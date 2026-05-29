@@ -13,9 +13,14 @@
  */
 const fs = require("fs");
 const path = require("path");
+const SlopScore = require("../src/slop-core.js");
 
 const ROOT = process.argv[2];
 const INPLACE = process.argv.includes("--inplace");
+const ONLY = (() => {
+  const i = process.argv.indexOf("--only");
+  return i !== -1 ? process.argv[i + 1] : null;
+})();
 const MODELS_DIR = path.join(__dirname, "..", "corpus", "models");
 fs.mkdirSync(MODELS_DIR, { recursive: true });
 
@@ -61,7 +66,8 @@ function clean(raw) {
     if (l === "" || TRAILING_RE.test(l)) lines.pop();
     else break;
   }
-  return lines.join("\n").trim();
+  // remove ALL section labels -> plain lyric lines in blank-line segments
+  return SlopScore.stripSectionLabels(lines.join("\n"));
 }
 
 if (!ROOT || !fs.existsSync(ROOT)) {
@@ -74,6 +80,7 @@ for (const diff of Object.keys(DIFF_TO_STRATEGY)) {
   const dDir = path.join(ROOT, diff);
   if (!fs.existsSync(dDir)) continue;
   for (const model of fs.readdirSync(dDir)) {
+    if (ONLY && model !== ONLY) continue;
     const mDir = path.join(dDir, model);
     if (!fs.statSync(mDir).isDirectory()) continue;
     for (const file of fs.readdirSync(mDir).filter((f) => f.endsWith(".txt"))) {

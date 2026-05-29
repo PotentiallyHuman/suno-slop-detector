@@ -158,6 +158,17 @@
       .join("\n");
   }
 
+  // Remove ALL section labels entirely, leaving plain lyric lines in blank-line
+  // separated segments (used to normalise stored corpus files to one format).
+  function stripSectionLabels(text) {
+    return normalizeStructure(text)
+      .split(/\r?\n/)
+      .filter((l) => !/^\s*\[[^\]]*\]\s*$/.test(l))
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   function normalize(text) {
     return (text || "").toLowerCase();
   }
@@ -327,6 +338,7 @@
     scoreLyrics,
     verdict,
     normalizeStructure,
+    stripSectionLabels,
     buildHighlightRegex,
     WORD_WEIGHTS,
     PHRASES,
