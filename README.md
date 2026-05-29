@@ -38,7 +38,7 @@ The lexicon above is hand-written guesses. The **real** detector learns what AI 
 
 The shipped score blends the two: `0.45 × lexicon + 0.55 × corpus`. The panel shows all three numbers.
 
-**Current corpus:** 30 AI songs (Claude + local Qwen 2.5 14B) vs 8 human anchors. Out-of-sample validation lands AI examples at 76–85% and human at 10–17%. Add Grok / Gemini / ChatGPT and it sharpens — see [`corpus/STRATEGIES.md`](corpus/STRATEGIES.md).
+**Current corpus:** 45 AI songs (ChatGPT + Claude + local Qwen 2.5 14B, 15 each) vs **54 real human songs** (1963–2019, 15 genres — metrics only, no copyrighted text stored; see `build/profile_human.js`). Resubstitution accuracy ~85% on content-only features (AI avg 73%, human avg 28%). Section-tag *count* is deliberately excluded (every Suno song has `[Verse]/[Chorus]`, so it's a format artifact, not a slop signal). Add Grok / Gemini and it sharpens — see [`corpus/STRATEGIES.md`](corpus/STRATEGIES.md).
 
 ### Translation
 

@@ -131,6 +131,33 @@
   // ---------------------------------------------------------------------------
   // helpers
   // ---------------------------------------------------------------------------
+  // Convert bare section headers ("Verse 1", "Pre-Chorus", "Final Chorus") that
+  // sit alone on a line into Suno-style [Verse 1] brackets, so ChatGPT/Qwen/
+  // human-pasted lyrics are scored on the same footing as Suno's bracket tags.
+  const BARE_HEADER_RE =
+    /^[\s>*_~`#()-]*((?:final\s+)?(?:pre[\s-]?chorus|post[\s-]?chorus|verse|chorus|bridge|intro|outro|hook|refrain|interlude))\s*(\d*)\s*[:.)]?[\s*_~`#()-]*$/i;
+  const TITLE_RE = /^[#*\s]*(?:song\s+)?title\s*:.*$/i;
+  function normalizeStructure(text) {
+    return String(text || "")
+      .split(/\r?\n/)
+      .map((line) => {
+        if (TITLE_RE.test(line)) return ""; // drop "Song Title: …" meta lines
+        const m = line.match(BARE_HEADER_RE);
+        if (!m) return line;
+        const w = m[1].toLowerCase().replace(/\s+/g, " ");
+        let canon;
+        if (w.includes("pre")) canon = "Pre-Chorus";
+        else if (w.includes("post")) canon = "Post-Chorus";
+        else if (w.includes("chorus")) canon = "Chorus";
+        else if (w.startsWith("verse")) canon = "Verse";
+        else if (w.startsWith("bridge")) canon = "Bridge";
+        else canon = w.charAt(0).toUpperCase() + w.slice(1);
+        const num = m[2] && (canon === "Verse" || canon === "Bridge") ? " " + m[2] : "";
+        return "[" + canon + num + "]";
+      })
+      .join("\n");
+  }
+
   function normalize(text) {
     return (text || "").toLowerCase();
   }
@@ -171,7 +198,7 @@
   };
 
   function scoreLyrics(rawText) {
-    const text = rawText || "";
+    const text = normalizeStructure(rawText || "");
     const lines = text.split(/\r?\n/);
     const tokens = tokenize(text);
     const contentTokens = tokens.filter((t) => !STOPWORDS.has(t));
@@ -299,6 +326,7 @@
   return {
     scoreLyrics,
     verdict,
+    normalizeStructure,
     buildHighlightRegex,
     WORD_WEIGHTS,
     PHRASES,

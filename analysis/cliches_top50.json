@@ -1,0 +1,909 @@
+{
+  "syntacticPatterns": [
+    {
+      "name": "simile 'like a ...'",
+      "total": 29,
+      "songs": 17,
+      "examples": [
+        "like a",
+        "like a",
+        "like a"
+      ]
+    },
+    {
+      "name": "'chasing/under the <sky-word>'",
+      "total": 5,
+      "songs": 5,
+      "examples": [
+        "beneath the sky",
+        "beneath the stars",
+        "under streetlights"
+      ]
+    },
+    {
+      "name": "rhetorical 'I don't know where/why'",
+      "total": 10,
+      "songs": 4,
+      "examples": [
+        "I don't know why",
+        "I don't know how",
+        "I don't know where"
+      ]
+    },
+    {
+      "name": "anaphora: 'carry the X, carry the Y'",
+      "total": 9,
+      "songs": 3,
+      "examples": [
+        "In the shimmer, in the",
+        "Carry the fire, carry the",
+        "until the morning, until the"
+      ]
+    },
+    {
+      "name": "'every X, every Y'",
+      "total": 3,
+      "songs": 2,
+      "examples": [
+        "Every mystery's a doorway, every page",
+        "Every stranger had a story, every silence"
+      ]
+    },
+    {
+      "name": "'I learned X from Y'",
+      "total": 2,
+      "songs": 2,
+      "examples": [
+        "I learned love from",
+        "I learned that from"
+      ]
+    },
+    {
+      "name": "'too A to B'",
+      "total": 2,
+      "songs": 2,
+      "examples": [
+        "too vast to miss",
+        "too big to wear"
+      ]
+    },
+    {
+      "name": "not A, not B, just/but C",
+      "total": 1,
+      "songs": 1,
+      "examples": [
+        "not a fire, not a lantern, but"
+      ]
+    },
+    {
+      "name": "'maybe ... maybe ...'",
+      "total": 1,
+      "songs": 1,
+      "examples": [
+        "Maybe he's a lion, maybe"
+      ]
+    },
+    {
+      "name": "'half X, half Y'",
+      "total": 1,
+      "songs": 1,
+      "examples": [
+        "half in my head, half"
+      ]
+    },
+    {
+      "name": "I'm not A, I'm (just) B",
+      "total": 0,
+      "songs": 0,
+      "examples": []
+    },
+    {
+      "name": "it's not A, it's B",
+      "total": 0,
+      "songs": 0,
+      "examples": []
+    },
+    {
+      "name": "fingers/hands trace",
+      "total": 0,
+      "songs": 0,
+      "examples": []
+    },
+    {
+      "name": "trace the <noun>",
+      "total": 0,
+      "songs": 0,
+      "examples": []
+    },
+    {
+      "name": "'in the dead/middle of the night'",
+      "total": 0,
+      "songs": 0,
+      "examples": []
+    }
+  ],
+  "recurringPhrases": [
+    {
+      "gram": "the morning",
+      "n": 2,
+      "count": 23,
+      "songs": 11,
+      "models": 3
+    },
+    {
+      "gram": "the dark",
+      "n": 2,
+      "count": 19,
+      "songs": 11,
+      "models": 3
+    },
+    {
+      "gram": "the night",
+      "n": 2,
+      "count": 25,
+      "songs": 10,
+      "models": 3
+    },
+    {
+      "gram": "through the",
+      "n": 2,
+      "count": 22,
+      "songs": 10,
+      "models": 3
+    },
+    {
+      "gram": "the world",
+      "n": 2,
+      "count": 11,
+      "songs": 10,
+      "models": 3
+    },
+    {
+      "gram": "used to",
+      "n": 2,
+      "count": 13,
+      "songs": 9,
+      "models": 3
+    },
+    {
+      "gram": "the same",
+      "n": 2,
+      "count": 19,
+      "songs": 8,
+      "models": 3
+    },
+    {
+      "gram": "there's a",
+      "n": 2,
+      "count": 19,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "your name",
+      "n": 2,
+      "count": 13,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "a place",
+      "n": 2,
+      "count": 9,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "the city",
+      "n": 2,
+      "count": 9,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "in the dark",
+      "n": 3,
+      "count": 9,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "a stranger",
+      "n": 2,
+      "count": 7,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "i never",
+      "n": 2,
+      "count": 7,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "morning light",
+      "n": 2,
+      "count": 6,
+      "songs": 6,
+      "models": 3
+    },
+    {
+      "gram": "before i",
+      "n": 2,
+      "count": 10,
+      "songs": 5,
+      "models": 3
+    },
+    {
+      "gram": "soft and",
+      "n": 2,
+      "count": 7,
+      "songs": 5,
+      "models": 3
+    },
+    {
+      "gram": "his name",
+      "n": 2,
+      "count": 6,
+      "songs": 5,
+      "models": 3
+    },
+    {
+      "gram": "i found",
+      "n": 2,
+      "count": 6,
+      "songs": 5,
+      "models": 3
+    },
+    {
+      "gram": "starts to",
+      "n": 2,
+      "count": 5,
+      "songs": 5,
+      "models": 3
+    },
+    {
+      "gram": "a quiet",
+      "n": 2,
+      "count": 7,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "of every",
+      "n": 2,
+      "count": 7,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "the room",
+      "n": 2,
+      "count": 5,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "the cold",
+      "n": 2,
+      "count": 5,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "we talked",
+      "n": 2,
+      "count": 4,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "the warmth",
+      "n": 2,
+      "count": 4,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "the lid",
+      "n": 2,
+      "count": 4,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "the way",
+      "n": 2,
+      "count": 4,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "felt like",
+      "n": 2,
+      "count": 4,
+      "songs": 4,
+      "models": 3
+    },
+    {
+      "gram": "found a",
+      "n": 2,
+      "count": 5,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "stood there",
+      "n": 2,
+      "count": 4,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "the storm",
+      "n": 2,
+      "count": 4,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "i thought",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "a boy",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "to play",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "a small",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "that never",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "the glass",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "a whisper",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "left to",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "holds the",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "behind the",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "the places",
+      "n": 2,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "in the places",
+      "n": 3,
+      "count": 3,
+      "songs": 3,
+      "models": 3
+    },
+    {
+      "gram": "the sky",
+      "n": 2,
+      "count": 28,
+      "songs": 11,
+      "models": 2
+    },
+    {
+      "gram": "beneath the",
+      "n": 2,
+      "count": 16,
+      "songs": 8,
+      "models": 2
+    },
+    {
+      "gram": "the rain",
+      "n": 2,
+      "count": 14,
+      "songs": 8,
+      "models": 2
+    },
+    {
+      "gram": "the stars",
+      "n": 2,
+      "count": 10,
+      "songs": 7,
+      "models": 2
+    },
+    {
+      "gram": "the sun",
+      "n": 2,
+      "count": 10,
+      "songs": 7,
+      "models": 2
+    },
+    {
+      "gram": "the air",
+      "n": 2,
+      "count": 9,
+      "songs": 7,
+      "models": 2
+    },
+    {
+      "gram": "full of",
+      "n": 2,
+      "count": 9,
+      "songs": 7,
+      "models": 2
+    },
+    {
+      "gram": "a little",
+      "n": 2,
+      "count": 21,
+      "songs": 6,
+      "models": 2
+    },
+    {
+      "gram": "my heart",
+      "n": 2,
+      "count": 12,
+      "songs": 6,
+      "models": 2
+    },
+    {
+      "gram": "the whole",
+      "n": 2,
+      "count": 12,
+      "songs": 6,
+      "models": 2
+    },
+    {
+      "gram": "the quiet",
+      "n": 2,
+      "count": 8,
+      "songs": 6,
+      "models": 2
+    },
+    {
+      "gram": "a story",
+      "n": 2,
+      "count": 6,
+      "songs": 6,
+      "models": 2
+    },
+    {
+      "gram": "don't know",
+      "n": 2,
+      "count": 12,
+      "songs": 5,
+      "models": 2
+    },
+    {
+      "gram": "but every",
+      "n": 2,
+      "count": 9,
+      "songs": 5,
+      "models": 2
+    },
+    {
+      "gram": "open wide",
+      "n": 2,
+      "count": 7,
+      "songs": 5,
+      "models": 2
+    },
+    {
+      "gram": "above the",
+      "n": 2,
+      "count": 7,
+      "songs": 5,
+      "models": 2
+    }
+  ],
+  "imageryWords": [
+    {
+      "word": "night",
+      "count": 52,
+      "songs": 21,
+      "models": 3,
+      "perModel": [
+        7,
+        4,
+        10
+      ],
+      "lift": 86.2
+    },
+    {
+      "word": "light",
+      "count": 43,
+      "songs": 22,
+      "models": 3,
+      "perModel": [
+        11,
+        4,
+        7
+      ],
+      "lift": 71.3
+    },
+    {
+      "word": "sky",
+      "count": 35,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        10,
+        2,
+        3
+      ],
+      "lift": 58
+    },
+    {
+      "word": "maybe",
+      "count": 34,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        10,
+        1,
+        3
+      ],
+      "lift": 56.4
+    },
+    {
+      "word": "quiet",
+      "count": 33,
+      "songs": 20,
+      "models": 3,
+      "perModel": [
+        9,
+        1,
+        10
+      ],
+      "lift": 54.7
+    },
+    {
+      "word": "love",
+      "count": 33,
+      "songs": 18,
+      "models": 3,
+      "perModel": [
+        8,
+        4,
+        6
+      ],
+      "lift": 54.7
+    },
+    {
+      "word": "heart",
+      "count": 32,
+      "songs": 15,
+      "models": 2,
+      "perModel": [
+        5,
+        0,
+        10
+      ],
+      "lift": 53
+    },
+    {
+      "word": "time",
+      "count": 30,
+      "songs": 21,
+      "models": 3,
+      "perModel": [
+        10,
+        4,
+        7
+      ],
+      "lift": 49.7
+    },
+    {
+      "word": "day",
+      "count": 30,
+      "songs": 16,
+      "models": 3,
+      "perModel": [
+        6,
+        4,
+        6
+      ],
+      "lift": 49.7
+    },
+    {
+      "word": "name",
+      "count": 29,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        7,
+        3,
+        4
+      ],
+      "lift": 48.1
+    },
+    {
+      "word": "each",
+      "count": 28,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        1,
+        1,
+        12
+      ],
+      "lift": 46.4
+    },
+    {
+      "word": "rain",
+      "count": 27,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        9,
+        1,
+        3
+      ],
+      "lift": 44.8
+    },
+    {
+      "word": "said",
+      "count": 27,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        8,
+        3,
+        1
+      ],
+      "lift": 44.8
+    },
+    {
+      "word": "left",
+      "count": 24,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        6,
+        4,
+        5
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "world",
+      "count": 24,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        9
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "dark",
+      "count": 24,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        7
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "place",
+      "count": 24,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        7
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "shadows",
+      "count": 21,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        2,
+        2,
+        10
+      ],
+      "lift": 34.8
+    },
+    {
+      "word": "hands",
+      "count": 20,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        5,
+        4,
+        6
+      ],
+      "lift": 33.2
+    },
+    {
+      "word": "felt",
+      "count": 20,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        4,
+        3,
+        4
+      ],
+      "lift": 33.2
+    },
+    {
+      "word": "story",
+      "count": 19,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        9
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "open",
+      "count": 19,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        9,
+        2,
+        2
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "free",
+      "count": 19,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        6
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "face",
+      "count": 19,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        7
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "inside",
+      "count": 19,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        6
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "way",
+      "count": 18,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        5
+      ],
+      "lift": 29.8
+    },
+    {
+      "word": "beneath",
+      "count": 18,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        3
+      ],
+      "lift": 29.8
+    },
+    {
+      "word": "something",
+      "count": 17,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        6,
+        3,
+        3
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "once",
+      "count": 17,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        7
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "bright",
+      "count": 17,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        5
+      ],
+      "lift": 28.2
+    }
+  ]
+}

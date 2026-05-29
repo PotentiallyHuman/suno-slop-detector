@@ -1,0 +1,1210 @@
+{
+  "corpusSize": 45,
+  "models": [
+    "chatgpt",
+    "claude-opus",
+    "qwen-2.5-14b"
+  ],
+  "words": [
+    {
+      "word": "every",
+      "count": 84,
+      "songs": 31,
+      "models": 3,
+      "perModel": [
+        13,
+        5,
+        13
+      ],
+      "lift": 2.2
+    },
+    {
+      "word": "through",
+      "count": 56,
+      "songs": 25,
+      "models": 3,
+      "perModel": [
+        10,
+        4,
+        11
+      ],
+      "lift": 2.9
+    },
+    {
+      "word": "light",
+      "count": 43,
+      "songs": 22,
+      "models": 3,
+      "perModel": [
+        11,
+        4,
+        7
+      ],
+      "lift": 71.3
+    },
+    {
+      "word": "night",
+      "count": 52,
+      "songs": 21,
+      "models": 3,
+      "perModel": [
+        7,
+        4,
+        10
+      ],
+      "lift": 86.2
+    },
+    {
+      "word": "still",
+      "count": 46,
+      "songs": 21,
+      "models": 3,
+      "perModel": [
+        8,
+        6,
+        7
+      ],
+      "lift": 1.2
+    },
+    {
+      "word": "time",
+      "count": 30,
+      "songs": 21,
+      "models": 3,
+      "perModel": [
+        10,
+        4,
+        7
+      ],
+      "lift": 49.7
+    },
+    {
+      "word": "quiet",
+      "count": 33,
+      "songs": 20,
+      "models": 3,
+      "perModel": [
+        9,
+        1,
+        10
+      ],
+      "lift": 54.7
+    },
+    {
+      "word": "one",
+      "count": 36,
+      "songs": 18,
+      "models": 3,
+      "perModel": [
+        7,
+        6,
+        5
+      ],
+      "lift": 0.6
+    },
+    {
+      "word": "love",
+      "count": 33,
+      "songs": 18,
+      "models": 3,
+      "perModel": [
+        8,
+        4,
+        6
+      ],
+      "lift": 54.7
+    },
+    {
+      "word": "never",
+      "count": 30,
+      "songs": 18,
+      "models": 3,
+      "perModel": [
+        5,
+        9,
+        4
+      ],
+      "lift": 0.3
+    },
+    {
+      "word": "little",
+      "count": 47,
+      "songs": 17,
+      "models": 3,
+      "perModel": [
+        10,
+        3,
+        4
+      ],
+      "lift": 2.5
+    },
+    {
+      "word": "morning",
+      "count": 36,
+      "songs": 17,
+      "models": 3,
+      "perModel": [
+        6,
+        7,
+        4
+      ],
+      "lift": 1.9
+    },
+    {
+      "word": "go",
+      "count": 26,
+      "songs": 17,
+      "models": 3,
+      "perModel": [
+        6,
+        7,
+        4
+      ],
+      "lift": 0.7
+    },
+    {
+      "word": "old",
+      "count": 36,
+      "songs": 16,
+      "models": 3,
+      "perModel": [
+        5,
+        4,
+        7
+      ],
+      "lift": 1.9
+    },
+    {
+      "word": "know",
+      "count": 36,
+      "songs": 16,
+      "models": 3,
+      "perModel": [
+        5,
+        7,
+        4
+      ],
+      "lift": 1
+    },
+    {
+      "word": "back",
+      "count": 35,
+      "songs": 16,
+      "models": 3,
+      "perModel": [
+        7,
+        4,
+        5
+      ],
+      "lift": 0.6
+    },
+    {
+      "word": "day",
+      "count": 30,
+      "songs": 16,
+      "models": 3,
+      "perModel": [
+        6,
+        4,
+        6
+      ],
+      "lift": 49.7
+    },
+    {
+      "word": "home",
+      "count": 37,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        10,
+        2,
+        3
+      ],
+      "lift": 0.7
+    },
+    {
+      "word": "sky",
+      "count": 35,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        10,
+        2,
+        3
+      ],
+      "lift": 58
+    },
+    {
+      "word": "heart",
+      "count": 32,
+      "songs": 15,
+      "models": 2,
+      "perModel": [
+        5,
+        0,
+        10
+      ],
+      "lift": 53
+    },
+    {
+      "word": "left",
+      "count": 24,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        6,
+        4,
+        5
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "world",
+      "count": 24,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        9
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "eyes",
+      "count": 21,
+      "songs": 15,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        9
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "hands",
+      "count": 20,
+      "songs": 15,
+      "models": 3,
+      "perModel": [
+        5,
+        4,
+        6
+      ],
+      "lift": 33.2
+    },
+    {
+      "word": "maybe",
+      "count": 34,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        10,
+        1,
+        3
+      ],
+      "lift": 56.4
+    },
+    {
+      "word": "name",
+      "count": 29,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        7,
+        3,
+        4
+      ],
+      "lift": 48.1
+    },
+    {
+      "word": "each",
+      "count": 28,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        1,
+        1,
+        12
+      ],
+      "lift": 46.4
+    },
+    {
+      "word": "dark",
+      "count": 24,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        7
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "made",
+      "count": 22,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        8,
+        2,
+        4
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "shadows",
+      "count": 21,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        2,
+        2,
+        10
+      ],
+      "lift": 34.8
+    },
+    {
+      "word": "story",
+      "count": 19,
+      "songs": 14,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        9
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "rain",
+      "count": 27,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        9,
+        1,
+        3
+      ],
+      "lift": 44.8
+    },
+    {
+      "word": "place",
+      "count": 24,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        7
+      ],
+      "lift": 39.8
+    },
+    {
+      "word": "before",
+      "count": 21,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        3,
+        4,
+        6
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "open",
+      "count": 19,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        9,
+        2,
+        2
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "away",
+      "count": 15,
+      "songs": 13,
+      "models": 3,
+      "perModel": [
+        5,
+        3,
+        5
+      ],
+      "lift": 24.9
+    },
+    {
+      "word": "said",
+      "count": 27,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        8,
+        3,
+        1
+      ],
+      "lift": 44.8
+    },
+    {
+      "word": "free",
+      "count": 19,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        6
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "face",
+      "count": 19,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        7
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "found",
+      "count": 18,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        5
+      ],
+      "lift": 0.3
+    },
+    {
+      "word": "something",
+      "count": 17,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        6,
+        3,
+        3
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "once",
+      "count": 17,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        7
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "see",
+      "count": 16,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        6
+      ],
+      "lift": 26.5
+    },
+    {
+      "word": "behind",
+      "count": 16,
+      "songs": 12,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        6
+      ],
+      "lift": 0.8
+    },
+    {
+      "word": "feel",
+      "count": 24,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        5
+      ],
+      "lift": 1.3
+    },
+    {
+      "word": "came",
+      "count": 22,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        7,
+        4,
+        0
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "felt",
+      "count": 20,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        4,
+        3,
+        4
+      ],
+      "lift": 33.2
+    },
+    {
+      "word": "inside",
+      "count": 19,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        6
+      ],
+      "lift": 31.5
+    },
+    {
+      "word": "whole",
+      "count": 19,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        5,
+        6,
+        0
+      ],
+      "lift": 1
+    },
+    {
+      "word": "way",
+      "count": 18,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        5
+      ],
+      "lift": 29.8
+    },
+    {
+      "word": "bright",
+      "count": 17,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        5
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "stars",
+      "count": 17,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        7,
+        0,
+        4
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "dreams",
+      "count": 17,
+      "songs": 11,
+      "models": 2,
+      "perModel": [
+        5,
+        0,
+        6
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "warm",
+      "count": 17,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        6
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "hand",
+      "count": 15,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        7,
+        1,
+        3
+      ],
+      "lift": 24.9
+    },
+    {
+      "word": "cold",
+      "count": 13,
+      "songs": 11,
+      "models": 3,
+      "perModel": [
+        4,
+        4,
+        3
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "find",
+      "count": 23,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        3,
+        1,
+        6
+      ],
+      "lift": 1.2
+    },
+    {
+      "word": "keep",
+      "count": 22,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        3,
+        4,
+        3
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "need",
+      "count": 18,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        6,
+        1,
+        3
+      ],
+      "lift": 0.9
+    },
+    {
+      "word": "soft",
+      "count": 16,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        4
+      ],
+      "lift": 26.5
+    },
+    {
+      "word": "used",
+      "count": 14,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        4,
+        4,
+        2
+      ],
+      "lift": 23.2
+    },
+    {
+      "word": "new",
+      "count": 14,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        5
+      ],
+      "lift": 0.7
+    },
+    {
+      "word": "whispers",
+      "count": 14,
+      "songs": 10,
+      "models": 1,
+      "perModel": [
+        0,
+        0,
+        10
+      ],
+      "lift": 23.2
+    },
+    {
+      "word": "small",
+      "count": 13,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        3
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "soul",
+      "count": 13,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        5
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "life",
+      "count": 12,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        4,
+        3,
+        3
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "stand",
+      "count": 12,
+      "songs": 10,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        5
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "there's",
+      "count": 25,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        4
+      ],
+      "lift": 0.3
+    },
+    {
+      "word": "same",
+      "count": 23,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        2,
+        5,
+        2
+      ],
+      "lift": 0.4
+    },
+    {
+      "word": "lost",
+      "count": 21,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        3
+      ],
+      "lift": 1.1
+    },
+    {
+      "word": "beneath",
+      "count": 18,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        3
+      ],
+      "lift": 29.8
+    },
+    {
+      "word": "sun",
+      "count": 17,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        3
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "them",
+      "count": 17,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        2
+      ],
+      "lift": 28.2
+    },
+    {
+      "word": "slow",
+      "count": 16,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        3
+      ],
+      "lift": 26.5
+    },
+    {
+      "word": "hearts",
+      "count": 15,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        3,
+        0,
+        6
+      ],
+      "lift": 24.9
+    },
+    {
+      "word": "city",
+      "count": 15,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        4,
+        2,
+        3
+      ],
+      "lift": 24.9
+    },
+    {
+      "word": "above",
+      "count": 15,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        6,
+        1,
+        2
+      ],
+      "lift": 0.8
+    },
+    {
+      "word": "nothing",
+      "count": 14,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        6,
+        2,
+        1
+      ],
+      "lift": 0.7
+    },
+    {
+      "word": "past",
+      "count": 14,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        4,
+        0,
+        5
+      ],
+      "lift": 23.2
+    },
+    {
+      "word": "wide",
+      "count": 14,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        6,
+        0,
+        3
+      ],
+      "lift": 23.2
+    },
+    {
+      "word": "corner",
+      "count": 13,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        4
+      ],
+      "lift": 0.7
+    },
+    {
+      "word": "own",
+      "count": 13,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        5,
+        1,
+        3
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "fear",
+      "count": 12,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        7,
+        0,
+        2
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "air",
+      "count": 12,
+      "songs": 9,
+      "models": 2,
+      "perModel": [
+        5,
+        0,
+        4
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "held",
+      "count": 11,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        4
+      ],
+      "lift": 0.3
+    },
+    {
+      "word": "holds",
+      "count": 11,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        1,
+        2,
+        6
+      ],
+      "lift": 18.2
+    },
+    {
+      "word": "memories",
+      "count": 11,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        1,
+        1,
+        7
+      ],
+      "lift": 18.2
+    },
+    {
+      "word": "stranger",
+      "count": 10,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        2,
+        3,
+        4
+      ],
+      "lift": 0.5
+    },
+    {
+      "word": "alone",
+      "count": 10,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        1,
+        1,
+        7
+      ],
+      "lift": 16.6
+    },
+    {
+      "word": "across",
+      "count": 9,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        6,
+        2,
+        1
+      ],
+      "lift": 0.5
+    },
+    {
+      "word": "keeps",
+      "count": 9,
+      "songs": 9,
+      "models": 3,
+      "perModel": [
+        2,
+        4,
+        3
+      ],
+      "lift": 0.5
+    },
+    {
+      "word": "yet",
+      "count": 24,
+      "songs": 8,
+      "models": 2,
+      "perModel": [
+        2,
+        0,
+        6
+      ],
+      "lift": 1.3
+    },
+    {
+      "word": "flame",
+      "count": 16,
+      "songs": 8,
+      "models": 2,
+      "perModel": [
+        7,
+        0,
+        1
+      ],
+      "lift": 26.5
+    },
+    {
+      "word": "didn't",
+      "count": 15,
+      "songs": 8,
+      "models": 3,
+      "perModel": [
+        4,
+        3,
+        1
+      ],
+      "lift": 0.8
+    },
+    {
+      "word": "grow",
+      "count": 15,
+      "songs": 8,
+      "models": 3,
+      "perModel": [
+        4,
+        1,
+        3
+      ],
+      "lift": 24.9
+    },
+    {
+      "word": "walls",
+      "count": 13,
+      "songs": 8,
+      "models": 2,
+      "perModel": [
+        3,
+        0,
+        5
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "echoes",
+      "count": 13,
+      "songs": 8,
+      "models": 2,
+      "perModel": [
+        0,
+        2,
+        6
+      ],
+      "lift": 21.5
+    },
+    {
+      "word": "first",
+      "count": 12,
+      "songs": 8,
+      "models": 3,
+      "perModel": [
+        5,
+        2,
+        1
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "things",
+      "count": 12,
+      "songs": 8,
+      "models": 2,
+      "perModel": [
+        7,
+        1,
+        0
+      ],
+      "lift": 19.9
+    },
+    {
+      "word": "last",
+      "count": 12,
+      "songs": 8,
+      "models": 3,
+      "perModel": [
+        3,
+        2,
+        3
+      ],
+      "lift": 19.9
+    }
+  ]
+}

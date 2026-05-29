@@ -21,12 +21,15 @@
      "im i'm ive i've all up down out not no").split(/\s+/)
   );
 
+  // The classifier feature set. NOTE: section-tag count is deliberately NOT
+  // here — it's a source-format artifact (every Suno song has [Verse]/[Chorus],
+  // API-sourced human lyrics don't), so it would bias every Suno song toward
+  // "AI" for the wrong reason. We focus on words/phrases/repetition/style.
   const FEATURE_NAMES = [
     "clicheDensity",   // weighted cliché words / content word
     "phrasePerLine",   // stock-phrase mass / line
     "rhymePerLine",    // lazy canned-rhyme pairs / line
     "repetition",      // 1 - length-corrected type/token
-    "sectionTags",     // [Verse]/[Chorus] markers (capped)
     "endRhymeRate",    // fraction of lines that rhyme with a neighbour
     "avgLineLen",      // words per line
     "fnWordRatio",     // function words / total (stylometric)
@@ -52,7 +55,7 @@
   }
 
   function extract(rawText) {
-    const text = String(rawText || "");
+    const text = SlopScore.normalizeStructure(String(rawText || ""));
     const s = SlopScore.scoreLyrics(text).stats;
 
     // strip section tags for line/word stylometrics

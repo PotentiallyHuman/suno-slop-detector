@@ -37,9 +37,26 @@ if (fs.existsSync(MODELS_DIR)) {
   }
 }
 
-// ---- load human anchors ----------------------------------------------------
-const humanRaw = require("../examples/human.js");
-const humanSongs = humanRaw.filter((h) => (h.text || "").trim().length > 30);
+// ---- load human class ------------------------------------------------------
+// Prefer the real-song profiles (corpus/human_profiles.json — derived feature
+// vectors only, no copyrighted text). Fall back to the synthetic anchors.
+const PROFILES = path.join(__dirname, "..", "corpus", "human_profiles.json");
+let humanVecs, humanCount, humanSource;
+if (fs.existsSync(PROFILES)) {
+  const hp = JSON.parse(fs.readFileSync(PROFILES, "utf8"));
+  // reconstruct by feature name when available, so adding/reordering features
+  // doesn't require re-fetching the corpus
+  humanVecs = hp.profiles.map((p) =>
+    p.named ? FEATURE_NAMES.map((k) => p.named[k]) : p.vector
+  );
+  humanCount = humanVecs.length;
+  humanSource = `${humanCount} real songs (profiles)`;
+} else {
+  const humanRaw = require("../examples/human.js").filter((h) => (h.text || "").trim().length > 30);
+  humanVecs = humanRaw.map((h) => extract(h.text).values);
+  humanCount = humanVecs.length;
+  humanSource = `${humanCount} synthetic anchors`;
+}
 
 if (!aiSongs.length) {
   console.error("No AI songs found in corpus/models/. Generate them first.");
@@ -48,7 +65,6 @@ if (!aiSongs.length) {
 
 // ---- featurize -------------------------------------------------------------
 const aiVecs = aiSongs.map((s) => extract(s.lyrics).values);
-const humanVecs = humanSongs.map((h) => extract(h.text).values);
 const all = aiVecs.concat(humanVecs);
 const D = FEATURE_NAMES.length;
 
@@ -79,7 +95,7 @@ const baseline = {
   scaler: { mean, std },
   centroids: { ai: aiCentroid, human: humanCentroid },
   temperature: 1.0,
-  meta: { aiCount: aiSongs.length, humanCount: humanSongs.length, perModel },
+  meta: { aiCount: aiSongs.length, humanCount, humanSource, perModel },
 };
 
 fs.writeFileSync(OUT_JSON, JSON.stringify(baseline, null, 2));
@@ -94,7 +110,7 @@ fs.writeFileSync(
 // ---- diagnostics -----------------------------------------------------------
 const dist = (a, b) => Math.sqrt(a.reduce((s, x, i) => s + (x - b[i]) ** 2, 0));
 console.log(`\n=== baseline built ===`);
-console.log(`AI songs: ${aiSongs.length}  | human anchors: ${humanSongs.length}`);
+console.log(`AI songs: ${aiSongs.length}  | human class: ${humanSource}`);
 console.log(`per model:`, perModel);
 console.log(`\nfeature           AI mean    human mean   (raw)`);
 for (let i = 0; i < D; i++) {
@@ -107,18 +123,18 @@ for (let i = 0; i < D; i++) {
   );
 }
 
-// leave-one-out separation on the labelled pool
-const { classify } = require("../src/features.js");
-let correct = 0,
-  total = 0;
-const probe = (text, label) => {
-  const r = classify(text, baseline);
-  total++;
-  if ((r.pAI >= 50 ? "ai" : "human") === label) correct++;
-  return r.pAI;
+// resubstitution separation on the labelled pool (classify by feature vector)
+const pAIofVec = (v) => {
+  const zv = v.map((x, i) => (x - mean[i]) / (std[i] || 1));
+  const dd = (c) => Math.sqrt(c.reduce((s, x, i) => s + (x - zv[i]) ** 2, 0));
+  return 100 / (1 + Math.exp(-(dd(humanCentroid) - dd(aiCentroid)) / baseline.temperature));
 };
-const aiP = aiSongs.map((s) => probe(s.lyrics, "ai"));
-const huP = humanSongs.map((h) => probe(h.text, "human"));
+let correct = 0;
+const aiP = aiVecs.map((v) => pAIofVec(v));
+const huP = humanVecs.map((v) => pAIofVec(v));
+aiP.forEach((p) => { if (p >= 50) correct++; });
+huP.forEach((p) => { if (p < 50) correct++; });
+const total = aiP.length + huP.length;
 const avg = (a) => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1);
 console.log(`\nresubstitution P(AI):  AI avg ${avg(aiP)}%   human avg ${avg(huP)}%`);
 console.log(`nearest-centroid accuracy: ${correct}/${total}\n`);
