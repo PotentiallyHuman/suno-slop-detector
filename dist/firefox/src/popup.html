@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>🤖 Suno Slop Detector</h1>
+
+    <div id="page-status" class="card">
+      <div id="page-msg" class="muted">Checking this tab…</div>
+      <div id="page-result" hidden>
+        <span id="page-score" class="big"></span>
+        <span id="page-label" class="muted"></span>
+      </div>
+    </div>
+
+    <details class="card">
+      <summary>Paste any lyrics to test ▾</summary>
+      <textarea id="paste" rows="8" placeholder="Paste lyrics here…"></textarea>
+      <button id="analyze">Analyze</button>
+      <div id="paste-result" hidden>
+        <span id="paste-score" class="big"></span>
+        <span id="paste-label" class="muted"></span>
+        <div id="paste-chips" class="chips"></div>
+      </div>
+    </details>
+
+    <p class="foot">
+      On a <code>suno.com/song/…</code> page it reads <b>only</b> the lyrics box.
+      It analyses nothing anywhere else. Heuristic for fun — not proof.
+    </p>
+
+    <script src="slop-core.js"></script>
+    <script src="common_words.js"></script>
+    <script src="features.js"></script>
+    <script src="baseline.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

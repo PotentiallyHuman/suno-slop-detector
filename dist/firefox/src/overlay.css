@@ -1,0 +1,118 @@
+/* injected badge + panel on suno.com/song/* only */
+#slop-detector-root {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 2147483647;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+#slop-badge {
+  --slop-color: #ffd23f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 2px solid var(--slop-color);
+  border-radius: 999px;
+  background: rgba(18, 18, 22, 0.92);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+#slop-badge:hover { transform: translateY(-1px); }
+#slop-badge .slop-emoji { font-size: 15px; }
+#slop-badge #slop-pct { color: var(--slop-color); }
+
+#slop-panel {
+  margin-top: 8px;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(18, 18, 22, 0.97);
+  color: #eaeaea;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+}
+.slop-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+#slop-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+#slop-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.slop-big { font-size: 30px; font-weight: 800; }
+.slop-verdict-text { color: #cfcfcf; font-style: italic; }
+.slop-components {
+  margin: -4px 0 10px;
+  color: #8f8f8f;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.slop-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+.slop-bar-name { width: 92px; color: #b9b9b9; font-size: 12px; }
+.slop-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.slop-bar-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffd23f, #ff4d4d);
+}
+
+.slop-section { margin-top: 12px; }
+.slop-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+  margin-bottom: 6px;
+}
+.slop-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.slop-chip {
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.slop-chip.t1 { color: #ffe9a8; }
+.slop-chip.t2 { color: #ffc04d; border-color: rgba(255, 159, 28, 0.4); }
+.slop-chip.t3 { color: #ff7b7b; border-color: rgba(255, 77, 77, 0.45); }
+.slop-none { color: #6cc070; font-size: 12px; }
+
+.slop-foot {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #777;
+  font-size: 11px;
+}
