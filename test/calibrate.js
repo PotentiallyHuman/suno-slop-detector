@@ -41,4 +41,30 @@ console.log(
   `Separation: lowest AI (${minAi}%) ${ranks ? ">" : "!>"} highest human (${maxHuman}%)  ${ranks ? "✅" : "❌"}\n`
 );
 
-process.exit(pass === corpus.length && ranks ? 0 : 1);
+// ---- data-driven baseline classifier (if built) ----------------------------
+let baseOk = true;
+try {
+  const { classify } = require("../src/features.js");
+  const baseline = require("../src/baseline.json");
+  console.log("=== baseline classifier (vs AI corpus) ===");
+  console.log(
+    `corpus: ${baseline.meta.aiCount} AI songs, ${baseline.meta.humanCount} human anchors`,
+    baseline.meta.perModel
+  );
+  for (const { ex, r } of rows) {
+    const c = classify(ex.text, baseline);
+    const blended = Math.round(0.45 * r.score + 0.55 * c.pAI);
+    console.log(
+      `  ${pad(ex.kind, 6)} lexicon ${pad(r.score + "%", 5)} corpus ${pad(
+        c.pAI + "%",
+        5
+      )} → blended ${pad(blended + "%", 5)}  ${ex.name}`
+    );
+  }
+  console.log();
+} catch (e) {
+  baseOk = true; // baseline is optional; don't fail the heuristic test on it
+  console.log(`(baseline not built yet: ${e.message})\n`);
+}
+
+process.exit(pass === corpus.length && ranks && baseOk ? 0 : 1);

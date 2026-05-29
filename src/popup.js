@@ -55,10 +55,18 @@
     const text = pasteEl.value || "";
     if (text.trim().length < 8) return;
     const r = SlopScore.scoreLyrics(text);
+    let base = null;
+    try {
+      if (globalThis.SLOP_BASELINE && typeof SlopFeatures !== "undefined") {
+        base = SlopFeatures.classify(text, globalThis.SLOP_BASELINE);
+      }
+    } catch (e) {}
+    const finalScore = base ? Math.round(0.45 * r.score + 0.55 * base.pAI) : r.score;
     pasteResult.hidden = false;
-    pasteScore.textContent = r.score + "% AI";
-    pasteScore.style.color = colorFor(r.score);
-    pasteLabel.textContent = r.label;
+    pasteScore.textContent = finalScore + "% AI";
+    pasteScore.style.color = colorFor(finalScore);
+    pasteLabel.textContent = SlopScore.verdict(finalScore) +
+      (base ? ` · lexicon ${r.score}% / corpus ${base.pAI}%` : "");
     const chips = r.hits.words
       .slice(0, 20)
       .map((w) => `<span class="chip t${w.weight}">${w.word}${w.count > 1 ? " ×" + w.count : ""}</span>`)

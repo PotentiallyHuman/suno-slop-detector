@@ -30,8 +30,41 @@
     if (!node) return null;
     const text = node.innerText || node.textContent || "";
     if (text.trim().length < 12) return null; // too short to mean anything
-    const result = SlopScore.scoreLyrics(text);
-    result._text = text;
+
+    // English-cliché signals only fire on English text; flag otherwise.
+    // (Offline corpus is normalized via build/translate.js; for live non-English
+    //  songs, on-device Chrome Translator could be wired here in future.)
+    const toks = (text.toLowerCase().match(/[a-z']+/g) || []);
+    const enHits = toks.filter((t) =>
+      /^(the|and|you|to|a|of|in|it|that|is|my|me|we|for|on|with|but|love|night)$/.test(t)
+    ).length;
+    const nonEnglish = toks.length > 12 && enHits / toks.length < 0.05;
+
+    const heur = SlopScore.scoreLyrics(text);
+    let base = null;
+    try {
+      if (globalThis.SLOP_BASELINE && typeof SlopFeatures !== "undefined") {
+        base = SlopFeatures.classify(text, globalThis.SLOP_BASELINE);
+      }
+    } catch (e) {
+      /* baseline optional */
+    }
+    // final "AI-ness": blend the cliché lexicon with the data-driven corpus
+    const finalScore = base
+      ? Math.round(0.45 * heur.score + 0.55 * base.pAI)
+      : heur.score;
+
+    const result = {
+      score: finalScore,
+      label: SlopScore.verdict(finalScore),
+      heuristicScore: heur.score,
+      baselineScore: base ? base.pAI : null,
+      nonEnglish: nonEnglish,
+      breakdown: heur.breakdown,
+      hits: heur.hits,
+      stats: heur.stats,
+      _text: text,
+    };
     lastResult = result;
     return result;
   }
@@ -55,6 +88,7 @@
           <button id="slop-close" type="button" aria-label="close">×</button>
         </div>
         <div id="slop-verdict"></div>
+        <div id="slop-components" class="slop-components"></div>
         <div id="slop-bars"></div>
         <div id="slop-section" class="slop-section">
           <div class="slop-label">Cliché words found</div>
@@ -97,6 +131,12 @@
     panel.querySelector("#slop-verdict").innerHTML =
       `<span class="slop-big" style="color:${c}">${result.score}% AI</span>` +
       `<span class="slop-verdict-text">${result.label}</span>`;
+
+    panel.querySelector("#slop-components").textContent =
+      (result.baselineScore != null
+        ? `cliché lexicon ${result.heuristicScore}%  ·  vs AI corpus ${result.baselineScore}%`
+        : `cliché lexicon ${result.heuristicScore}%  ·  corpus baseline not loaded`) +
+      (result.nonEnglish ? "  ·  ⚠ non-English: score approximate" : "");
 
     const b = result.breakdown;
     const parts = [

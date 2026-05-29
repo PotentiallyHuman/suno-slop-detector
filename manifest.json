@@ -7,7 +7,7 @@
   "content_scripts": [
     {
       "matches": ["https://suno.com/song/*"],
-      "js": ["src/slop-core.js", "src/content.js"],
+      "js": ["src/slop-core.js", "src/features.js", "src/baseline.js", "src/content.js"],
       "css": ["src/overlay.css"],
       "run_at": "document_idle"
     }

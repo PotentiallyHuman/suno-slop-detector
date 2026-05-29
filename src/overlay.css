@@ -61,6 +61,12 @@
 }
 .slop-big { font-size: 30px; font-weight: 800; }
 .slop-verdict-text { color: #cfcfcf; font-style: italic; }
+.slop-components {
+  margin: -4px 0 10px;
+  color: #8f8f8f;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
 
 .slop-bar-row {
   display: flex;

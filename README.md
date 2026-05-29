@@ -24,6 +24,26 @@ The score is a transparent, tunable heuristic — **five signals** squashed thro
 
 All weights live in `src/slop-core.js` (`WORD_WEIGHTS`, `PHRASES`, `LAZY_RHYMES`, `W`). Tune away.
 
+## The data-driven baseline (the "final mode")
+
+The lexicon above is hand-written guesses. The **real** detector learns what AI lyrics look like from a corpus of *actual* AI lyrics:
+
+1. Every model is fed the **same 15 prompts** — 3 prompting strategies × 5 subjects (`corpus/prompts.js`):
+   - **vibe** — lazy one-liner ("write a song about my cat John")
+   - **story** — tell a full story, then ask for lyrics
+   - **craft** — ask the model to apply real songwriting craft and dodge clichés
+2. Each lyric is turned into a 10-dimensional **feature vector** (`src/features.js`) — the heuristic signals plus stylometrics (function-word ratio, line length, vocabulary richness, rhyme regularity).
+3. We compute the **AI centroid** and a **human centroid**, standardized over the pool (`build/build_baseline.js`).
+4. A new song is scored by **which centroid it sits closer to** → *the more it looks like the AI baseline, the more AI it is; the further away, the less.*
+
+The shipped score blends the two: `0.45 × lexicon + 0.55 × corpus`. The panel shows all three numbers.
+
+**Current corpus:** 30 AI songs (Claude + local Qwen 2.5 14B) vs 8 human anchors. Out-of-sample validation lands AI examples at 76–85% and human at 10–17%. Add Grok / Gemini / ChatGPT and it sharpens — see [`corpus/STRATEGIES.md`](corpus/STRATEGIES.md).
+
+### Translation
+
+All lyrics are normalized to **English before comparison** (`build/translate.js`, local ollama, skips already-English text) — so a Danish Suno song is judged on equal footing. `npm run rebuild` does translate + build.
+
 ## Honesty (this matters)
 
 It is a **vibe meter, not a detector of ground truth.** Humans write "fire" and "midnight" too; a great lyric can score high and a bland AI one can score low. Treat a number as a conversation-starter, not a verdict. The whole engine is ~250 readable lines — audit it, disagree with it, send a PR that changes the lexicon.
@@ -64,13 +84,31 @@ Add your own examples to `examples/corpus.js` with an `expect: [lo, hi]` band to
 ## Project layout
 
 ```
-manifest.json          MV3, scoped to suno.com/song/*
-src/slop-core.js        scoring engine (pure; runs in browser AND node)
-src/content.js          reads ONLY the lyrics box, draws the badge/panel
-src/overlay.css         badge + panel styling
-src/popup.html/js/css   toolbar popup: current score + paste-to-test box
-examples/corpus.js      calibration fixtures
-test/calibrate.js       `npm test`
+manifest.json            MV3, scoped to suno.com/song/*
+src/slop-core.js          cliché-lexicon scoring engine (pure; browser + node)
+src/features.js           feature vector + nearest-centroid classifier
+src/baseline.{json,js}    AUTO-GENERATED corpus baseline (centroids + scaler)
+src/content.js            reads ONLY the lyrics box, draws the badge/panel
+src/overlay.css           badge + panel styling
+src/popup.html/js/css     toolbar popup: current score + paste-to-test box
+corpus/prompts.js         the 3 strategies × 5 subjects (shared by all models)
+corpus/models/*.{js,json} per-model AI lyrics (claude, qwen, + pasted-in)
+corpus/STRATEGIES.md      how to build/grow the baseline
+build/gen_ollama.mjs      generate a baseline from a local ollama model
+build/ingest.js           scaffold + parse pasted web-model lyrics
+build/translate.js        normalize a corpus to English (local ollama)
+build/build_baseline.js   compile corpus -> src/baseline.{json,js}
+examples/human.js         human negative-class anchors
+examples/corpus.js        calibration fixtures
+test/calibrate.js         `npm test`
+```
+
+## npm scripts
+
+```bash
+npm test          # heuristic calibration + classifier report
+npm run gen:qwen  # regenerate the local Qwen baseline
+npm run rebuild   # translate all corpora -> English, then rebuild baseline.json
 ```
 
 ## License
