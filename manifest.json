@@ -4,10 +4,16 @@
   "version": "0.1.0",
   "description": "Reads ONLY the lyrics box on a Suno song page and rates how much it reeks of AI cliché. For fun. And spite.",
   "permissions": ["activeTab"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "suno-slop-detector@local",
+      "strict_min_version": "121.0"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["https://suno.com/song/*"],
-      "js": ["src/slop-core.js", "src/features.js", "src/baseline.js", "src/content.js"],
+      "js": ["src/slop-core.js", "src/common_words.js", "src/features.js", "src/baseline.js", "src/content.js"],
       "css": ["src/overlay.css"],
       "run_at": "document_idle"
     }
