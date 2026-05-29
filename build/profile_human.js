@@ -142,6 +142,62 @@ const SONGS = [
   ["Chuck Berry", "Johnny B. Goode", 1958, "rock"],
   ["Aretha Franklin", "Natural Woman", 1967, "soul"],
   ["The Temptations", "My Girl", 1964, "soul"],
+
+  // --- "trained-on" hard negatives: REAL human songs drenched in the same
+  //     vocabulary AI over-uses (neon, shadows, horizon, embers, ashes, rise,
+  //     paradise…). Force the classifier to look past the words. ---
+  ["Linkin Park", "In the End", 2000, "numetal-cliche"],
+  ["Linkin Park", "Numb", 2003, "numetal-cliche"],
+  ["Linkin Park", "Shadow of the Day", 2007, "numetal-cliche"],
+  ["Linkin Park", "What I've Done", 2007, "numetal-cliche"],
+  ["Linkin Park", "Castle of Glass", 2012, "numetal-cliche"],
+  ["Linkin Park", "Burn It Down", 2012, "numetal-cliche"],
+  ["Linkin Park", "Leave Out All the Rest", 2007, "numetal-cliche"],
+  ["Imagine Dragons", "Demons", 2012, "poprock-cliche"],
+  ["Imagine Dragons", "Radioactive", 2012, "poprock-cliche"],
+  ["Imagine Dragons", "Believer", 2017, "poprock-cliche"],
+  ["Imagine Dragons", "Thunder", 2017, "poprock-cliche"],
+  ["OneRepublic", "Counting Stars", 2013, "poprock-cliche"],
+  ["OneRepublic", "Secrets", 2009, "poprock-cliche"],
+  ["Coldplay", "Paradise", 2011, "alt-cliche"],
+  ["Coldplay", "Fix You", 2005, "alt-cliche"],
+  ["Coldplay", "A Sky Full of Stars", 2014, "alt-cliche"],
+  ["Thirty Seconds to Mars", "This Is War", 2009, "altrock-cliche"],
+  ["Thirty Seconds to Mars", "Kings and Queens", 2009, "altrock-cliche"],
+  ["Evanescence", "Bring Me to Life", 2003, "rock-cliche"],
+  ["Evanescence", "My Immortal", 2003, "rock-cliche"],
+  ["Fall Out Boy", "Centuries", 2014, "poppunk-cliche"],
+  ["Fall Out Boy", "The Phoenix", 2013, "poppunk-cliche"],
+  ["Panic! at the Disco", "High Hopes", 2018, "pop-cliche"],
+  ["Panic! at the Disco", "Emperor's New Clothes", 2016, "pop-cliche"],
+  ["Muse", "Starlight", 2006, "rock-cliche"],
+  ["Muse", "Uprising", 2009, "rock-cliche"],
+  ["Muse", "Supermassive Black Hole", 2006, "rock-cliche"],
+  ["Florence + The Machine", "Cosmic Love", 2009, "indie-cliche"],
+  ["Florence + The Machine", "Shake It Out", 2011, "indie-cliche"],
+  ["Halsey", "Gasoline", 2015, "pop-cliche"],
+  ["Halsey", "Colors", 2015, "pop-cliche"],
+  ["Bastille", "Pompeii", 2013, "indie-cliche"],
+  ["Sia", "Chandelier", 2014, "pop-cliche"],
+  ["Sia", "Alive", 2015, "pop-cliche"],
+  ["M83", "Midnight City", 2011, "synth-cliche"],
+  ["The Weeknd", "Blinding Lights", 2019, "pop-cliche"],
+  ["The Weeknd", "Starboy", 2016, "pop-cliche"],
+  ["Lana Del Rey", "Young and Beautiful", 2013, "pop-cliche"],
+  ["Lana Del Rey", "Born to Die", 2011, "pop-cliche"],
+  ["Lana Del Rey", "West Coast", 2014, "pop-cliche"],
+  ["Avicii", "Wake Me Up", 2013, "edm-cliche"],
+  ["Bonnie Tyler", "Total Eclipse of the Heart", 1983, "pop-cliche"],
+  ["Survivor", "Eye of the Tiger", 1982, "rock-cliche"],
+  ["Europe", "The Final Countdown", 1986, "rock-cliche"],
+  ["Bon Jovi", "It's My Life", 2000, "rock-cliche"],
+  ["Scorpions", "Wind of Change", 1990, "rock-cliche"],
+  ["Bring Me the Horizon", "Drown", 2014, "metalcore-cliche"],
+  ["Bring Me the Horizon", "Throne", 2015, "metalcore-cliche"],
+  ["Three Days Grace", "Animal I Have Become", 2006, "rock-cliche"],
+  ["Breaking Benjamin", "The Diary of Jane", 2006, "rock-cliche"],
+  ["Skillet", "Monster", 2009, "rock-cliche"],
+  ["Nickelback", "How You Remind Me", 2001, "rock-cliche"],
 ];
 
 const STOP = new Set(
@@ -196,22 +252,35 @@ async function fetchLyrics(artist, title) {
 }
 
 (async () => {
+  // Incremental: reuse existing profiles (that have all current features) and
+  // only fetch songs not already profiled. `--fresh` forces a full re-fetch.
+  const FRESH = process.argv.includes("--fresh");
+  const existing = {};
+  if (!FRESH && fs.existsSync(OUT)) {
+    const prev = JSON.parse(fs.readFileSync(OUT, "utf8"));
+    for (const p of prev.profiles || []) {
+      if (p.named && FEATURE_NAMES.every((k) => k in p.named)) existing[`${p.artist}|${p.title}`] = p;
+    }
+  }
   const profiles = [];
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, reused = 0;
   for (const [artist, title, year, genre] of SONGS) {
+    const key = `${artist}|${title}`;
+    if (existing[key]) { profiles.push(existing[key]); reused++; continue; }
     try {
       const lyrics = await fetchLyrics(artist, title); // in memory only
       const f = extract(lyrics);                        // derived numbers
       const summary = analyze(lyrics);                  // derived numbers
       profiles.push({ artist, title, year, genre, vector: f.values, named: f.named, summary });
       ok++;
-      console.log(`✓ ${artist} — ${title} (${year}) ${summary.words}w ttr${summary.ttr}`);
+      console.log(`✓ ${artist} — ${title} (${year}) ${summary.words}w cliché${(f.named.clicheDensity).toFixed(2)}`);
     } catch (e) {
       fail++;
       console.log(`✗ ${artist} — ${title}: ${e.message}`);
     }
     // lyrics variable goes out of scope; nothing copyrighted is persisted
   }
+  console.log(`(reused ${reused} existing profiles)`);
   fs.writeFileSync(
     OUT,
     JSON.stringify(
@@ -219,5 +288,5 @@ async function fetchLyrics(artist, title) {
       null, 2
     )
   );
-  console.log(`\nwrote ${ok} profiles (${fail} failed) -> ${path.relative(process.cwd(), OUT)}`);
+  console.log(`\nwrote ${profiles.length} total (${ok} new, ${reused} reused, ${fail} failed) -> ${path.relative(process.cwd(), OUT)}`);
 })();
