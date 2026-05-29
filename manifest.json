@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Suno Slop Detector",
+  "version": "0.1.0",
+  "description": "Reads ONLY the lyrics box on a Suno song page and rates how much it reeks of AI cliché. For fun. And spite.",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://suno.com/song/*"],
+      "js": ["src/slop-core.js", "src/content.js"],
+      "css": ["src/overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Suno Slop Detector"
+  }
+}

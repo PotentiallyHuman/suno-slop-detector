@@ -1,0 +1,10 @@
+{
+  "name": "suno-slop-detector",
+  "version": "0.1.0",
+  "description": "Browser extension that rates how much a Suno song's lyrics reek of AI cliché.",
+  "scripts": {
+    "test": "node test/calibrate.js"
+  },
+  "license": "MIT",
+  "private": true
+}
