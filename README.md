@@ -8,6 +8,9 @@ Open a song. A little pill appears top-right. Click it to see *why* — which cl
 
 Born out of spite after r/SunoAI removed an open-source de-clicker post. So now it's open source forever. 🫡
 
+> ### 🙅 This is for fun — it is **not** a personal attack or a judgement of any songwriter.
+> The score rates **lyrical texture**, not talent, effort, or worth. Using AI to make music is **completely fine** — this is a playful mirror, not a courtroom. A high score doesn't mean a song is bad and a low score doesn't mean it's good. Plenty of beloved human songs score high (they share vocabulary with the AI that trained on them), and plenty of careful AI-assisted writing scores low. **Don't use this to harass, shame, or "out" anyone.** It's a toy for curiosity and craft, full stop.
+
 ---
 
 ## What it actually measures
@@ -46,7 +49,7 @@ All lyrics are normalized to **English before comparison** (`build/translate.js`
 
 ## Honesty (this matters)
 
-It is a **vibe meter, not a detector of ground truth.** Humans write "fire" and "midnight" too; a great lyric can score high and a bland AI one can score low. Treat a number as a conversation-starter, not a verdict. The whole engine is ~250 readable lines — audit it, disagree with it, send a PR that changes the lexicon.
+It is a **vibe meter, not a detector of ground truth, and never a personal attack.** Humans write "fire" and "midnight" too; a great lyric can score high and a bland AI one can score low. The number rates *texture*, not the person who made the song — treat it as a conversation-starter, not a verdict, and please don't weaponize it against other creators. The whole engine is readable JS — audit it, disagree with it, send a PR that changes the lexicon.
 
 ## Privacy & safety (by design)
 
