@@ -242,13 +242,40 @@ function analyze(lyrics) {
 }
 
 async function fetchLyrics(artist, title) {
-  const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
-  const r = await fetch(url, { signal: AbortSignal.timeout(20000) });
-  if (!r.ok) throw new Error("http " + r.status);
-  const j = await r.json();
-  const L = clean(j.lyrics);
+  // 1) lyrics.ovh (good for Western pop/rock)
+  try {
+    const r = await fetch(
+      `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`,
+      { signal: AbortSignal.timeout(15000) }
+    );
+    if (r.ok) {
+      const L = clean((await r.json()).lyrics);
+      if (L.length >= 80) return L;
+    }
+  } catch (e) { /* fall through */ }
+  // 2) lrclib (much better non-English / Asian / Cyrillic coverage)
+  const r2 = await fetch(
+    `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`,
+    { signal: AbortSignal.timeout(15000), headers: { "User-Agent": "suno-slop-detector/0.1 (research)" } }
+  );
+  if (!r2.ok) throw new Error("not found (" + r2.status + ")");
+  const L = clean((await r2.json()).plainLyrics);
   if (L.length < 80) throw new Error("too short");
   return L;
+}
+
+// translate non-English lyrics to English (local ollama) so features compare fairly
+async function translate(text) {
+  const prompt =
+    "Translate these song lyrics into natural English. Keep the line breaks. " +
+    "Output ONLY the English translation, nothing else:\n\n" + text;
+  const r = await fetch("http://localhost:11434/api/generate", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ model: process.env.TRANSLATE_MODEL || "qwen2.5:14b", prompt, stream: false, options: { temperature: 0.2, num_predict: 1000 } }),
+    signal: AbortSignal.timeout(180000),
+  });
+  if (!r.ok) throw new Error("translate http " + r.status);
+  return ((await r.json()).response || "").trim();
 }
 
 (async () => {
@@ -262,31 +289,48 @@ async function fetchLyrics(artist, title) {
       if (p.named && FEATURE_NAMES.every((k) => k in p.named)) existing[`${p.artist}|${p.title}`] = p;
     }
   }
+  // built-in English list + optional extra/multilingual queue (5th col = lang)
+  let QUEUE = SONGS.map((s) => (s.length >= 5 ? s : [s[0], s[1], s[2], s[3], "en"]));
+  try { QUEUE = QUEUE.concat(require("../corpus/human_queue_extra.js")); } catch (e) {}
+  // optional batch window: BATCH_OFFSET / BATCH_LIMIT to page through a big queue
+  const off = +(process.env.BATCH_OFFSET || 0);
+  const lim = +(process.env.BATCH_LIMIT || QUEUE.length);
+  const slice = QUEUE.slice(off, off + lim);
+
   const profiles = [];
+  const langCount = {};
   let ok = 0, fail = 0, reused = 0;
-  for (const [artist, title, year, genre] of SONGS) {
+  // keep any existing profiles that are NOT in this slice (so batches accumulate)
+  const sliceKeys = new Set(slice.map(([a, t]) => `${a}|${t}`));
+  for (const k in existing) if (!sliceKeys.has(k)) profiles.push(existing[k]);
+
+  const writeOut = () =>
+    fs.writeFileSync(OUT, JSON.stringify(
+      { note: "Derived metrics only — no lyrics text stored (copyright).", featureNames: FEATURE_NAMES, count: profiles.length, profiles },
+      null, 2));
+
+  for (const [artist, title, year, genre, lang] of slice) {
     const key = `${artist}|${title}`;
-    if (existing[key]) { profiles.push(existing[key]); reused++; continue; }
+    const lg = lang || "en";
+    if (existing[key]) { profiles.push(existing[key]); reused++; langCount[lg] = (langCount[lg]||0)+1; continue; }
     try {
-      const lyrics = await fetchLyrics(artist, title); // in memory only
-      const f = extract(lyrics);                        // derived numbers
-      const summary = analyze(lyrics);                  // derived numbers
-      profiles.push({ artist, title, year, genre, vector: f.values, named: f.named, summary });
-      ok++;
-      console.log(`✓ ${artist} — ${title} (${year}) ${summary.words}w cliché${(f.named.clicheDensity).toFixed(2)}`);
+      let lyrics = await fetchLyrics(artist, title);        // in memory only
+      if (lg !== "en") {                                    // normalize to English
+        lyrics = await translate(lyrics);
+        if (lyrics.replace(/\s/g, "").length < 60) throw new Error("translation too short");
+      }
+      const f = extract(lyrics);
+      const summary = analyze(lyrics);
+      profiles.push({ artist, title, year, genre, lang: lg, vector: f.values, named: f.named, summary });
+      ok++; langCount[lg] = (langCount[lg]||0)+1;
+      console.log(`✓ [${lg}] ${artist} — ${title} ${summary.words}w cliché${f.named.clicheDensity.toFixed(2)}`);
     } catch (e) {
       fail++;
-      console.log(`✗ ${artist} — ${title}: ${e.message}`);
+      console.log(`✗ [${lg}] ${artist} — ${title}: ${e.message}`);
     }
-    // lyrics variable goes out of scope; nothing copyrighted is persisted
+    writeOut(); // incremental: resumable + memory-light
   }
-  console.log(`(reused ${reused} existing profiles)`);
-  fs.writeFileSync(
-    OUT,
-    JSON.stringify(
-      { note: "Derived metrics only — no lyrics text stored (copyright).", featureNames: FEATURE_NAMES, count: profiles.length, profiles },
-      null, 2
-    )
-  );
+  console.log(`(reused ${reused}; by language:`, langCount, ")");
+  writeOut();
   console.log(`\nwrote ${profiles.length} total (${ok} new, ${reused} reused, ${fail} failed) -> ${path.relative(process.cwd(), OUT)}`);
 })();
