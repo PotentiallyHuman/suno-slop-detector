@@ -1,5 +1,14 @@
 node_modules/
 *.zip
+*.xpi
 .DS_Store
 
 *.bundle
+.amo_credentials.txt
+.google_credentials.txt
+credentials/
+corpus/_models_pre_clean/
+corpus/_prev_model/
+handover_bundle/
+handover_bundle.tar.gz
+build/_amo/

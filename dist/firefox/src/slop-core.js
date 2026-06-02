@@ -37,6 +37,8 @@
     diamond: 2, fragile: 2, hollow: 2, drowning: 2, endless: 2, eternal: 2,
     demons: 2, demon: 2, angels: 2, void: 2, flicker: 2, flickering: 2,
     horizons: 2, glimmer: 2, shimmer: 2, eternal: 2, unbreakable: 2,
+    // audited additions — high AI-lift words (text-only, extension-reproducible)
+    beneath: 2, stranger: 2, skyline: 2, streetlight: 2, streetlights: 2, quiet: 1, maybe: 1, morning: 1,
     // tier 1 — pop-lyric staples (everyone uses these; mild signal)
     fire: 1, heart: 1, night: 1, light: 1, sky: 1, stars: 1, ocean: 1,
     sea: 1, river: 1, dream: 1, dreams: 1, lost: 1, alone: 1, pain: 1,
@@ -86,6 +88,11 @@
     { p: "lost in the moment", w: 3 },
     { p: "frozen in time", w: 3 },
     { p: "against all odds", w: 2 },
+    { p: "on the horizon", w: 3 },
+    { p: "streetlight glow", w: 3 },
+    { p: "neon glow", w: 3 },
+    { p: "fingers trace", w: 3 },
+    { p: "fingertips trace", w: 3 },
   ];
 
   // ---------------------------------------------------------------------------
@@ -94,7 +101,7 @@
   //    dictionary (or an LLM) reaches for first.
   // ---------------------------------------------------------------------------
   const LAZY_RHYMES = [
-    ["fire", "desire"], ["fire", "higher"], ["night", "light"], ["night", "fight"],
+    ["fire", "desire"], ["fire", "higher"], ["night", "light"], ["night", "fight"], ["blue", "true"],
     ["night", "right"], ["heart", "apart"], ["heart", "start"], ["pain", "rain"],
     ["rain", "again"], ["sky", "fly"], ["sky", "high"], ["fly", "high"],
     ["eyes", "lies"], ["eyes", "skies"], ["love", "above"], ["away", "stay"],
@@ -160,10 +167,31 @@
 
   // Remove ALL section labels entirely, leaving plain lyric lines in blank-line
   // separated segments (used to normalise stored corpus files to one format).
+  // Robust to:
+  //   - well-formed: [Verse], [Chorus 2], (Bridge), [Heartfelt melodic breakdown bride]
+  //   - malformed unclosed: "[Omkvæd " (trailing-space typo), "Verse 1:" bare-line,
+  //     "**Verse 1:**" markdown variants
+  //   - multilingual: Danish (vers, omkvæd, bro, sidste), Spanish (verso, estribillo,
+  //     puente), French (couplet, refrain, pont), German (vers, refrain), Italian
+  //     (verso, ritornello), Norwegian/Swedish (omkväd, vers).
   function stripSectionLabels(text) {
+    var SECTION_KW = /(verse|chorus|bridge|intro|outro|pre[\s\-]?chorus|post[\s\-]?chorus|hook|refrain|tag|interlude|breakdown|drop|coda|reprise|vamp|vers|omkv[äaæ]d|bro(?!\w)|sidste|verso|estribillo|puente|couplet|pont|ritornello)/i;
     return normalizeStructure(text)
       .split(/\r?\n/)
-      .filter((l) => !/^\s*\[[^\]]*\]\s*$/.test(l))
+      .filter((l) => {
+        var t = l.trim();
+        // bracketed (well-formed)
+        if (/^\[[^\]]*\]$/.test(t)) return false;
+        if (/^\([^\)]*\)$/.test(t)) return false;
+        // unclosed bracket containing section keyword: strip
+        if (/^\[/.test(t) && SECTION_KW.test(t)) return false;
+        if (/\]$/.test(t) && SECTION_KW.test(t) && !/\[/.test(t.slice(0, -1))) return false;
+        // markdown-bold section header
+        if (/^\*\*[^*]+\*\*$/.test(t) && SECTION_KW.test(t)) return false;
+        // bare-word section header: "Verse 1:", "Chorus:", "Bridge"
+        if (/^\s*(verse|chorus|bridge|intro|outro|pre[\s\-]?chorus|post[\s\-]?chorus|hook|refrain|tag|interlude|breakdown|drop|coda|reprise|vamp)\s*\d*\s*:?\s*$/i.test(t)) return false;
+        return true;
+      })
       .join("\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();

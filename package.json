@@ -1,7 +1,7 @@
 {
   "name": "suno-slop-detector",
-  "version": "0.1.0",
-  "description": "Browser extension that rates how much a Suno song's lyrics reek of AI cliché.",
+  "version": "0.2.0",
+  "description": "Browser extension that scores how AI a Suno song's lyrics read with a trained model, plus a craft-coach panel.",
   "scripts": {
     "test": "node test/calibrate.js",
     "gen:qwen": "node build/gen_ollama.mjs qwen2.5:14b qwen-2.5-14b",

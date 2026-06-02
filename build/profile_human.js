@@ -15,6 +15,19 @@ const { extract, FEATURE_NAMES } = require("../src/features.js");
 
 const OUT = path.join(__dirname, "..", "corpus", "human_profiles.json");
 
+// --- safety: read Linux MemAvailable (MB). If another job (e.g. the LTX video
+//     cascade in the other terminal) is filling RAM, this profiler pauses
+//     itself rather than pushing the box toward an OOM. English songs load no
+//     model, so the only real risk is translation — which SKIP_NON_EN disables.
+function memAvailableMB() {
+  try {
+    const m = /MemAvailable:\s+(\d+)\s+kB/.exec(fs.readFileSync("/proc/meminfo", "utf8"));
+    return m ? Math.round(+m[1] / 1024) : Infinity;
+  } catch (_) { return Infinity; }
+}
+const MIN_FREE_MB = +(process.env.MIN_FREE_MB || 6000);
+const SKIP_NON_EN = process.env.SKIP_NON_EN === "1";
+
 // [artist, title, year, genre]
 const SONGS = [
   ["Queen", "Bohemian Rhapsody", 1975, "rock"],
@@ -292,6 +305,12 @@ async function translate(text) {
   // built-in English list + optional extra/multilingual queue (5th col = lang)
   let QUEUE = SONGS.map((s) => (s.length >= 5 ? s : [s[0], s[1], s[2], s[3], "en"]));
   try { QUEUE = QUEUE.concat(require("../corpus/human_queue_extra.js")); } catch (e) {}
+  try { QUEUE = QUEUE.concat(require("../corpus/human_queue_extra2.js")); } catch (e) {}
+  try { QUEUE = QUEUE.concat(require("../corpus/human_queue_underground.js")); } catch (e) {}
+  // dedupe by artist|title so accumulated batches never double-count a song
+  { const seen = new Set();
+    QUEUE = QUEUE.filter((s) => { const k = `${s[0]}|${s[1]}`.toLowerCase();
+      if (seen.has(k)) return false; seen.add(k); return true; }); }
   // optional batch window: BATCH_OFFSET / BATCH_LIMIT to page through a big queue
   const off = +(process.env.BATCH_OFFSET || 0);
   const lim = +(process.env.BATCH_LIMIT || QUEUE.length);
@@ -313,7 +332,16 @@ async function translate(text) {
     const key = `${artist}|${title}`;
     const lg = lang || "en";
     if (existing[key]) { profiles.push(existing[key]); reused++; langCount[lg] = (langCount[lg]||0)+1; continue; }
+    // memory guard: bail out gracefully if the box is getting tight (protects
+    // the video cascade). Everything profiled so far is already written.
+    if (memAvailableMB() < MIN_FREE_MB) {
+      console.log(`⏸ low memory (<${MIN_FREE_MB}MB free) — stopping early to protect other work`);
+      break;
+    }
+    // skip non-English when asked, so the ollama translation model never loads
+    if (SKIP_NON_EN && lg !== "en") { fail++; continue; }
     try {
+      await new Promise((r) => setTimeout(r, +(process.env.FETCH_DELAY_MS || 200))); // gentle on the API + CPU
       let lyrics = await fetchLyrics(artist, title);        // in memory only
       if (lg !== "en") {                                    // normalize to English
         lyrics = await translate(lyrics);

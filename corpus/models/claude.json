@@ -8,7 +8,8 @@
       "lyrics": "John on the windowsill, watching the world go by\nTail like a question mark against the morning sky\nYou don't care about my problems, you don't care about my day\nYou just want your dinner and a sunny place to lay\n\nOh John, my little shadow on the floor\nKing of every empty cardboard box and so much more\nYou rule this house like neon in the night\nOh John, oh John, everything's alright\n\nKnocking cups off tables just to watch them fall\nNine whole lives of mischief and you've lived through them all\n\nOh John, my little shadow on the floor\nKing of every empty cardboard box and so much more",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "John on the windowsill, watching the world go by\nTail like a question mark against the morning sky\nYou don't care about my problems, you don't care about my day\nYou just want your dinner and a sunny place to lay\n\nOh John, my little shadow on the floor\nKing of every empty cardboard box and so much more\nYou rule this house like neon in the night\nOh John, oh John, everything's alright\n\nKnocking cups off tables just to watch them fall\nNine whole lives of mischief and you've lived through them all\n\nOh John, my little shadow on the floor\nKing of every empty cardboard box and so much more"
     },
     {
       "strategy": "vibe",
@@ -17,7 +18,8 @@
       "lyrics": "Grey light through the window, coffee going cold\nAnother rainy Tuesday, same story being told\nThe whole world keeps on turning while I'm frozen in my chair\nWatching shadows on the ceiling, raindrops everywhere\n\nIt's a rainy Tuesday, washing me away\nEchoes of the weekend fading into grey\nBut I'll rise above the storm, I'll find my light\nOn this rainy Tuesday I will be alright\n\nDrop by drop, the hours fall\nI'm still standing through it all",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Grey light through the window, coffee going cold\nAnother rainy Tuesday, same story being told\nThe whole world keeps on turning while I'm frozen in my chair\nWatching shadows on the ceiling, raindrops everywhere\n\nIt's a rainy Tuesday, washing me away\nEchoes of the weekend fading into grey\nBut I'll rise above the storm, I'll find my light\nOn this rainy Tuesday I will be alright\n\nDrop by drop, the hours fall\nI'm still standing through it all"
     },
     {
       "strategy": "vibe",
@@ -26,7 +28,8 @@
       "lyrics": "First light hits the kitchen, kettle starts to scream\nPour it black and bitter, wake me from the dream\nThe steam is like a whisper, rising to the sky\nOne sip and I'm a phoenix, watch this soul revive\n\nMorning coffee, burning like a fire in my veins\nYou're the only thing that keeps me sane\nLiquid gold, my midnight turning into day\nMorning coffee, never go away",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "First light hits the kitchen, kettle starts to scream\nPour it black and bitter, wake me from the dream\nThe steam is like a whisper, rising to the sky\nOne sip and I'm a phoenix, watch this soul revive\n\nMorning coffee, burning like a fire in my veins\nYou're the only thing that keeps me sane\nLiquid gold, my midnight turning into day\nMorning coffee, never go away"
     },
     {
       "strategy": "vibe",
@@ -35,7 +38,8 @@
       "lyrics": "Taillights disappearing down the avenue\nStood there in the neon glow with nothing left to do\nThe city's cold and endless, the night is wearing thin\nJust me and all these shadows and the state that I am in\n\nI missed the last bus home, now I'm walking all alone\nEvery streetlight is a ghost of someone I used to know\nMiles to go before I sleep, secrets that I cannot keep\nI missed the last bus home tonight",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Taillights disappearing down the avenue\nStood there in the neon glow with nothing left to do\nThe city's cold and endless, the night is wearing thin\nJust me and all these shadows and the state that I am in\n\nI missed the last bus home, now I'm walking all alone\nEvery streetlight is a ghost of someone I used to know\nMiles to go before I sleep, secrets that I cannot keep\nI missed the last bus home tonight"
     },
     {
       "strategy": "vibe",
@@ -44,7 +48,8 @@
       "lyrics": "Flour on the counter, sunlight on the tiles\nGrandmother's hands are moving, and I can see her smile\nThe radio is playing something old and sweet\nThe smell of bread and cinnamon, the warmth beneath my feet\n\nIn grandmother's kitchen, time stands still\nLove baked into every windowsill\nMemories like embers, glowing soft and gold\nIn grandmother's kitchen, I'll never grow old\n\nShe's gone now but the recipe remains\nHer love still echoes through these windowpanes",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Flour on the counter, sunlight on the tiles\nGrandmother's hands are moving, and I can see her smile\nThe radio is playing something old and sweet\nThe smell of bread and cinnamon, the warmth beneath my feet\n\nIn grandmother's kitchen, time stands still\nLove baked into every windowsill\nMemories like embers, glowing soft and gold\nIn grandmother's kitchen, I'll never grow old\n\nShe's gone now but the recipe remains\nHer love still echoes through these windowpanes"
     },
     {
       "strategy": "story",
@@ -53,7 +58,8 @@
       "lyrics": "Saw your back across the green and called a name I knew\nSure as Sunday it was Daniel from the class of '92\nBut you turned around a stranger with a kinder, rounder face\nAnd I should've just apologized and given you your space\n\nBut we talked until the sprinklers came on\n'Bout your sister, 'bout the job you just quit\nAn hour of a stranger and then you were gone\nAnd I never even asked your name — that's it\n\nYou knew nothing of my history and I knew none of yours\nThat's maybe why the talking came so easy, felt so pure\nNow you're just a Tuesday and a bench I'll always see\nA whole life passing through a name that never came to be",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Saw your back across the green and called a name I knew\nSure as Sunday it was Daniel from the class of '92\nBut you turned around a stranger with a kinder, rounder face\nAnd I should've just apologized and given you your space\n\nBut we talked until the sprinklers came on\n'Bout your sister, 'bout the job you just quit\nAn hour of a stranger and then you were gone\nAnd I never even asked your name — that's it\n\nYou knew nothing of my history and I knew none of yours\nThat's maybe why the talking came so easy, felt so pure\nNow you're just a Tuesday and a bench I'll always see\nA whole life passing through a name that never came to be"
     },
     {
       "strategy": "story",
@@ -62,7 +68,8 @@
       "lyrics": "Mile marker nineteen, the engine gave its last\nMidnight on the mountain and the cold came on so fast\nThen headlights in the mirror, a big rig pulling slow\nA stranger with a thermos and a wire and nowhere to go but home\n\nHe fixed it with his hands and a half a cup of coffee\nDidn't ask my name, didn't want a dime\nGone before I turned around to thank him for the kindness\nSome angels drive a diesel late at night\n\nI still don't know your face, I never caught your plate\nBut I pull over now for strangers — I learned that from you that day",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Mile marker nineteen, the engine gave its last\nMidnight on the mountain and the cold came on so fast\nThen headlights in the mirror, a big rig pulling slow\nA stranger with a thermos and a wire and nowhere to go but home\n\nHe fixed it with his hands and a half a cup of coffee\nDidn't ask my name, didn't want a dime\nGone before I turned around to thank him for the kindness\nSome angels drive a diesel late at night\n\nI still don't know your face, I never caught your plate\nBut I pull over now for strangers — I learned that from you that day"
     },
     {
       "strategy": "story",
@@ -71,7 +78,8 @@
       "lyrics": "Seven years old and a tangle in the line\nHe never raised his voice, he just said \"take your time\"\nThe same green water, the same flat morning light\nI brought your granddaughter, Dad — I think we did it right\n\nYour old rod in her little hands\nA reel that still remembers how you taught a boy to stand\nAnd the lake holds everything it ever held\nI cast it out and felt you in the line, I felt you, I felt you still\n\nShe caught a little sunfish and she shrieked and let it go\nYou'd have laughed the way you used to, low and slow\nThree generations standing on a dock that's going grey\nI finally understand the things you couldn't say",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "Seven years old and a tangle in the line\nHe never raised his voice, he just said \"take your time\"\nThe same green water, the same flat morning light\nI brought your granddaughter, Dad — I think we did it right\n\nYour old rod in her little hands\nA reel that still remembers how you taught a boy to stand\nAnd the lake holds everything it ever held\nI cast it out and felt you in the line, I felt you, I felt you still\n\nShe caught a little sunfish and she shrieked and let it go\nYou'd have laughed the way you used to, low and slow\nThree generations standing on a dock that's going grey\nI finally understand the things you couldn't say"
     },
     {
       "strategy": "story",
@@ -80,7 +88,8 @@
       "lyrics": "New town, new badge, lasted ninety days\nDidn't know a single soul in all that concrete haze\nFound a corner diner with a flickering sign\nOrdered the same special, table for one at nine\n\nBut Donna saved my booth by the window every night\n\"The usual?\" — two words that felt like light\nI quit the job I came here for, I'm still not sure I'm free\nBut somebody in this whole town kept a seat for me\n\nShe never asked my story and I never told her mine\nJust coffee and a kindness in a quiet little line\nI'm leaving in the morning, left her twenty on the tray\nAnd a note that said the booth was the best part of my day",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "New town, new badge, lasted ninety days\nDidn't know a single soul in all that concrete haze\nFound a corner diner with a flickering sign\nOrdered the same special, table for one at nine\n\nBut Donna saved my booth by the window every night\n\"The usual?\" — two words that felt like light\nI quit the job I came here for, I'm still not sure I'm free\nBut somebody in this whole town kept a seat for me\n\nShe never asked my story and I never told her mine\nJust coffee and a kindness in a quiet little line\nI'm leaving in the morning, left her twenty on the tray\nAnd a note that said the booth was the best part of my day"
     },
     {
       "strategy": "story",
@@ -89,7 +98,8 @@
       "lyrics": "A shoebox in the attic tied with garden string\nYour handwriting younger than the mother I'd been seeing\nAddressed to someone \"dearest\" that I never knew you'd known\nDated three years early — before Dad, when you were on your own\n\nSo we folded up the first one and we put the lid back on\nSome doors aren't ours to open even after you are gone\nYou were a whole person once before you were my mom\nAnd we left you that one secret in the dark up where it belongs\n\nI don't need to know his name\nI just love you more for the life I never knew you came from",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "A shoebox in the attic tied with garden string\nYour handwriting younger than the mother I'd been seeing\nAddressed to someone \"dearest\" that I never knew you'd known\nDated three years early — before Dad, when you were on your own\n\nSo we folded up the first one and we put the lid back on\nSome doors aren't ours to open even after you are gone\nYou were a whole person once before you were my mom\nAnd we left you that one secret in the dark up where it belongs\n\nI don't need to know his name\nI just love you more for the life I never knew you came from"
     },
     {
       "strategy": "craft",
@@ -98,7 +108,8 @@
       "lyrics": "I built you out of everyone who left\nA wanted poster sketched from my regret\nYou said good morning, I heard something else\nA man can drown inside a thing he tells himself\n\nI keep meeting the idea of you\nThe draft I wrote before you ever spoke\nYou're a stranger in a coat I sewed\nAnd I call it love, this argument I hold\n\nYou ordered tea, I read it as goodbye\nTurns out you just don't sleep well, that's the why\nThe version in my head won't take a seat\nIt eats the actual you across the table where we eat\n\nWhat if I set the cardboard cutout down\nAnd let the real one walk into the room\nNo script, no part for you to play\nJust two strangers learning what the other one would say",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "I built you out of everyone who left\nA wanted poster sketched from my regret\nYou said good morning, I heard something else\nA man can drown inside a thing he tells himself\n\nI keep meeting the idea of you\nThe draft I wrote before you ever spoke\nYou're a stranger in a coat I sewed\nAnd I call it love, this argument I hold\n\nYou ordered tea, I read it as goodbye\nTurns out you just don't sleep well, that's the why\nThe version in my head won't take a seat\nIt eats the actual you across the table where we eat\n\nWhat if I set the cardboard cutout down\nAnd let the real one walk into the room\nNo script, no part for you to play\nJust two strangers learning what the other one would say"
     },
     {
       "strategy": "craft",
@@ -107,7 +118,8 @@
       "lyrics": "They keep the photo on the fridge, the one where I was loud\nThe funny one, the easy one, the favorite in the crowd\nI packed him in a suitcase about four winters back\nBut everybody sets a place for the guy who's not coming back\n\nAnd I can't tell them quietly\nThat I buried who they're waiting for\nHe was good, he made them laugh\nBut I can't be him anymore\n\nMy mother asks where'd all the jokes go, did the city make me cold\nI don't know how to tell a woman she's been mourning something old\nIt's nobody's fault, it's just a tide\nYou can love a person and the ghost they used to be inside\n\nSo I do the voice at Christmas, I perform him for a while\nThen I drive back to my real life and let him go a mile at a time",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "They keep the photo on the fridge, the one where I was loud\nThe funny one, the easy one, the favorite in the crowd\nI packed him in a suitcase about four winters back\nBut everybody sets a place for the guy who's not coming back\n\nAnd I can't tell them quietly\nThat I buried who they're waiting for\nHe was good, he made them laugh\nBut I can't be him anymore\n\nMy mother asks where'd all the jokes go, did the city make me cold\nI don't know how to tell a woman she's been mourning something old\nIt's nobody's fault, it's just a tide\nYou can love a person and the ghost they used to be inside\n\nSo I do the voice at Christmas, I perform him for a while\nThen I drive back to my real life and let him go a mile at a time"
     },
     {
       "strategy": "craft",
@@ -116,7 +128,8 @@
       "lyrics": "The barista on Fifth still makes it without the sugar\nA muscle in her wrist that I taught her by mistake\nThere's a bench that holds the shape of every Thursday lunch I took\nAnd a crosswalk that still counts down to a step I'll never make\n\nThe city keeps me like a habit\nIn the hands of people I forgot to know\nI'm a route the buses run at seven\nA small warm dent in the places that I go\n\nThe bodega cat still waits beside a door I used to open\nThe locksmith saved my spare key in a drawer he'll never check\nYou don't get a statue, you get nobody noticing\nThat the morning has a hole in it the shape of your old neck\n\nI moved away, I didn't die\nBut a version of me still buys the paper, still says hi",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "The barista on Fifth still makes it without the sugar\nA muscle in her wrist that I taught her by mistake\nThere's a bench that holds the shape of every Thursday lunch I took\nAnd a crosswalk that still counts down to a step I'll never make\n\nThe city keeps me like a habit\nIn the hands of people I forgot to know\nI'm a route the buses run at seven\nA small warm dent in the places that I go\n\nThe bodega cat still waits beside a door I used to open\nThe locksmith saved my spare key in a drawer he'll never check\nYou don't get a statue, you get nobody noticing\nThat the morning has a hole in it the shape of your old neck\n\nI moved away, I didn't die\nBut a version of me still buys the paper, still says hi"
     },
     {
       "strategy": "craft",
@@ -125,7 +138,8 @@
       "lyrics": "I found the bank statements behind the good china\nRed ink in the year I thought we had it made\nThe man who seemed carved from the mountain in the kitchen\nWas a kid in a tie who was terrified and brave\n\nYou were guessing the whole time\nYou just guessed it in a deeper voice\nThe hand on the wheel was shaking\nAnd you drove us anyway, no choice\n\nThe rules I broke my back against were duct tape on a panic\nThe curfew was a prayer dressed up to look like steel\nNow I've got a kid who thinks I'm certain\nAnd I'm reading the same map upside down, learning how it feels\n\nSo thank you for the trembling you hid so well from me\nI'll shake behind a bigger coat so mine grows up feeling free",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "I found the bank statements behind the good china\nRed ink in the year I thought we had it made\nThe man who seemed carved from the mountain in the kitchen\nWas a kid in a tie who was terrified and brave\n\nYou were guessing the whole time\nYou just guessed it in a deeper voice\nThe hand on the wheel was shaking\nAnd you drove us anyway, no choice\n\nThe rules I broke my back against were duct tape on a panic\nThe curfew was a prayer dressed up to look like steel\nNow I've got a kid who thinks I'm certain\nAnd I'm reading the same map upside down, learning how it feels\n\nSo thank you for the trembling you hid so well from me\nI'll shake behind a bigger coat so mine grows up feeling free"
     },
     {
       "strategy": "craft",
@@ -134,7 +148,8 @@
       "lyrics": "The woman reading Russian has a ring she keeps on turning\nThe kid asleep on someone's coat that isn't his to keep\nWe're close enough to count each other's breathing in the carriage\nAnd we'll never trade a word — just borrow forty miles of sleep\n\nFor one hour we're a country\nStrangers stacked against the dark\nHeaded somewhere none of us is from\nWith the same rain on the glass, the same spark\n\nThe conductor knows our tickets but he doesn't know our reasons\nThe drunk man near the doorway sang one verse then lost the rest\nI'll forget you by the platform, you'll forget me by the morning\nBut right now your shoulder's warm and we are briefly, oddly blessed\n\nThen the brakes, the names of stations\nAnd the country comes apart\nEverybody takes their suitcase\nAnd the small unspoken thing we shared in the dark",
       "model": "claude-opus",
       "source": "claude",
-      "lang": "en"
+      "lang": "en",
+      "lyrics_en": "The woman reading Russian has a ring she keeps on turning\nThe kid asleep on someone's coat that isn't his to keep\nWe're close enough to count each other's breathing in the carriage\nAnd we'll never trade a word — just borrow forty miles of sleep\n\nFor one hour we're a country\nStrangers stacked against the dark\nHeaded somewhere none of us is from\nWith the same rain on the glass, the same spark\n\nThe conductor knows our tickets but he doesn't know our reasons\nThe drunk man near the doorway sang one verse then lost the rest\nI'll forget you by the platform, you'll forget me by the morning\nBut right now your shoulder's warm and we are briefly, oddly blessed\n\nThen the brakes, the names of stations\nAnd the country comes apart\nEverybody takes their suitcase\nAnd the small unspoken thing we shared in the dark"
     }
   ]
 }

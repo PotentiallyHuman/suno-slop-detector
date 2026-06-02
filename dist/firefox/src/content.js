@@ -40,29 +40,23 @@
     ).length;
     const nonEnglish = toks.length > 12 && enHits / toks.length < 0.05;
 
-    const heur = SlopScore.scoreLyrics(text);
-    let base = null;
+    // v2: pure trained-model confidence P(AI). score = round(pAI*100). No blend.
+    const sc = SlopV2.score(text);
+    // Instrumental (nothing but bracket-tags / blank after cleaning) -> no score, no feedback.
+    if (sc && sc.instrumental) { lastResult = { instrumental: true, _text: text }; return lastResult; }
+    let panel = null;
     try {
-      if (globalThis.SLOP_BASELINE && typeof SlopFeatures !== "undefined") {
-        base = SlopFeatures.classify(text, globalThis.SLOP_BASELINE);
-      }
+      panel = SlopPanel.build(text, sc);
     } catch (e) {
-      /* baseline optional */
+      /* panel optional */
     }
-    // final "AI-ness": blend the cliché lexicon with the data-driven corpus
-    const finalScore = base
-      ? Math.round(0.45 * heur.score + 0.55 * base.pAI)
-      : heur.score;
 
     const result = {
-      score: finalScore,
-      label: SlopScore.verdict(finalScore),
-      heuristicScore: heur.score,
-      baselineScore: base ? base.pAI : null,
+      score: sc.score, // = round(pAI*100)
+      pAI: sc.pAI,
+      label: SlopScore.verdict(sc.score),
       nonEnglish: nonEnglish,
-      breakdown: heur.breakdown,
-      hits: heur.hits,
-      stats: heur.stats,
+      panel: panel,
       _text: text,
     };
     lastResult = result;
@@ -103,24 +97,14 @@
     ]);
     refs.verdict = el("div", { id: "slop-verdict" });
     refs.components = el("div", { id: "slop-components", class: "slop-components" });
-    refs.bars = el("div", { id: "slop-bars" });
-    refs.words = el("div", { id: "slop-words", class: "slop-chips" });
-    refs.phrases = el("div", { id: "slop-phrases", class: "slop-chips" });
+    refs.craft = el("div", { id: "slop-craft" }); // the 5 ✅ · 1 🃏 · 5 ⚠️ panel
     const closeBtn = el("button", { id: "slop-close", type: "button", "aria-label": "close", text: "×" });
     panel = el("div", { id: "slop-panel", hidden: true }, [
       el("div", { class: "slop-head" }, [el("strong", { text: "Suno Slop Detector" }), closeBtn]),
       refs.verdict,
       refs.components,
-      refs.bars,
-      el("div", { class: "slop-section" }, [
-        el("div", { class: "slop-label", text: "Cliché words found" }),
-        refs.words,
-      ]),
-      el("div", { class: "slop-section" }, [
-        el("div", { class: "slop-label", text: "Stock phrases" }),
-        refs.phrases,
-      ]),
-      el("div", { class: "slop-foot", text: "Reads only the lyrics box · heuristic, not proof" }),
+      refs.craft,
+      el("div", { class: "slop-foot", text: "Reads only the lyrics box · model confidence, not proof" }),
     ]);
     host = el("div", { id: "slop-detector-root" }, [badge, panel]);
     document.body.appendChild(host);
@@ -130,6 +114,39 @@
     closeBtn.addEventListener("click", () => {
       panel.hidden = true;
     });
+  }
+
+  // Build one craft row: emoji + label + optional quote + optional fix.
+  function craftRow(cls, emoji, label, quote, fix) {
+    const kids = [el("span", { class: "slop-cr-emoji", text: emoji })];
+    const body = el("div", { class: "slop-cr-body" });
+    body.appendChild(el("div", { class: "slop-cr-label", text: label }));
+    if (quote) body.appendChild(el("div", { class: "slop-cr-quote", text: quote }));
+    if (fix) body.appendChild(el("div", { class: "slop-cr-fix", text: fix }));
+    kids.push(body);
+    return el("div", { class: "slop-cr " + cls }, kids);
+  }
+
+  function renderCraft(p) {
+    clear(refs.craft);
+    if (!p) return;
+    // ✅ good — keep this
+    if (p.good && p.good.length) {
+      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "✅ Keep this" }));
+      p.good.forEach((g) =>
+        refs.craft.appendChild(craftRow("good", "✅", g.label, g.quote || "", "")));
+    }
+    // 🃏 joker — do this
+    if (p.joker) {
+      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "🃏 Try this" }));
+      refs.craft.appendChild(craftRow("joker", "🃏", p.joker.text, "", ""));
+    }
+    // ⚠️ bad — work on
+    if (p.bad && p.bad.length) {
+      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "⚠️ Work on" }));
+      p.bad.forEach((b) =>
+        refs.craft.appendChild(craftRow("bad", "⚠️", b.label, b.quote || "", b.fix || "")));
+    }
   }
 
   function colorFor(score) {
@@ -145,6 +162,15 @@
       refs.pct.textContent = "?";
       return;
     }
+    if (result.instrumental) {
+      badge.style.setProperty("--slop-color", "#888");
+      refs.pct.textContent = "–";
+      clear(refs.verdict);
+      refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: "Instrumental — no lyrics to score" }));
+      refs.components.textContent = "";
+      renderCraft(null);
+      return;
+    }
     const c = colorFor(result.score);
     badge.style.setProperty("--slop-color", c);
     refs.pct.textContent = result.score + "%";
@@ -154,49 +180,10 @@
     refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: result.label }));
 
     refs.components.textContent =
-      (result.baselineScore != null
-        ? `cliché lexicon ${result.heuristicScore}%  ·  vs AI corpus ${result.baselineScore}%`
-        : `cliché lexicon ${result.heuristicScore}%  ·  corpus baseline not loaded`) +
+      `model confidence this is AI: ${result.score}%` +
       (result.nonEnglish ? "  ·  ⚠ non-English: score approximate" : "");
 
-    const b = result.breakdown;
-    const parts = [
-      ["Cliché words", b.words],
-      ["Stock phrases", b.phrases],
-      ["Lazy rhymes", b.rhymes],
-      ["Repetition", b.repetition],
-      ["Section tags", b.sectionTags],
-    ];
-    const max = Math.max(0.5, ...parts.map((p) => p[1]));
-    clear(refs.bars);
-    for (const [name, v] of parts) {
-      const fill = el("span", { class: "slop-bar-fill" });
-      fill.style.width = Math.round((Math.max(0, v) / max) * 100) + "%";
-      refs.bars.appendChild(
-        el("div", { class: "slop-bar-row" }, [
-          el("span", { class: "slop-bar-name", text: name }),
-          el("span", { class: "slop-bar-track" }, [fill]),
-        ])
-      );
-    }
-
-    clear(refs.words);
-    if (result.hits.words.length) {
-      result.hits.words.slice(0, 24).forEach((w) =>
-        refs.words.appendChild(
-          el("span", { class: "slop-chip t" + w.weight, text: w.word + (w.count > 1 ? " ×" + w.count : "") })
-        )
-      );
-    } else refs.words.appendChild(el("span", { class: "slop-none", text: "none — nice" }));
-
-    clear(refs.phrases);
-    if (result.hits.phrases.length) {
-      result.hits.phrases.forEach((p) =>
-        refs.phrases.appendChild(
-          el("span", { class: "slop-chip t3", text: "“" + p.phrase + "”" + (p.count > 1 ? " ×" + p.count : "") })
-        )
-      );
-    } else refs.phrases.appendChild(el("span", { class: "slop-none", text: "none" }));
+    renderCraft(result.panel);
   }
 
   // ---- Suno is a SPA: lyrics load late & change on navigation ---------------
@@ -225,9 +212,7 @@
             ? {
                 score: lastResult.score,
                 label: lastResult.label,
-                breakdown: lastResult.breakdown,
-                hits: lastResult.hits,
-                stats: lastResult.stats,
+                panel: lastResult.panel,
               }
             : null,
         });

@@ -1,0 +1,15 @@
+{
+  "ollama_url": "http://localhost:11434",
+  "output_dir": "/home/potentiallyhumanspark/projects/28_suno_slop_detector/corpus/ai_lyrics",
+  "n_per_run": 10,
+  "models": [
+    {"name": "qwen2.5:3b",      "weight": 4},
+    {"name": "qwen2.5:14b",     "weight": 4},
+    {"name": "qwen3-coder:30b", "weight": 1},
+    {"name": "llava:13b",       "weight": 1}
+  ],
+  "keep_alive": "8m",
+  "temperature_range": [0.7, 1.05],
+  "num_predict": 700,
+  "timeout_s": 240
+}

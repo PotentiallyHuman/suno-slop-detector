@@ -1,4 +1,5 @@
-/* popup.js — shows the current tab's score (from content.js) + a manual tester */
+/* popup.js — shows the current tab's score (from content.js) + a manual tester.
+ * v2: pure trained-model confidence P(AI) + a compact 5✅·1🃏·5⚠️ craft panel. */
 (function () {
   "use strict";
 
@@ -7,6 +8,45 @@
     if (s >= 45) return "#ff9f1c";
     if (s >= 25) return "#ffd23f";
     return "#5fd068";
+  }
+
+  // build a compact craft panel into `host` from a panel object {good,joker,bad}
+  function renderCraft(host, p) {
+    while (host.firstChild) host.removeChild(host.firstChild);
+    if (!p) return;
+    const head = (txt) => {
+      const h = document.createElement("div");
+      h.className = "craft-h";
+      h.textContent = txt;
+      host.appendChild(h);
+    };
+    const row = (cls, label, detail) => {
+      const r = document.createElement("div");
+      r.className = "craft-row " + cls;
+      const l = document.createElement("div");
+      l.className = "craft-label";
+      l.textContent = label;
+      r.appendChild(l);
+      if (detail) {
+        const d = document.createElement("div");
+        d.className = "craft-detail";
+        d.textContent = detail;
+        r.appendChild(d);
+      }
+      host.appendChild(r);
+    };
+    if (p.good && p.good.length) {
+      head("✅ Keep this");
+      p.good.forEach((g) => row("good", "✅ " + g.label, g.quote || ""));
+    }
+    if (p.joker) {
+      head("🃏 Try this");
+      row("joker", "🃏 " + p.joker.text, "");
+    }
+    if (p.bad && p.bad.length) {
+      head("⚠️ Work on");
+      p.bad.forEach((b) => row("bad", "⚠️ " + b.label, [b.quote, b.fix].filter(Boolean).join(" — ")));
+    }
   }
 
   // ---- current tab --------------------------------------------------------
@@ -41,6 +81,15 @@
       pageScore.textContent = r.score + "% AI";
       pageScore.style.color = colorFor(r.score);
       pageLabel.textContent = r.label;
+      // compact craft panel for the current page
+      let host = document.getElementById("page-craft");
+      if (!host) {
+        host = document.createElement("div");
+        host.id = "page-craft";
+        host.className = "craft";
+        pageResult.appendChild(host);
+      }
+      renderCraft(host, r.panel);
     });
   });
 
@@ -49,37 +98,18 @@
   const pasteResult = document.getElementById("paste-result");
   const pasteScore = document.getElementById("paste-score");
   const pasteLabel = document.getElementById("paste-label");
-  const pasteChips = document.getElementById("paste-chips");
+  const pasteCraft = document.getElementById("paste-craft");
 
   document.getElementById("analyze").addEventListener("click", () => {
     const text = pasteEl.value || "";
     if (text.trim().length < 8) return;
-    const r = SlopScore.scoreLyrics(text);
-    let base = null;
-    try {
-      if (globalThis.SLOP_BASELINE && typeof SlopFeatures !== "undefined") {
-        base = SlopFeatures.classify(text, globalThis.SLOP_BASELINE);
-      }
-    } catch (e) {}
-    const finalScore = base ? Math.round(0.45 * r.score + 0.55 * base.pAI) : r.score;
+    const sc = SlopV2.score(text);
+    let panel = null;
+    try { panel = SlopPanel.build(text, sc); } catch (e) {}
     pasteResult.hidden = false;
-    pasteScore.textContent = finalScore + "% AI";
-    pasteScore.style.color = colorFor(finalScore);
-    pasteLabel.textContent = SlopScore.verdict(finalScore) +
-      (base ? ` · lexicon ${r.score}% / corpus ${base.pAI}%` : "");
-    // build chips with DOM APIs (no innerHTML) — page/user text never becomes markup
-    while (pasteChips.firstChild) pasteChips.removeChild(pasteChips.firstChild);
-    const mk = (cls, txt) => {
-      const s = document.createElement("span");
-      s.className = cls;
-      s.textContent = txt;
-      return s;
-    };
-    const items = r.hits.words
-      .slice(0, 20)
-      .map((w) => mk("chip t" + w.weight, w.word + (w.count > 1 ? " ×" + w.count : "")))
-      .concat(r.hits.phrases.map((p) => mk("chip t3", "“" + p.phrase + "”")));
-    if (items.length) items.forEach((n) => pasteChips.appendChild(n));
-    else pasteChips.appendChild(mk("muted", "no clichés found 🎉"));
+    pasteScore.textContent = sc.score + "% AI";
+    pasteScore.style.color = colorFor(sc.score);
+    pasteLabel.textContent = SlopScore.verdict(sc.score) + " · model confidence";
+    renderCraft(pasteCraft, panel);
   });
 })();

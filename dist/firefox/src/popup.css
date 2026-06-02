@@ -54,3 +54,27 @@ button {
 .chip.t3 { color: #ff7b7b; }
 .foot { color: #777; font-size: 11px; line-height: 1.4; }
 code { color: #ffc04d; }
+
+/* compact craft panel (5 ✅ · 1 🃏 · 5 ⚠️) */
+.craft { margin-top: 10px; }
+.craft-h {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a8a8a;
+  margin: 8px 0 3px;
+}
+.craft-row {
+  border-radius: 7px;
+  padding: 5px 8px;
+  margin: 3px 0;
+  font-size: 11.5px;
+  border-left: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+}
+.craft-row.good  { border-left-color: #5fd068; }
+.craft-row.joker { border-left-color: #b07bff; background: rgba(176, 123, 255, 0.08); }
+.craft-row.bad   { border-left-color: #ff9f1c; }
+.craft-label { color: #eaeaea; }
+.craft-row.joker .craft-label { color: #d9c4ff; }
+.craft-detail { color: #9a9a9a; font-size: 10.5px; margin-top: 2px; font-style: italic; }

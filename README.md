@@ -1,10 +1,10 @@
 # 🤖 Suno Slop Detector
 
-A browser extension that reads the lyrics on a Suno song page and tells you, in big honest numbers, how much they reek of AI cliché:
+A browser extension that reads the lyrics on a Suno song page and tells you, in one honest number, how much they read like AI slop:
 
-> **56% AI** — *Suspiciously seasoned*
+> **62% AI** — *Heavy AI seasoning*
 
-Open a song. A little pill appears top-right. Click it to see *why* — which clichés, which stock phrases, how lazy the rhymes, how repetitive the vocabulary.
+Open a song. A little pill appears top-right. Click it for the **craft-coach panel**: what the song does well, one creative move to try, and what to work on.
 
 Born out of spite after r/SunoAI removed an open-source de-clicker post. So now it's open source forever. 🫡
 
@@ -13,49 +13,73 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
-## What it actually measures
+## What's new in v0.2.0
 
-The score is a transparent, tunable heuristic — **five signals** squashed through saturating curves into a 0–100% "slop probability":
+v0.1 was a hand-tuned cliché lexicon squashed through a curve. **v0.2 replaces the guesswork with a real trained model** and adds a craft coach:
 
-| Signal | What it catches |
-|---|---|
-| **Cliché words** | `neon`, `horizon`, `shadows`, `echoes`, `whisper`, `ember`, `abyss`, `velvet`, `ethereal`, `crimson`… weighted 1 (mild) → 3 (flashing red) |
-| **Stock phrases** | "in the dead of night", "rise from the ashes", "concrete jungle", "we won't back down", "fire in my veins"… |
-| **Lazy rhymes** | the rhymes a rhyming dictionary reaches for first: fire/desire, night/light, heart/apart, sky/fly… |
-| **Repetition** | low lexical diversity (length-corrected type-token ratio) — slop loops the same words |
-| **Section tags** | literal `[Verse 1]` / `[Chorus]` / `[Bridge]` markers Suno emits in the lyric text |
+- **A trained classifier, not hand-weights.** A logistic-regression model learned from a corpus of **3,805 AI songs** (ChatGPT, Claude, Grok, Gemini, Suno) vs **3,848 human-song metric vectors**. It combines a **bag-of-words** half with **79 text-only stylometric/craft features** (the cliché lexicon, rhyme regularity, burstiness, specificity, personification, argument structure…). ~85% cross-validated accuracy (the shipped text-only, no-embedding variant).
+- **The score is pure P(AI).** No more blending. The number you see is the model's calibrated confidence that the lyric is AI-written. The raw logistic regression is wildly overconfident on separable data (it pins everything to 0 or 100), so the logit is **temperature-scaled** to spread borderline songs across the middle and keep the gradient meaningful.
+- **Input cleaning.** Before scoring, the extension strips `[Verse]` / `[Chorus]` section tags, leaked JSON blobs, and model-reply scaffolding ("Sure! Here are your lyrics:") so the format never leaks into the score — exactly the way the training corpus was cleaned.
+- **Instrumental detection.** If the "lyrics" are empty after cleaning, the song is flagged **instrumental** and gets **no score and no feedback** (scoring silence would be nonsense).
+- **The craft-coach panel: 5 ✅ · 1 🃏 · 5 ⚠️.** Click the pill to see:
+  - **5 ✅ keep-this** — the song's 5 strongest *human-leaning* choices, quoted back as "keep doing this."
+  - **1 🃏 joker** — a single, always-present, decisive creative suggestion, with its slots (a word, a rhyme, a line) filled from *this* song. Grounded in real songwriting craft (Pattison's prosody, object-writing / show-don't-tell, Shklovsky's defamiliarization, slant rhyme, point-of-view shifts). See [`analysis/JOKER_STRATEGY_LIBRARY.md`](analysis/JOKER_STRATEGY_LIBRARY.md).
+  - **5 ⚠️ work-on** — the song's 5 strongest *AI-leaning* signals that fired, each quoting the offending word/line plus a one-line fix.
 
-All weights live in `src/slop-core.js` (`WORD_WEIGHTS`, `PHRASES`, `LAZY_RHYMES`, `W`). Tune away.
+**Everything runs on-device, text-only, with no network.** No embeddings, no LLM call, no upload. The model weights ship inside the extension; the lyric is scored in memory and thrown away.
 
-## The data-driven baseline (the "final mode")
+---
 
-The lexicon above is hand-written guesses. The **real** detector learns what AI lyrics look like from a corpus of *actual* AI lyrics:
+## How it tells AI from human — the strongest signals
 
-1. Every model is fed the **same 15 prompts** — 3 prompting strategies × 5 subjects (`corpus/prompts.js`):
-   - **vibe** — lazy one-liner ("write a song about my cat John")
-   - **story** — tell a full story, then ask for lyrics
-   - **craft** — ask the model to apply real songwriting craft and dodge clichés
-2. Each lyric is turned into a 10-dimensional **feature vector** (`src/features.js`) — the heuristic signals plus stylometrics (function-word ratio, line length, vocabulary richness, rhyme regularity).
-3. We compute the **AI centroid** and a **human centroid**, standardized over the pool (`build/build_baseline.js`).
-4. A new song is scored by **which centroid it sits closer to** → *the more it looks like the AI baseline, the more AI it is; the further away, the less.*
+The model judges **degree of slop, not origin.** It doesn't know who made a song; it measures *texture*. A well-crafted lyric scores low even if AI made it, and a cliché-heavy human song scores high. Here are the highest-weight learned signals (from `corpus/combined_model.json` — `wDense` per-feature weights; the corpus was deliberately seeded with cliché-heavy human "hard negatives" so the model learns *degree*, not mere word-presence).
 
-The shipped score blends the two: `0.45 × lexicon + 0.55 × corpus`. The panel shows all three numbers.
+Examples in the **AI** column are **real lines from the AI corpus** (`corpus/models/*.json`). The **human** column notes the contrasting human tendency.
 
-**Current corpus:** 60 AI songs (ChatGPT + Claude + Grok + local Qwen 2.5 14B, 15 each) vs **151 real human songs** (1953–2019, ~20 genres — metrics only, no copyrighted text stored; see `build/profile_human.js`). That human set deliberately includes ~50 *cliché-heavy* songs (Linkin Park, Imagine Dragons, Coldplay's "Paradise"…) as **hard negatives** — real songs use AI vocabulary too (it's the training data!), so the classifier must judge *degree*, not mere presence. 18 features grounded in AI-detection research + songwriting craft + a human-vs-LLM perspective lens (perplexity proxy, burstiness, perfect-vs-slant rhyme, abstract-vs-concrete, proper-noun/numeral specificity, collective-vs-personal voice). Resubstitution accuracy ~93% (196/211); cliché-rich human songs still read as human. Section-tag *count* is excluded (format artifact). Add Grok / Gemini and it sharpens — see [`corpus/STRATEGIES.md`](corpus/STRATEGIES.md).
+| Signal (weight) | What it measures | Leans | AI example (real) vs human tendency |
+|---|---|:---:|---|
+| **`immediateWordDouble`** (+20.4) | a word repeated back-to-back inside a line — "grow, grow", "higher, higher" | 🤖 AI | AI: *"Higher, higher, the wind-stairs curled"* / *"Lower, lower, the sea bells rang"*. Humans double words for real emphasis occasionally; AI reflexively pads with it to fill a meter. |
+| **`dupLinesTotal`** (+12.2) | how many whole lines are repeated verbatim across the song | 🤖 AI | AI loops *entire identical lines* to reach length. Human hooks repeat too — but a human usually **varies one word** in the final chorus so it lands harder. |
+| **`t3_specificReferent`** (−11.3) | mid-line capitalised names — people, places, brands | 🧑 human | Humans name things: *"met you outside the Texaco on Marshall Street."* AI stays generic — *"met you in the city under neon lights"* — because a named referent is a specificity it can't safely invent. |
+| **`idkButOpener`** (+10.5) | the "I don't know why/where… **but** I …" opener template | 🤖 AI | AI: *"I don't know where I'm going but I know it's not here"* / *"I don't know who's listening but I sing it like I do."* A signature LLM scaffold for manufacturing false vulnerability. |
+| **`t3_argumentMarkers`** (+9.4) | density of but / yet / though / however / still | 🤖 AI | AI over-uses contrast connectives to *simulate* depth: *"But you came down like weather."* Used sparingly by humans for a genuine turn; AI sprinkles them as filler texture. |
+| **`f_lineLenCV`** (−8.9) | burstiness — variation in line length (stdev/mean) | 🧑 human | Humans write bursty, uneven lines (a 3-word punch next to a 12-word run). AI produces **uniform, metronomic** line lengths — low variation is a tell. |
+| **`f_hapaxRatio`** (+8.7) | share of words used exactly once — a thin, padded vocabulary | 🤖 AI | AI lyrics churn through many one-off mood-words without a tight, recurring vocabulary; humans tend to compress around a few load-bearing images. |
+| **`f_properNounDensity`** (−8.7) | capitalised proper nouns per line — specificity | 🧑 human | Same instinct as `specificReferent`: humans drop in *Marshall Street*, *a '79 Ford*, *Mama*; AI keeps it nameless and universal. |
+| **`s_secondPersonDensity`** (−8.7) | how often a real "you" is addressed | 🧑 human | Human songs are often written *to someone*. AI tilts toward generic first-person mood-painting with no concrete addressee. |
+| **`f_repetition`** (−8.0) | length-corrected lexical diversity (this direction rewards varied vocabulary) | 🧑 human | A *too-uniform* loop of the same words reads AI; varied, surprising word choice reads human. |
+| **`s_consecDupLines`** (+7.6) | back-to-back identical lines | 🤖 AI | AI: *"And I wished 'em well, I wished 'em well…"* repeated immediately. Verbatim back-to-back duplication is padding, not a crafted hook. |
+| **`f_abstractRatio`** (−7.6) | abstract emotion-words (love/pain/soul/forever) per content word | 🧑 human | AI *names* the feeling — *"endless pain, a shattered soul, forever lost."* Humans **show** it: *"your jacket's still on the hook and I can't move it."* Concrete beats abstract. |
+| **`s_simileLikeA`** (+7.1) | "like a ___" similes | 🤖 AI | AI reaches for the easy comparison: *"the blue flame opened like a star."* Vivid human similes are strange-but-true; AI similes are generic and interchangeable. |
+| **`s_antithesisNotBut`** (−6.9) | "not X, but Y" inline reversal | 🧑 human | A real human turn: *"Not for the rice but for the empty chair."* When earned (not template-filled) this contradiction-holding reads as genuine craft. |
+| **`t3_inanimateAnimate`** (+6.5) | objects given human verbs — "pavement whispers", "the city sings" | 🤖 AI | AI over-personifies everything: *"the city sings itself into its morning power"*, *"we echo back when the silence calls."* One personification is poetry; personifying *everything* is the AI mood-stacking tell. |
+| **`t3_aiClicheList`** (+4.9) | the documented AI-slop phrase list — echoes, whispers in the dark, fading light, shattered dreams… | 🤖 AI | AI: *"In the echoes of the streets I've always known"*, *"the weight of the road and the fading light."* These exact phrases recur across nearly every AI lyric generator. |
 
-### Translation
+And the old cliché vocabulary still pulls its weight underneath all this — `neon`, `shadows`, `echoes`, `whisper`, `ember`, `velvet`, `crimson`, `ethereal`, predictable rhymes (`fire`/`desire`, `night`/`light`, `blue`/`true`) — but now as *features the model weighs*, not hand-set knobs. The headline finding across the corpus: **Suno's lyrics are structurally quite human-like** (singable burstiness, some proper nouns, looser rhymes) — its tell is **clichés**, not structure.
 
-All lyrics are normalized to **English before comparison** (`build/translate.js`, local ollama, skips already-English text) — so a Danish Suno song is judged on equal footing. `npm run rebuild` does translate + build.
+> **Read this honestly:** these are statistical leanings, not proof. Humans write "fire" and "midnight" and repeat hooks too. The score rates the *texture* of the words, never the person who made the song.
+
+---
+
+## The craft-coach panel
+
+Click the pill and you get a panel built from the **same trained weights**:
+
+- **✅ Keep this (×5):** the strongest human-leaning choices the song already makes — quoted so you know what *not* to touch.
+- **🃏 The joker (×1):** one decisive move, tailored to this song. The selector scores every move in the [strategy library](analysis/JOKER_STRATEGY_LIBRARY.md) by `z-score(this song vs the AI corpus) × |model weight|` and fires the single top one — so it only suggests a move when the song over-does a trait *and* the model agrees that trait matters. Examples: *"Swap **neon** for something only your narrator would notice right then."* / *"Your hook repeats word-for-word 4× — change one word the final time."* / *"Every line is 'I' — try the last verse from someone else's side."* If a track is already tight, the joker becomes a pure-experiment prompt instead of nagging.
+- **⚠️ Work on (×5):** the strongest AI-leaning signals that fired, each with the offending word/line and a one-line fix ("loosen one rhyme to a slant rhyme so it doesn't feel machine-perfect").
+
+It's a coach, not a verdict — observations on top, one thing to *do*.
 
 ## Honesty (this matters)
 
-It is a **vibe meter, not a detector of ground truth, and never a personal attack.** Humans write "fire" and "midnight" too; a great lyric can score high and a bland AI one can score low. The number rates *texture*, not the person who made the song — treat it as a conversation-starter, not a verdict, and please don't weaponize it against other creators. The whole engine is readable JS — audit it, disagree with it, send a PR that changes the lexicon.
+It is a **vibe meter, not a detector of ground truth, and never a personal attack.** Humans write "fire" and "midnight" too; a great lyric can score high and a bland AI one can score low. The number rates *texture*, not the person who made the song — treat it as a conversation-starter and a craft mirror, not a courtroom, and please don't weaponize it against other creators. The whole engine is readable JS — audit it, disagree with it, send a PR.
 
 ## Privacy & safety (by design)
 
 - **Only runs on `https://suno.com/song/*`.** Enforced in `manifest.json` (`matches`) *and* re-checked in code. It loads nowhere else.
-- **Reads exactly one element** — the lyrics paragraph (`…p.pr-6.whitespace-pre-wrap`). It never touches the rest of the page, your account, comments, or any personal info.
-- **No network. No storage of page text. No tracking.** The text is scored in memory and thrown away.
+- **Reads exactly one element** — the lyrics paragraph. It never touches the rest of the page, your account, comments, or any personal info.
+- **No network. No storage of page text. No tracking.** The model ships inside the extension; the text is scored in memory and thrown away. There are no embeddings, no LLM calls, nothing leaves your machine.
 - Permissions: `activeTab` only (so the popup can ask the page for its score).
 
 ## Install (unpacked, ~30 seconds)
@@ -63,56 +87,47 @@ It is a **vibe meter, not a detector of ground truth, and never a personal attac
 1. `git clone` this repo.
 2. Chrome / Edge / Brave → `chrome://extensions` → toggle **Developer mode** (top-right).
 3. **Load unpacked** → select this folder.
-4. Open any `https://suno.com/song/…` page. The badge appears top-right.
+4. Open any `https://suno.com/song/…` page. The badge appears top-right — click it for the craft-coach panel.
 
-> Firefox: load `manifest.json` via `about:debugging` → "This Firefox" → "Load Temporary Add-on". (MV3 content scripts work; the manifest is cross-browser.)
-
-## Develop / test
-
-```bash
-npm test        # runs the calibration corpus
-```
-
-`test/calibrate.js` scores the example lyrics in `examples/corpus.js` and asserts that AI-style lyrics rank above human ones and land in their target bands. Edit the lexicon, re-run, watch the numbers move:
-
-```
-✅ 100%  (target 70-100)  Suno-typical 'Neon Horizon' (synthetic slop)
-✅  28%  (target 0-40)    Classic craft lyric — specific imagery
-✅  40%  (target 25-65)   Real-ish pop with some staples (mixed)
-Separation: lowest AI (100%) > highest human (28%)  ✅
-```
-
-Add your own examples to `examples/corpus.js` with an `expect: [lo, hi]` band to keep the heuristic honest as you tune it.
+> Firefox: load `manifest.json` via `about:debugging` → "This Firefox" → "Load Temporary Add-on". (MV3 content scripts work; the manifest is cross-browser — the Chrome build just strips the Firefox-only `browser_specific_settings`.)
 
 ## Project layout
 
 ```
-manifest.json            MV3, scoped to suno.com/song/*
-src/slop-core.js          cliché-lexicon scoring engine (pure; browser + node)
-src/features.js           feature vector + nearest-centroid classifier
-src/baseline.{json,js}    AUTO-GENERATED corpus baseline (centroids + scaler)
-src/content.js            reads ONLY the lyrics box, draws the badge/panel
-src/overlay.css           badge + panel styling
-src/popup.html/js/css     toolbar popup: current score + paste-to-test box
-corpus/prompts.js         the 3 strategies × 5 subjects (shared by all models)
-corpus/models/*.{js,json} per-model AI lyrics (claude, qwen, + pasted-in)
-corpus/STRATEGIES.md      how to build/grow the baseline
-build/gen_ollama.mjs      generate a baseline from a local ollama model
-build/ingest.js           scaffold + parse pasted web-model lyrics
-build/translate.js        normalize a corpus to English (local ollama)
-build/build_baseline.js   compile corpus -> src/baseline.{json,js}
-examples/human.js         human negative-class anchors
-examples/corpus.js        calibration fixtures
-test/calibrate.js         `npm test`
+manifest.json                 MV3, scoped to suno.com/song/*
+src/slop-core.js              cliché-lexicon engine + lyric normalisation (pure; browser + node)
+src/common_words.js           top-1000 English word list (perplexity proxy)
+src/features.js               18 stylometric/craft features + nearest-centroid baseline
+src/ext/patterns.browser.js   ~100 structural detectors (s_*) — browser build
+src/ext/tier3.browser.js      semantic-craft detectors (t3_*) — browser build
+src/ext/model.js              AUTO-GENERATED trained weights (globalThis.SLOP_MODEL)
+src/ext/clean-lyrics.js       strips tags/JSON/scaffolding + instrumental detection
+src/ext/v2-engine.js          reproduces the training feature pipeline → pure P(AI)
+src/ext/v2-panel.js           builds the 5 ✅ · 1 🃏 · 5 ⚠️ craft panel
+src/content.js                reads ONLY the lyrics box, draws the badge/panel
+src/overlay.css               badge + panel styling
+src/popup.html/js/css         toolbar popup: current score + paste-to-test box
+analysis/patterns.js          structural detectors (node build / miner)
+analysis/tier3_detectors.js   semantic-craft detectors (node build)
+analysis/JOKER_STRATEGY_LIBRARY.md   the joker move library + research grounding
+corpus/combined_model.json    the trained weights (BoW + 79 dense features)
+corpus/models/*.json          per-model AI lyrics (metrics + text for training)
+pipeline_tier3.js             trains combined_model.json (5-fold CV ablation)
+build/gen_model.js            bakes combined_model.json → src/ext/model.js
+build/package.sh              build the Firefox store zip (entire src/ tree)
+build/package_chrome.sh       build the Chrome store zip (manifest stripped)
 ```
 
-## npm scripts
+## Build / package
 
 ```bash
-npm test          # heuristic calibration + classifier report
-npm run gen:qwen  # regenerate the local Qwen baseline
-npm run rebuild   # translate all corpora -> English, then rebuild baseline.json
+node build/gen_model.js     # rebuild src/ext/model.js from corpus/combined_model.json
+bash build/package.sh       # → dist/suno-slop-detector-<ver>.zip          (Firefox)
+bash build/package_chrome.sh# → dist/suno-slop-detector-chrome-<ver>.zip   (Chrome)
+node pipeline_tier3.js      # retrain the model + print 5-fold CV ablation
 ```
+
+Both package scripts zip the **entire `src/` tree** (so new runtime files are never forgotten), excluding node-only tests (`_test_engine.js`) and sourcemaps. The Chrome script additionally strips `browser_specific_settings` (Chrome rejects it).
 
 ## License
 
