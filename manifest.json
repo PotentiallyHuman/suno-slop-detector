@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Suno Slop Detector",
   "version": "0.2.0",
-  "description": "Reads ONLY the lyrics box on a Suno song page, scores how AI it reads with a trained model, and gives craft feedback: keep-this, one creative move, and what to work on. For fun. And spite.",
+  "description": "Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun. And spite.",
   "permissions": ["activeTab"],
   "browser_specific_settings": {
     "gecko": {
