@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lyric Humanizer</string>
+    <string name="title_activity_main">Lyric Humanizer</string>
+    <string name="package_name">com.potentiallyhuman.lyrichumanizer</string>
+    <string name="custom_url_scheme">com.potentiallyhuman.lyrichumanizer</string>
+</resources>

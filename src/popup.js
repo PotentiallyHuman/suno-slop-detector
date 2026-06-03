@@ -131,30 +131,67 @@
   const pasteScore = document.getElementById("paste-score");
   const pasteLabel = document.getElementById("paste-label");
   const pasteCraft = document.getElementById("paste-craft");
+  const pasteMsg = document.getElementById("paste-msg");
+  const humanizeBtn = document.getElementById("humanize");
+  const undoBtn = document.getElementById("undo");
+  const undoStack = [];
 
-  document.getElementById("analyze").addEventListener("click", () => {
+  // Score + render the current paste box. Returns true on a normal numeric score
+  // (so the caller knows Humanize is applicable), false for instrumental/non-English.
+  function analysePaste() {
     const text = pasteEl.value || "";
-    if (text.trim().length < 8) return;
+    if (text.trim().length < 8) return false;
     const sc = SlopV2.score(text);
     pasteResult.hidden = false;
-    // Instrumental path unchanged in spirit: nothing to score.
     if (sc && sc.instrumental) {
       pasteScore.textContent = "–";
       pasteScore.style.color = "#888";
       pasteLabel.textContent = "No lyrics to score";
+      humanizeBtn.hidden = true;
       renderCraft(pasteCraft, null);
-      return;
+      return false;
     }
-    // Non-English guard (separate check AFTER scoring): show notice + joker, no number.
     if (looksNonEnglish(text)) {
       showNonEnglish(pasteScore, pasteLabel, pasteCraft);
-      return;
+      humanizeBtn.hidden = true;
+      return false;
     }
     let panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) {}
     pasteScore.textContent = sc.score + "% AI";
     pasteScore.style.color = colorFor(sc.score);
     pasteLabel.textContent = SlopScore.verdict(sc.score) + " · model confidence";
+    humanizeBtn.hidden = false;            // a real score → one-click cleanup is available
     renderCraft(pasteCraft, panel);
+    return true;
+  }
+
+  function showMsg(txt) { pasteMsg.textContent = txt; pasteMsg.hidden = !txt; }
+
+  document.getElementById("analyze").addEventListener("click", () => {
+    showMsg("");
+    analysePaste();
+  });
+
+  // Humanize: apply ONE mechanical fix, re-score, show the drop. Reversible via Undo.
+  humanizeBtn.addEventListener("click", () => {
+    const text = pasteEl.value || "";
+    let res = null;
+    try { res = Humanize.next(text); } catch (e) {}
+    if (!res) { showMsg("Nothing safe left to auto-fix — the rest needs your words."); return; }
+    undoStack.push(text);
+    undoBtn.hidden = false;
+    pasteEl.value = res.text;
+    analysePaste();
+    const delta = (res.before > res.after) ? (res.before + "% → " + res.after + "% AI") : (res.after + "% AI");
+    showMsg("Applied: " + (res.detail || res.label) + " · " + delta);
+  });
+
+  undoBtn.addEventListener("click", () => {
+    if (!undoStack.length) return;
+    pasteEl.value = undoStack.pop();
+    undoBtn.hidden = undoStack.length === 0;
+    analysePaste();
+    showMsg("Undid last change.");
   });
 })();

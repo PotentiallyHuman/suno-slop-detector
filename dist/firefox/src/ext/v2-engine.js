@@ -75,6 +75,11 @@
 
     var tf = SlopTier3.analyze(text);
     for (var tk in tf) if (tf.hasOwnProperty(tk)) d[tk] = tf[tk];
+    // tier-4 craft-perspective lenses (rapper/poet/wit/psych/phil/story) — MUST mirror pipeline_tier3.
+    if (G.SlopPerspectives) {
+      var pf = G.SlopPerspectives.features(text);
+      for (var pk in pf) if (pf.hasOwnProperty(pk)) d[pk] = pf[pk];
+    }
     return d;
   }
 
@@ -115,7 +120,9 @@
     for (var j = 0; j < DN; j++) {
       var r = +raw[denseNames[j]] || 0;      // missing (e.g. emb_*) -> 0
       denseRaw[j] = r;
-      denseStdz[j] = (r - denseMean[j]) / (denseStd[j] || 1);
+      var z = (r - denseMean[j]) / (denseStd[j] || 1);
+      denseStdz[j] = z > 3 ? 3 : z < -3 ? -3 : z;   // CLIP ±3σ — MUST match pipeline_tier3 DCLIP
+
     }
 
     // --- z = bias + sum wBow*bowTf + sum wDense*denseStdz ---

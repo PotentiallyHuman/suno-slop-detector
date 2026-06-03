@@ -1,0 +1,11 @@
+# secrets — NEVER commit the signing key
+keystore/
+# dependencies / generated / build outputs
+node_modules/
+www/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/public/
+*.keystore

@@ -1,0 +1,8 @@
+{
+  "appId": "com.potentiallyhuman.lyrichumanizer",
+  "appName": "Lyric Humanizer",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

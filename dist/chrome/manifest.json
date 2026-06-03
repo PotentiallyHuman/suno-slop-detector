@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Suno Slop Detector",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun. And spite.",
   "permissions": [
     "activeTab"
@@ -17,6 +17,7 @@
         "src/features.js",
         "src/ext/patterns.browser.js",
         "src/ext/tier3.browser.js",
+        "src/ext/perspectives.browser.js",
         "src/ext/model.js",
         "src/ext/clean-lyrics.js",
         "src/ext/v2-engine.js",

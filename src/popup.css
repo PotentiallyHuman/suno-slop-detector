@@ -40,7 +40,21 @@ button {
   font-weight: 700;
   cursor: pointer;
 }
+.paste-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button.ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cfcfcf;
+}
 #paste-result { margin-top: 12px; }
+.paste-msg {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #b07bff;
+  background: rgba(176, 123, 255, 0.08);
+  border-radius: 7px;
+  padding: 5px 8px;
+}
 .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .chip {
   padding: 3px 8px;

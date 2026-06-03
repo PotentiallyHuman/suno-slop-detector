@@ -12,3 +12,8 @@ corpus/_prev_model/
 handover_bundle/
 handover_bundle.tar.gz
 build/_amo/
+
+# native build outputs (large binaries)
+dist/android/
+*.apk
+*.aab

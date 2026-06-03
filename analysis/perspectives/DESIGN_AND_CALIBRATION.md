@@ -87,3 +87,24 @@ fixes (name the place, thread internal rhyme, swap stock image, add a turn) → 
 until score < 20% AI. The panel's LOCALIZED, actionable notes (not just a score) give a real gradient
 to optimize against — effectively the perspective lenses as a reward model. Produces the "least-AI"
 AI lyrics (the user's mondegreen workflow, automated).
+
+## FUTURE — "Humanize" magic-editor (user, monetizable; after v4)
+Add a **Humanize** button next to Clear in the standalone app: each click APPLIES one panel
+suggestion to the actual pasted lyrics (edits the text), lowering the AI score step by step. Flow:
+paste ChatGPT/Suno lyrics → "How AI?" → Humanize ×N → watch the % drop. Two fix classes:
+(1) MECHANICAL = pure-deterministic, offline, no LLM: break a too-perfect rhyme, de-dup a repeated
+line, cut vocable filler, swap a stock word via synonym table, trim padding, vary a verbatim hook.
+(2) CREATIVE = needs generation (qwen) or a user fill-in slot: name the place, add a turn, add a
+concrete detail. Ship (1) first (works offline, instant, ad-supported). This is the consumer-facing
+form of the v5 detector-as-critic loop.
+
+## SHELVED — "Shazam for AI lyrics" (mic → live transcribe → score). Considered 2026-06-03.
+Idea: listen to a song via mic, transcribe lyrics live, score AI-likelihood. VERDICT: shelved.
+- Legal/privacy = MANAGEABLE (the lesser worry): same posture as Shazam/on-device voice assistants —
+  user-initiated, on-device, ephemeral (never store/upload audio), clear "listening" indicator. Fits
+  the no-network ethos.
+- Accuracy = THE DEALBREAKER: on-device offline ASR (whisper-tiny WASM) is poor on SUNG audio over
+  instrumentation; the detector keys on fine-grained rhyme/cliché/named-entity signals that a noisy
+  transcript destroys → garbage-in. A cloud-grade model (Whisper-large) breaks both offline + privacy.
+- Value = LOW: the songs you most want to test (Suno/ChatGPT) you already have as text; paste is
+  faster + exact. Mic only helps for songs heard "in the wild" — rare, low stakes. Not worth it.

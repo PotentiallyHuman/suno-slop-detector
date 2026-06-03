@@ -25,25 +25,34 @@
     return document.querySelector(LYRICS_SELECTOR);
   }
 
+  // The model is English-only (its bag-of-words + cliché lexicon are English keywords).
+  // On other languages almost no words/clichés match, so the score would be noise.
+  // Cheap on-device check: share of very common English function words. If tiny, it isn't English.
+  // (real English lyrics run ~30-40%+; Danish/Spanish samples land ~0-6%, so this margin is safe)
+  const EN_COMMON = /^(the|and|you|to|a|of|in|it|that|is|my|me|we|for|on|with|but|love|night|i|are|was|be|he|she|they|this|have|not|your|all|like|when|what|so|do|can|just|know|now|time|up|out|no|yes|oh|don't|i'm|we're|you're|it's)$/;
+  function looksNonEnglish(text) {
+    const toks = String(text).toLowerCase().match(/[a-z']+/g) || [];
+    if (toks.length < 12) return false;            // too short to judge
+    let hits = 0;
+    for (let i = 0; i < toks.length; i++) if (EN_COMMON.test(toks[i])) hits++;
+    return (hits / toks.length) < 0.08;            // <8% common English words -> not English
+  }
+
   function analyse() {
     const node = getLyricsNode();
     if (!node) return null;
     const text = node.innerText || node.textContent || "";
     if (text.trim().length < 12) return null; // too short to mean anything
 
-    // English-cliché signals only fire on English text; flag otherwise.
-    // (Offline corpus is normalized via build/translate.js; for live non-English
-    //  songs, on-device Chrome Translator could be wired here in future.)
-    const toks = (text.toLowerCase().match(/[a-z']+/g) || []);
-    const enHits = toks.filter((t) =>
-      /^(the|and|you|to|a|of|in|it|that|is|my|me|we|for|on|with|but|love|night)$/.test(t)
-    ).length;
-    const nonEnglish = toks.length > 12 && enHits / toks.length < 0.05;
-
     // v2: pure trained-model confidence P(AI). score = round(pAI*100). No blend.
     const sc = SlopV2.score(text);
     // Instrumental (nothing but bracket-tags / blank after cleaning) -> no score, no feedback.
     if (sc && sc.instrumental) { lastResult = { instrumental: true, _text: text }; return lastResult; }
+
+    // Non-English guard (separate check AFTER scoring): the English-only model can't
+    // give a meaningful number here, so show an honest notice instead of a fake score.
+    if (looksNonEnglish(text)) { lastResult = { nonEnglish: true, _text: text }; return lastResult; }
+
     let panel = null;
     try {
       panel = SlopPanel.build(text, sc);
@@ -55,7 +64,6 @@
       score: sc.score, // = round(pAI*100)
       pAI: sc.pAI,
       label: SlopScore.verdict(sc.score),
-      nonEnglish: nonEnglish,
       panel: panel,
       _text: text,
     };
@@ -171,6 +179,17 @@
       renderCraft(null);
       return;
     }
+    if (result.nonEnglish) {
+      badge.style.setProperty("--slop-color", "#888");
+      refs.pct.textContent = "–";
+      clear(refs.verdict);
+      refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: "Looks non-English" }));
+      refs.components.textContent =
+        "The model reads English words and clichés, so a score here wouldn't mean anything.";
+      // route the guidance through the joker card the user already knows
+      renderCraft({ joker: { text: "Translate these lyrics to English for a coherent result, then run it again." } });
+      return;
+    }
     const c = colorFor(result.score);
     badge.style.setProperty("--slop-color", c);
     refs.pct.textContent = result.score + "%";
@@ -179,9 +198,7 @@
     refs.verdict.appendChild(el("span", { class: "slop-big", style: "color:" + c, text: result.score + "% AI" }));
     refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: result.label }));
 
-    refs.components.textContent =
-      `model confidence this is AI: ${result.score}%` +
-      (result.nonEnglish ? "  ·  ⚠ non-English: score approximate" : "");
+    refs.components.textContent = `model confidence this is AI: ${result.score}%`;
 
     renderCraft(result.panel);
   }
@@ -213,6 +230,8 @@
                 score: lastResult.score,
                 label: lastResult.label,
                 panel: lastResult.panel,
+                instrumental: !!lastResult.instrumental,
+                nonEnglish: !!lastResult.nonEnglish,
               }
             : null,
         });

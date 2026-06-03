@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Suno Slop Detector",
-  "version": "0.2.0",
-  "description": "Reads ONLY the lyrics box on a Suno song page, scores how AI it reads with a trained model, and gives craft feedback: keep-this, one creative move, and what to work on. For fun. And spite.",
+  "version": "0.3.0",
+  "description": "Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun. And spite.",
   "permissions": ["activeTab"],
   "browser_specific_settings": {
     "gecko": {
@@ -16,7 +16,7 @@
   "content_scripts": [
     {
       "matches": ["https://suno.com/song/*"],
-      "js": ["src/slop-core.js", "src/common_words.js", "src/features.js", "src/ext/patterns.browser.js", "src/ext/tier3.browser.js", "src/ext/model.js", "src/ext/clean-lyrics.js", "src/ext/v2-engine.js", "src/ext/v2-panel.js", "src/content.js"],
+      "js": ["src/slop-core.js", "src/common_words.js", "src/features.js", "src/ext/patterns.browser.js", "src/ext/tier3.browser.js", "src/ext/perspectives.browser.js", "src/ext/model.js", "src/ext/clean-lyrics.js", "src/ext/v2-engine.js", "src/ext/v2-panel.js", "src/content.js"],
       "css": ["src/overlay.css"],
       "run_at": "document_idle"
     }
