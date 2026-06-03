@@ -125,112 +125,140 @@
   }
 
   // ---------- dense feature -> human-readable label + fix ----------
+  // Each entry: a plain-English label + a "fix" that says WHAT it means, WHAT to do, and a clean
+  // EXAMPLE. Examples must be ordinary, specific things — never AI-cliché words (no neon/shadow/
+  // ember/coffee as a "good" example; those only ever appear as the thing to REMOVE).
   var FEATURE_INFO = {
-    f_clicheDensity:   { label: "cliché density", fix: "swap a stock phrase for one detail only your narrator would say." },
-    lex_cliche:        { label: "stock clichés", fix: "trade the most common line for a private, specific one." },
-    lex_rhyme:         { label: "predictable rhymes", fix: "let one perfect rhyme be a near-miss (slant) — it reads human." },
-    f_perfectRhymeRatio:{ label: "all-perfect rhyme", fix: "loosen one rhyme to a slant rhyme so it doesn't feel machine-perfect." },
-    f_endRhymeRate:    { label: "every line rhymes", fix: "leave one line unrhymed for a productive bit of tension." },
-    f_repetition:      { label: "verbatim repetition", fix: "change one word in the final chorus so it lands harder." },
-    f_abstractRatio:   { label: "abstract vocabulary", fix: "replace an abstract emotion word with something you can see or touch." },
-    f_positivityBias:  { label: "uniformly positive tone", fix: "let one line complicate the mood instead of stacking sweetness." },
-    f_commonWordRatio: { label: "very common words", fix: "drop in one concrete noun (a place, a brand, a time)." },
-    s_hookMaxRepeat:   { label: "hook repeats verbatim", fix: "vary the hook once — change a single word the last time." },
-    s_titleDropRepeat: { label: "title repeated a lot", fix: "earn the title by changing its context, not just repeating it." },
-    s_consecDupLines:  { label: "back-to-back identical lines", fix: "cut one duplicate or vary it slightly." },
-    s_maxConsecDup:    { label: "run of identical lines", fix: "break the run with a contrasting line." },
-    s_abstractEnding:  { label: "lines end on feeling-words", fix: "land one ending on a concrete thing — that's where the ear rests." },
-    s_vocableLines:    { label: "vocable filler (oohs/las)", fix: "trade a filler line for a real image." },
-    s_vocables:        { label: "vocable padding", fix: "cut a 'na-na/oh-oh' and put a specific detail there." },
-    s_ingEmotionVerb:  { label: "-ing emotion verbs (burning/falling)", fix: "name the actual action instead of a generic -ing mood." },
-    s_prepInTheNight:  { label: "'in the night/dark' phrasing", fix: "place it somewhere specific instead of a generic mood-setting." },
-    s_temporalAbsolute:{ label: "forever / never / always", fix: "make one absolute a particular moment instead." },
-    s_myHeart:         { label: "'my heart' phrasing", fix: "show the feeling through a detail rather than naming the heart." },
-    s_iLineOpeners:    { label: "every line opens with 'I'", fix: "try a verse from another point of view." },
-    s_firstPersonIOpener:{ label: "opens on 'I'", fix: "open on an image or another voice instead." },
-    s_anaphora:        { label: "repeated line-openers", fix: "vary how lines begin to avoid a template feel." },
-    s_everyEnum:       { label: "'every…' enumeration", fix: "replace the list with one telling instance." },
-    t3_vagueEmotion:   { label: "vague emotional placeholders", fix: "swap 'broken/fading/endless' for a concrete observable." },
-    t3_aiClicheList:   { label: "documented AI clichés", fix: "these phrases show up in every AI song — write your own." },
-    t3_adjStack:       { label: "adjective stacks (shattered dreams)", fix: "break the adj+noun cliché with a specific noun." },
-    t3_ingVerbAbstract:{ label: "-ing verb + abstract noun", fix: "ground the image — what literally happens, to what?" },
-    t3_emoSimile:      { label: "flat emotional similes", fix: "make the comparison strange-but-true, not generic." },
-    t3_emoHomogeneity: { label: "same mood every stanza", fix: "give one section a turn — a shift in temperature." },
-    t3_inanimateAnimate:{ label: "everything personified", fix: "let one object just be an object; over-personifying reads AI." },
-    t3_argumentMarkers:{ label: "argument markers (but/though/yet)", fix: "keep the turn, but make sure it earns a real reversal." },
-    t3_inlineContradict:{ label: "inline contradiction", fix: "good instinct — make the two halves genuinely collide." },
-    t3_metaObservation:{ label: "self-observation", fix: "ground the realization in a concrete moment." },
-    t3_whenConditionals:{ label: "'when…' conditionals", fix: "tie the 'when' to one specific scene." },
-    t3_specificReferent:{ label: "specific named referents", fix: "great — name a few more real things." },
-    t3_numericReferent:{ label: "specific numbers/dates", fix: "great — numbers give the song a body." },
-    f_concreteRatio:  { label: "concrete imagery", fix: "lean further into things you can see/touch." },
-    f_abstractRatio:  { label: "abstract vocabulary", fix: "replace an abstract emotion word with something you can see or touch." },
-    f_numeralDensity: { label: "numbers present", fix: "specific figures read human — keep them." },
-    f_properNounDensity:{ label: "proper nouns / names", fix: "names anchor a song — keep naming real things." },
-    f_hapaxRatio:     { label: "varied vocabulary", fix: "good — avoid padding it back out." },
-    f_fnWordRatio:    { label: "natural function-word flow", fix: "keep the conversational grammar." },
-    f_collectivePronoun:{ label: "'we' collective voice", fix: "make the 'we' specific to two real people." },
-    f_avgLineLen:     { label: "line length", fix: "vary line lengths to avoid a metronome feel." },
-    f_avgWordLen:     { label: "word length", fix: "mix plain and vivid words." },
-    f_lineLenCV:      { label: "line-length variety", fix: "uneven line lengths read more human." },
-    f_phrasePerLine:  { label: "stock phrases per line", fix: "swap a stock phrase for a private one." },
-    f_rhymePerLine:   { label: "rhymes per line", fix: "leave a line or two unrhymed." },
-    s_contentDensity: { label: "content density (padding)", fix: "compress — say more with fewer filler words." },
-    s_endStoppedRatio:{ label: "end-stopped lines", fix: "let a thought spill across the line-break sometimes." },
-    s_secondPersonDensity:{ label: "'you' address", fix: "make the 'you' a specific person." },
-    s_collectiveWe:   { label: "'we' phrasing", fix: "give the 'we' a concrete shared moment." },
-    s_youAndI:        { label: "'you and I' phrasing", fix: "this pairing is a stock romantic move — make it specific." },
-    s_takeMe:         { label: "'take me…' phrasing", fix: "where, exactly? Name the place." },
-    s_allINeed:       { label: "'all I need…' phrasing", fix: "a stock declaration — what's the specific thing?" },
-    s_holdOnMe:       { label: "'hold on/hold me' phrasing", fix: "show the gesture with a real detail." },
-    s_letItGo:        { label: "'let it/me go' phrasing", fix: "a stock release line — make it yours." },
-    s_thisIs:         { label: "'this is…' declaration", fix: "show it instead of announcing it." },
-    s_neverGonna:     { label: "'never gonna…' phrasing", fix: "a stock vow — ground it in a scene." },
-    s_iFeelWantNeed:  { label: "'I feel/want/need' openers", fix: "show the feeling rather than naming it." },
-    s_iWillVerb:      { label: "'I will/I'll' openers", fix: "vary your line openers." },
-    s_causeOpener:    { label: "''cause/because' openers", fix: "vary how lines begin." },
-    s_ohHeyOpener:    { label: "'oh/hey/baby' openers", fix: "open on an image, not an interjection." },
-    s_exclaimInterjection:{ label: "interjection openers", fix: "trade an 'oh/yeah' for a concrete line." },
-    s_rhetoricalQ:    { label: "rhetorical questions", fix: "answer one with a specific image." },
-    s_tricolon:       { label: "'X, Y, and Z' lists", fix: "replace the list with one telling instance." },
-    s_simileLikeA:    { label: "'like a…' similes", fix: "make the comparison strange-but-true." },
-    s_antithesisNotBut:{ label: "'not X but Y' template", fix: "say it plain, in your own grammar." },
-    s_negNegPos:      { label: "'no X, no Y, but Z' template", fix: "a common AI scaffold — loosen it." },
-    s_repeatedWordInLine:{ label: "repeated word in a line", fix: "vary the repeat or cut it." },
-    s_immediateWordDouble:{ label: "doubled words", fix: "trim the stutter unless it's intentional." },
-    s_youLineOpeners: { label: "lines opening with 'you'", fix: "vary your line openers." },
-    s_everyEnum:      { label: "'every…' enumeration", fix: "replace the list with one telling instance." },
+    // ===== AI-leaning signals (these show up under "Work on") =====
+    f_clicheDensity:   { label: "leans on clichés", fix: "Too many stock phrases everyone uses. Swap one for a detail only you'd write — e.g. 'the 6:15 bus' instead of 'the night'." },
+    lex_cliche:        { label: "stock clichés", fix: "Some lines are common song-clichés. Trade the most generic line for one that's specific to your story." },
+    lex_rhyme:         { label: "rhymes are too predictable", fix: "The rhymes are easy ones. Make one an almost-rhyme (like 'around / down') so it sounds less automatic." },
+    f_perfectRhymeRatio:{ label: "every rhyme is perfect", fix: "All-perfect rhyme sounds machine-made. Let one be an almost-rhyme, e.g. 'gone / home'." },
+    f_endRhymeRate:    { label: "every line rhymes", fix: "When every line rhymes it feels mechanical. Leave one line unrhymed — the gap adds tension." },
+    f_repetition:      { label: "repeats lines word-for-word", fix: "You repeat a line exactly. Change one word the last time, or cut a copy." },
+    f_abstractRatio:   { label: "names feelings instead of showing them", fix: "Words like 'pain' or 'hope' tell the feeling. Show it with something you can see/hear — e.g. a slammed screen door." },
+    f_positivityBias:  { label: "every line is sweet", fix: "The mood never shifts. Let one line complicate it — a doubt, a flaw, a small ugly truth." },
+    f_commonWordRatio: { label: "words are very generic", fix: "Mostly common words. Drop in one concrete thing — a place name, a time, a number (e.g. 'aisle 5')." },
+    s_hookMaxRepeat:   { label: "the hook repeats unchanged", fix: "Your hook repeats word-for-word. Change one word the final time so it lands harder." },
+    s_titleDropRepeat: { label: "the title repeats a lot", fix: "Don't just say the title again — put it in a new situation each time so it earns the repeat." },
+    s_consecDupLines:  { label: "two identical lines in a row", fix: "Back-to-back identical lines feel padded. Cut one, or change a word in the second." },
+    s_maxConsecDup:    { label: "a run of identical lines", fix: "Several copies of the same line in a row. Break the run with one contrasting line." },
+    s_abstractEnding:  { label: "lines end on feeling-words", fix: "Endings are where the ear rests — land one on a real object (a porch step, a name tag) instead of a feeling." },
+    s_vocableLines:    { label: "filler-sound lines (na-na / oh-oh)", fix: "A whole line is filler sounds. Put a real image there instead." },
+    s_vocables:        { label: "filler sounds padding it", fix: "Cut a 'na-na / oh-oh' and use the space for one specific detail." },
+    s_ingEmotionVerb:  { label: "vague '-ing' moods (burning, falling)", fix: "These are generic moods. Say what literally happens, and to what — e.g. 'the brakes lock' not 'falling'." },
+    s_prepInTheNight:  { label: "'in the night / in the dark'", fix: "That's a generic mood-setter. Put it in a specific place — e.g. 'in the parking lot'." },
+    s_temporalAbsolute:{ label: "'forever / never / always'", fix: "These are big and vague. Pin one to a specific moment — e.g. 'until the 9 o'clock news'." },
+    s_myHeart:         { label: "'my heart' phrasing", fix: "Naming the heart tells the feeling. Show it instead — shaking hands, a held breath." },
+    s_iLineOpeners:    { label: "almost every line starts with 'I'", fix: "All-'I' gets samey. Try one verse from another person's view, or open a line on an image." },
+    s_firstPersonIOpener:{ label: "opens on 'I'", fix: "Try opening on an image or another voice instead of 'I'." },
+    s_anaphora:        { label: "many lines start the same way", fix: "Repeated openers feel templated. Vary how lines begin." },
+    s_everyEnum:       { label: "'every…' list", fix: "A list of 'every…' feels generic. Replace it with one telling example." },
+    t3_vagueEmotion:   { label: "vague placeholder feelings", fix: "Words like 'broken / fading / endless' are placeholders. Swap one for something you can actually see." },
+    t3_aiClicheList:   { label: "phrases found in most AI songs", fix: "These exact phrases show up everywhere AI writes. Write your own version of the line." },
+    t3_adjStack:       { label: "'adjective + noun' clichés (shattered dreams)", fix: "Replace the stock pair with a plain, specific noun — e.g. 'the unpaid rent'." },
+    t3_ingVerbAbstract:{ label: "'-ing' verb + vague noun", fix: "Ground it: what literally happens, to what real thing?" },
+    t3_emoSimile:      { label: "flat 'like a…' comparisons", fix: "Make the comparison surprising but true, not a generic one." },
+    t3_emoHomogeneity: { label: "same mood the whole way", fix: "Every section feels the same. Give one part a turn — a shift in tone or stakes." },
+    t3_inanimateAnimate:{ label: "everything is personified", fix: "When the city sighs and the walls cry, it reads AI. Let one thing just be itself." },
+    t3_argumentMarkers:{ label: "uses but / though / yet", fix: "Good instinct to turn — just make sure the 'but' leads to a real reversal." },
+    t3_inlineContradict:{ label: "holds a contradiction", fix: "Good — make the two halves genuinely clash, not just sound opposite." },
+    t3_metaObservation:{ label: "narrator notices themselves", fix: "Good — tie the realization to one concrete moment so it lands." },
+    t3_whenConditionals:{ label: "'when…' set-ups", fix: "Tie the 'when' to one specific scene rather than a general mood." },
+    t3_specificReferent:{ label: "names real things", fix: "Great — naming real people/places reads human. Add a couple more." },
+    t3_numericReferent:{ label: "specific numbers / dates", fix: "Great — numbers give a song a body. Keep them." },
+    f_concreteRatio:  { label: "things you can see/touch", fix: "Great — concrete images read human. Keep leaning that way." },
+    f_numeralDensity: { label: "uses numbers", fix: "Great — specific figures read human. Keep them." },
+    f_properNounDensity:{ label: "uses names", fix: "Great — names anchor a song. Keep naming real things." },
+    f_hapaxRatio:     { label: "varied word choice", fix: "Great — you avoid repeating the same words. Keep it varied." },
+    f_fnWordRatio:    { label: "natural, spoken grammar", fix: "Great — it reads like real speech. Keep the conversational flow." },
+    f_collectivePronoun:{ label: "'we' as a vague group", fix: "Make the 'we' two real people in a real moment, not a generic crowd." },
+    f_avgLineLen:     { label: "line length", fix: "Vary line lengths so it doesn't tick like a metronome." },
+    f_avgWordLen:     { label: "word length", fix: "Mix plain short words with a few sharp, vivid ones." },
+    f_lineLenCV:      { label: "lines are all the same length", fix: "Even line lengths read mechanical. Let some lines run long and some stay short." },
+    f_phrasePerLine:  { label: "stock phrases per line", fix: "Swap a stock phrase for one that's specific to you." },
+    f_rhymePerLine:   { label: "rhymes per line", fix: "If most lines rhyme, leave one or two unrhymed for breathing room." },
+    s_contentDensity: { label: "padded with filler words", fix: "Lots of filler. Say more with fewer words — cut what isn't pulling weight." },
+    s_endStoppedRatio:{ label: "every line stops cleanly", fix: "Let one thought run past the line-break instead of stopping at every end." },
+    s_secondPersonDensity:{ label: "addresses 'you'", fix: "Good — make the 'you' one specific person, not anyone." },
+    s_collectiveWe:   { label: "'we' phrasing", fix: "Give the 'we' a concrete shared moment so it means something." },
+    s_youAndI:        { label: "'you and I' phrasing", fix: "A stock romantic pairing. Make it specific — who, where, when." },
+    s_takeMe:         { label: "'take me…' phrasing", fix: "Take you where, exactly? Name the place." },
+    s_allINeed:       { label: "'all I need…' phrasing", fix: "A stock declaration. What's the one specific thing?" },
+    s_holdOnMe:       { label: "'hold on / hold me' phrasing", fix: "Show the gesture with a real detail instead of saying it." },
+    s_letItGo:        { label: "'let it / me go' phrasing", fix: "A stock release line. Make it yours with a concrete image." },
+    s_thisIs:         { label: "'this is…' announcement", fix: "Show it instead of announcing it." },
+    s_neverGonna:     { label: "'never gonna…' vow", fix: "A stock vow. Ground it in a real scene." },
+    s_iFeelWantNeed:  { label: "'I feel / want / need' openers", fix: "Show the feeling through an action rather than naming it." },
+    s_iWillVerb:      { label: "'I will / I'll' openers", fix: "Vary your line openers so they don't all start the same." },
+    s_causeOpener:    { label: "''cause / because' openers", fix: "Vary how lines begin." },
+    s_ohHeyOpener:    { label: "'oh / hey / baby' openers", fix: "Open on an image, not an interjection." },
+    s_exclaimInterjection:{ label: "interjection openers", fix: "Trade an 'oh / yeah' for a concrete line." },
+    s_rhetoricalQ:    { label: "rhetorical questions", fix: "Good — try answering one with a specific image." },
+    s_tricolon:       { label: "'X, Y, and Z' lists", fix: "Replace the three-item list with one telling example." },
+    s_simileLikeA:    { label: "'like a…' similes", fix: "Make the comparison surprising but true." },
+    s_antithesisNotBut:{ label: "'not X but Y' template", fix: "A common scaffold. Say it plain, in your own grammar." },
+    s_negNegPos:      { label: "'no X, no Y, but Z' template", fix: "A common AI scaffold. Loosen it into your own phrasing." },
+    s_repeatedWordInLine:{ label: "a word repeats in one line", fix: "Vary the repeat or cut it, unless the echo is intentional." },
+    s_immediateWordDouble:{ label: "doubled words (this this)", fix: "Trim the stutter unless you mean it." },
+    s_youLineOpeners: { label: "many lines start with 'you'", fix: "Vary your line openers." },
 
-    // ---- tier-4 craft-perspective signals (rapper/poet/wit/psych/phil/story) ----
-    // human-leaning (show up in "keep this"):
-    t4_rap_internalRhyme:{ label: "internal rhyme", fix: "keep threading rhymes inside the line (e.g. “the bent nail / pay the bail”), not only at line-ends." },
-    t4_rap_assonance:    { label: "vowel music (assonance)", fix: "keep the repeated vowel sounds — they make the line sing." },
-    t4_rap_rhymeDensity: { label: "dense rhyming", fix: "keep packing the rhymes; sparse end-rhyme reads more machine-made." },
-    t4_rap_multisyll:    { label: "multisyllabic rhyme", fix: "keep the two-word/compound rhymes — they're a human flex." },
-    t4_poet_alliteration:{ label: "alliteration", fix: "nice sound-play (“cold coffee”, “feed store”) — keep it." },
-    t4_wit_wordLength:   { label: "rich vocabulary", fix: "keep reaching for the precise, less-common word." },
-    t4_wit_allusion:     { label: "real-world references", fix: "keep naming real people/places/brands — it's a strong human tell." },
-    t4_wit_domainFusion: { label: "ideas across domains", fix: "keep colliding worlds (Queen's “two hundred degrees… Mr Fahrenheit”)." },
-    t4_psy_directAddress:{ label: "talks to the listener", fix: "keep speaking to a real someone — it pulls the listener in." },
-    t4_psy_interiority:  { label: "a real interior life", fix: "keep showing what the narrator thinks/realizes, not just feels." },
-    t4_psy_emoGranularity:{ label: "specific feelings", fix: "keep naming exact emotions (ashamed, relieved) over “broken/lost”." },
-    t4_phil_rhetoricalQ: { label: "questions to the listener", fix: "keep asking — questions invite the listener to answer." },
-    t4_phil_causal:      { label: "cause-and-effect reasoning", fix: "keep the because/so logic — it builds one thought." },
-    t4_phil_bareUniversal:{ label: "bold sweeping claims", fix: "keep the big claim — anchor one in a single real instance." },
-    t4_story_namedEntities:{ label: "named people/places", fix: "keep naming real things — names give the song a body." },
-    // AI-leaning (show up in "work on"):
-    t4_poet_senseDiversity:{ label: "over-stuffed sensory imagery", fix: "you're piling on senses — cut to the one image that earns its place." },
-    t4_poet_concreteRatio:{ label: "wall-to-wall imagery", fix: "let one plain, direct line breathe between the images." },
-    t4_poet_imageDensity:{ label: "image overload", fix: "fewer, truer images beat many pretty ones." },
-    t4_poet_stockImagery:{ label: "stock images (shadows/embers/neon)", fix: "swap a stock image for one only this song would use." },
-    t4_story_setting:    { label: "generic settings (street/room/night)", fix: "name the specific place (a Texaco on Route 9), not a generic one." },
-    t4_story_objects:    { label: "generic objects", fix: "make the object specific — whose, which one, what brand." },
-    t4_rap_schemeEntropy:{ label: "scattered rhyme scheme", fix: "let a rhyme sound recur so the ear has something to latch onto." }
+    // ===== tier-4 craft-lens signals =====
+    // Human-leaning (show up under "Keep this") — short affirmations, no AI-word examples:
+    t4_rap_internalRhyme:{ label: "rhymes inside the line", fix: "Great — you rhyme mid-line, not just at line-ends (like 'the bent nail / pay the bail'). Keep it." },
+    t4_rap_assonance:    { label: "repeated vowel sounds", fix: "Great — the matching vowel sounds make the lines sing. Keep it." },
+    t4_rap_rhymeDensity: { label: "packs in the rhymes", fix: "Great — dense rhyming reads human (sparse end-rhyme feels machine-made). Keep it." },
+    t4_rap_multisyll:    { label: "multi-syllable rhymes", fix: "Great — two-word / compound rhymes are a real human flex. Keep it." },
+    t4_poet_alliteration:{ label: "sound-play (repeated first letters)", fix: "Great — repeated opening sounds (like 'screen door swings') add music. Keep it." },
+    t4_wit_wordLength:   { label: "reaches for precise words", fix: "Great — you pick exact, less-common words. Keep it." },
+    t4_wit_allusion:     { label: "names real people / places / brands", fix: "Great — real-world references read strongly human. Keep it." },
+    t4_wit_domainFusion: { label: "mixes worlds in one image", fix: "Great — describing one thing in another's terms (a feeling in money- or weather-words) is clever. Keep it." },
+    t4_psy_directAddress:{ label: "talks to a real listener", fix: "Great — speaking to someone specific pulls the listener in. Keep it." },
+    t4_psy_interiority:  { label: "shows a thinking mind", fix: "Great — you show what the narrator thinks and realizes, not just feels. Keep it." },
+    t4_psy_emoGranularity:{ label: "names exact feelings", fix: "Great — specific emotions (ashamed, relieved) beat placeholders like 'broken / lost'. Keep it." },
+    t4_phil_rhetoricalQ: { label: "asks the listener", fix: "Great — questions invite the listener in. Keep it." },
+    t4_phil_causal:      { label: "cause-and-effect logic", fix: "Great — your because/so logic builds one clear thought. Keep it." },
+    t4_phil_bareUniversal:{ label: "a bold, sweeping line", fix: "Nice big claim — keep it, and anchor it in one real moment." },
+    t4_story_namedEntities:{ label: "named people / places", fix: "Great — names give the song a body and place. Keep it." },
+    // AI-leaning (show up under "Work on"):
+    t4_poet_senseDiversity:{ label: "too many senses at once", fix: "You pile on sights, sounds, textures. Cut to the one image that matters most." },
+    t4_poet_concreteRatio:{ label: "wall-to-wall imagery", fix: "Every line is a picture. Let one plain, direct line breathe between them." },
+    t4_poet_imageDensity:{ label: "image overload", fix: "Fewer, truer images beat many pretty ones — trim one." },
+    t4_poet_stockImagery:{ label: "stock images (shadows / embers / neon)", fix: "These show up in most AI songs. Swap one for an image only this song would use." },
+    t4_story_setting:    { label: "generic setting (a street, a room)", fix: "Name the real place instead — e.g. 'a Texaco off Route 9'." },
+    t4_story_objects:    { label: "generic objects", fix: "Make it specific — whose, which one (e.g. 'your mom's blue Corolla')." },
+    t4_rap_schemeEntropy:{ label: "rhyme sounds rarely repeat", fix: "The ear can't latch on. Let a rhyme sound come back instead of a new one each line." },
+    // prominent AI-leaning features that previously hit the generic fallback:
+    s_dupLinesTotal:    { label: "lots of repeated lines", fix: "Many lines repeat across the song. Cut some copies, or change a word so each return earns its place." },
+    t4_phil_sequentialFlow:{ label: "lines don't lead into each other", fix: "The lines feel like a list. Link two with a 'but / so / because' so the verse builds one thought." },
+    t4_phil_connectives:{ label: "few connecting words", fix: "Add a 'but / so / because' so ideas connect instead of stacking." },
+    t4_story_action:    { label: "little actually happens", fix: "It's mostly states of being. Let something happen — an action, a moment that turns." },
+    t4_story_temporalSeq:{ label: "no sense of time passing", fix: "Add a 'then / later / that night' so the song moves through time, not just mood." },
+    t4_story_dialogue:  { label: "no one speaks", fix: "Add a line of what someone actually said — quoted speech reads human." },
+    t4_poet_volta:      { label: "no turn", fix: "The song stays on one note. Give it a turn — a moment the narrator sees it differently." },
+    t4_poet_figurative: { label: "few fresh comparisons", fix: "Try one surprising-but-true comparison instead of stating the feeling." },
+    t4_poet_ungrounded: { label: "abstract lines with no anchor", fix: "Some lines float free of anything real. Pin one to a concrete thing you could photograph." },
+    t4_psy_ambivalence: { label: "feelings are one-note", fix: "Real people feel two things at once. Let one line hold a mixed feeling." },
+    t4_wit_blendRate:   { label: "stays in one idea per line", fix: "Try a line that collides two worlds — describe a feeling in money-, weather-, or science-words." },
+    t4_wit_domainPeak:  { label: "ideas stay in one lane", fix: "Mix in a surprising frame — e.g. describe heartbreak like a weather report." }
   };
+  // Intended polarity: which features are genuine HUMAN strengths (only these may appear under
+  // "Keep this"; everything else is an AI-tell and may only appear under "Work on"). This keeps the
+  // two lists coherent even when the model's learned weight-sign for a feature disagrees with craft
+  // intuition (otherwise an AI-tell like "vague -ing moods" could show up as a "keep this").
+  var HUMAN_DIR = {};
+  ("t4_rap_internalRhyme t4_rap_assonance t4_rap_rhymeDensity t4_rap_multisyll t4_poet_alliteration "
+   + "t4_wit_wordLength t4_wit_allusion t4_wit_domainFusion t4_psy_directAddress t4_psy_interiority "
+   + "t4_psy_emoGranularity t4_phil_rhetoricalQ t4_phil_causal t4_phil_bareUniversal t4_story_namedEntities "
+   + "t3_specificReferent t3_numericReferent t3_argumentMarkers t3_inlineContradict t3_metaObservation "
+   + "f_concreteRatio f_numeralDensity f_properNounDensity f_hapaxRatio f_fnWordRatio s_secondPersonDensity"
+  ).split(/\s+/).forEach(function (n) { HUMAN_DIR[n] = 1; });
+
   function infoFor(name) {
     if (FEATURE_INFO[name]) return FEATURE_INFO[name];
-    var label = name.replace(/^f_|^s_|^t3_|^lex_/, "").replace(/([A-Z])/g, " $1").toLowerCase();
-    return { label: label, fix: "consider easing this — the model reads it as AI-leaning." };
+    var label = name.replace(/^(f_|s_|t3_|t4_(rap|poet|wit|psy|phil|story)_|lex_)/, "")
+                    .replace(/([A-Z])/g, " $1").toLowerCase().trim();
+    return { label: label, fix: "The model reads this pattern as AI-leaning — ease off it a touch." };
   }
 
   // quote the offending line/word for a given dense feature
@@ -308,6 +336,7 @@
     for (var i = 0; i < c.length && out.length < 5; i++) {
       var d = c[i];
       if (d.kind !== "dense") continue;
+      if (HUMAN_DIR[d.name]) continue;   // a human-strength feature never belongs under "Work on"
       if (d.weight <= 0) continue;       // AI-leaning weight
       if (d.contrib <= 0) continue;      // actually present / pushing toward AI
       var info = infoFor(d.name);
@@ -331,7 +360,7 @@
     for (var i = 0; i < c.length; i++) {
       var d = c[i];
       if (d.kind !== "dense") continue;
-      if (d.weight >= 0) continue;
+      if (!HUMAN_DIR[d.name]) continue;  // only genuine human strengths may show as "Keep this"
       if (d.contrib >= 0) continue;      // contributing toward human
       if (d.value === 0) continue;       // not actually present in this song
       arr.push(d);
@@ -381,7 +410,7 @@
       var wt = idx >= 0 ? model.wBow[idx] : 0;
       // z proxy: tf of the word weighted by model BoW weight; score by |weight| only
       moves.push({ move: 1, score: Math.abs(wt) * 1.0, text:
-        "Swap “" + w + "” for something only your narrator would notice right then — a brand, a smell, one small specific thing." });
+        "“" + w + "” is a word AI leans on. Swap it for one small, specific thing only your narrator would notice right then — an object, a place, a name (e.g. “the laundromat on 5th”)." });
     })();
 
     // Move 2 — concretize the vaguest line (low properNoun + low contentDensity)
@@ -393,7 +422,7 @@
       var line = abstractLine(text); if (!line) return;
       var w = Math.abs(denseWeight(model, "f_abstractRatio")) || 0.5;
       moves.push({ move: 2, score: sig * w, text:
-        "“" + clip(line) + "” tells the feeling — show it: one thing we could see or touch (a jacket on the hook, the cold coffee)." });
+        "“" + clip(line) + "” tells the feeling — show it instead with one thing we could see or touch (e.g. “a name tag still on”, “the screen door left open”)." });
     })();
 
     // Move 3 — break a too-perfect rhyme
@@ -445,7 +474,7 @@
       if (pn > 0.001 || nd > 0.001) return;
       var w = Math.abs(denseWeight(model, "f_properNounDensity")) || Math.abs(denseWeight(model, "t3_specificReferent")) || 0.5;
       moves.push({ move: 7, score: 1.2 * w, text:
-        "Nothing here is named — drop in one anchor (a street, a year, a time of day) and the whole song gets a body." });
+        "Nothing here is named — drop in one real anchor (a street name, a year, a time like “6:15”) and the whole song gets a body." });
     })();
 
     // Move 8 — land an ending on a thing (high abstractEnding)
