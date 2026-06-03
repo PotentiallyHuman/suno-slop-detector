@@ -10,6 +10,27 @@
     return "#5fd068";
   }
 
+  // The model is English-only (its BoW + cliché lexicon are English keywords), so a
+  // non-English score would be noise. Cheap on-device check: share of common English
+  // function words. (real English ~30-40%+; Danish/Spanish ~0-6%, so the margin is safe)
+  const EN_COMMON = /^(the|and|you|to|a|of|in|it|that|is|my|me|we|for|on|with|but|love|night|i|are|was|be|he|she|they|this|have|not|your|all|like|when|what|so|do|can|just|know|now|time|up|out|no|yes|oh|don't|i'm|we're|you're|it's)$/;
+  function looksNonEnglish(text) {
+    const toks = String(text).toLowerCase().match(/[a-z']+/g) || [];
+    if (toks.length < 12) return false;            // too short to judge
+    let hits = 0;
+    for (let i = 0; i < toks.length; i++) if (EN_COMMON.test(toks[i])) hits++;
+    return (hits / toks.length) < 0.08;            // <8% common English words -> not English
+  }
+
+  // Show the non-English notice (no number) + the translate joker, mirroring the on-page panel.
+  const NONEN_JOKER = "Translate these lyrics to English for a coherent result, then run it again.";
+  function showNonEnglish(scoreEl, labelEl, craftHost) {
+    scoreEl.textContent = "–";
+    scoreEl.style.color = "#888";
+    labelEl.textContent = "Looks non-English · model reads English only";
+    renderCraft(craftHost, { joker: { text: NONEN_JOKER } });
+  }
+
   // build a compact craft panel into `host` from a panel object {good,joker,bad}
   function renderCraft(host, p) {
     while (host.firstChild) host.removeChild(host.firstChild);
@@ -78,9 +99,6 @@
       const r = resp.result;
       pageMsg.hidden = true;
       pageResult.hidden = false;
-      pageScore.textContent = r.score + "% AI";
-      pageScore.style.color = colorFor(r.score);
-      pageLabel.textContent = r.label;
       // compact craft panel for the current page
       let host = document.getElementById("page-craft");
       if (!host) {
@@ -89,6 +107,20 @@
         host.className = "craft";
         pageResult.appendChild(host);
       }
+      if (r.nonEnglish) {
+        showNonEnglish(pageScore, pageLabel, host);
+        return;
+      }
+      if (r.instrumental) {
+        pageScore.textContent = "–";
+        pageScore.style.color = "#888";
+        pageLabel.textContent = "Instrumental — no lyrics to score";
+        renderCraft(host, null);
+        return;
+      }
+      pageScore.textContent = r.score + "% AI";
+      pageScore.style.color = colorFor(r.score);
+      pageLabel.textContent = r.label;
       renderCraft(host, r.panel);
     });
   });
@@ -104,9 +136,22 @@
     const text = pasteEl.value || "";
     if (text.trim().length < 8) return;
     const sc = SlopV2.score(text);
+    pasteResult.hidden = false;
+    // Instrumental path unchanged in spirit: nothing to score.
+    if (sc && sc.instrumental) {
+      pasteScore.textContent = "–";
+      pasteScore.style.color = "#888";
+      pasteLabel.textContent = "No lyrics to score";
+      renderCraft(pasteCraft, null);
+      return;
+    }
+    // Non-English guard (separate check AFTER scoring): show notice + joker, no number.
+    if (looksNonEnglish(text)) {
+      showNonEnglish(pasteScore, pasteLabel, pasteCraft);
+      return;
+    }
     let panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) {}
-    pasteResult.hidden = false;
     pasteScore.textContent = sc.score + "% AI";
     pasteScore.style.color = colorFor(sc.score);
     pasteLabel.textContent = SlopScore.verdict(sc.score) + " · model confidence";
