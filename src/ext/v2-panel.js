@@ -76,13 +76,24 @@
     for (var i = 0; i < PHRASES.length; i++) if (lo.indexOf(PHRASES[i]) >= 0) return PHRASES[i];
     return "";
   }
-  // most-used overused/AI content word that is also a top +weight BoW word in the model
+  // function/closed-class words we must NEVER suggest swapping (the "change 'the' to…" bug)
+  var STOP = {};
+  ("a an the and or but if then so as of to in on at by for with from into about over under up down out off "
+   + "i you he she it we they me him her us them my your his its our their this that these those is am are was "
+   + "were be been being do does did have has had will would can could should may might must shall not no nt "
+   + "oh yeah la na ooh ah mm hmm da ba uh huh yo hey just only very really too also still even when what who "
+   + "how why where here there now back down all some any more most much many one two").split(/\s+/)
+   .forEach(function (w) { STOP[w] = 1; });
+  function isContentWord(w) { return w && w.length >= 3 && !STOP[w] && !/^(i'm|i'll|i've|i'd|you're|don't|can't|won't|it's|that's|we're|they're)$/.test(w); }
+
+  // most-used overused/AI CONTENT word that is also a top +weight BoW word in the model
   function topAiWordPresent(text, model) {
     var idx = {}; for (var i = 0; i < model.vocab.length; i++) idx[model.vocab[i]] = i;
     var toks = lc(SlopScore.stripSectionLabels(text)).match(/[a-z']+/g) || [];
     var seen = {}, best = "", bestW = 0;
     for (var t = 0; t < toks.length; t++) {
       var w = toks[t]; if (seen[w]) continue; seen[w] = 1;
+      if (!isContentWord(w)) continue;            // never target function words
       var bi = idx[w]; if (bi === undefined) continue;
       var wt = model.wBow[bi];
       if (wt > bestW) { bestW = wt; best = w; }
@@ -188,7 +199,33 @@
     s_repeatedWordInLine:{ label: "repeated word in a line", fix: "vary the repeat or cut it." },
     s_immediateWordDouble:{ label: "doubled words", fix: "trim the stutter unless it's intentional." },
     s_youLineOpeners: { label: "lines opening with 'you'", fix: "vary your line openers." },
-    s_everyEnum:      { label: "'every…' enumeration", fix: "replace the list with one telling instance." }
+    s_everyEnum:      { label: "'every…' enumeration", fix: "replace the list with one telling instance." },
+
+    // ---- tier-4 craft-perspective signals (rapper/poet/wit/psych/phil/story) ----
+    // human-leaning (show up in "keep this"):
+    t4_rap_internalRhyme:{ label: "internal rhyme", fix: "keep threading rhymes inside the line (e.g. “the bent nail / pay the bail”), not only at line-ends." },
+    t4_rap_assonance:    { label: "vowel music (assonance)", fix: "keep the repeated vowel sounds — they make the line sing." },
+    t4_rap_rhymeDensity: { label: "dense rhyming", fix: "keep packing the rhymes; sparse end-rhyme reads more machine-made." },
+    t4_rap_multisyll:    { label: "multisyllabic rhyme", fix: "keep the two-word/compound rhymes — they're a human flex." },
+    t4_poet_alliteration:{ label: "alliteration", fix: "nice sound-play (“cold coffee”, “feed store”) — keep it." },
+    t4_wit_wordLength:   { label: "rich vocabulary", fix: "keep reaching for the precise, less-common word." },
+    t4_wit_allusion:     { label: "real-world references", fix: "keep naming real people/places/brands — it's a strong human tell." },
+    t4_wit_domainFusion: { label: "ideas across domains", fix: "keep colliding worlds (Queen's “two hundred degrees… Mr Fahrenheit”)." },
+    t4_psy_directAddress:{ label: "talks to the listener", fix: "keep speaking to a real someone — it pulls the listener in." },
+    t4_psy_interiority:  { label: "a real interior life", fix: "keep showing what the narrator thinks/realizes, not just feels." },
+    t4_psy_emoGranularity:{ label: "specific feelings", fix: "keep naming exact emotions (ashamed, relieved) over “broken/lost”." },
+    t4_phil_rhetoricalQ: { label: "questions to the listener", fix: "keep asking — questions invite the listener to answer." },
+    t4_phil_causal:      { label: "cause-and-effect reasoning", fix: "keep the because/so logic — it builds one thought." },
+    t4_phil_bareUniversal:{ label: "bold sweeping claims", fix: "keep the big claim — anchor one in a single real instance." },
+    t4_story_namedEntities:{ label: "named people/places", fix: "keep naming real things — names give the song a body." },
+    // AI-leaning (show up in "work on"):
+    t4_poet_senseDiversity:{ label: "over-stuffed sensory imagery", fix: "you're piling on senses — cut to the one image that earns its place." },
+    t4_poet_concreteRatio:{ label: "wall-to-wall imagery", fix: "let one plain, direct line breathe between the images." },
+    t4_poet_imageDensity:{ label: "image overload", fix: "fewer, truer images beat many pretty ones." },
+    t4_poet_stockImagery:{ label: "stock images (shadows/embers/neon)", fix: "swap a stock image for one only this song would use." },
+    t4_story_setting:    { label: "generic settings (street/room/night)", fix: "name the specific place (a Texaco on Route 9), not a generic one." },
+    t4_story_objects:    { label: "generic objects", fix: "make the object specific — whose, which one, what brand." },
+    t4_rap_schemeEntropy:{ label: "scattered rhyme scheme", fix: "let a rhyme sound recur so the ear has something to latch onto." }
   };
   function infoFor(name) {
     if (FEATURE_INFO[name]) return FEATURE_INFO[name];
@@ -223,6 +260,14 @@
       case "s_myHeart": { var mh = lineContaining(text, ["my heart"]); return mh ? '"' + clip(mh) + '"' : ""; }
       case "s_iLineOpeners":
       case "s_firstPersonIOpener": { var io = lineMatching(text, /^i\b/i); return io ? '"' + clip(io) + '"' : ""; }
+      // tier-4 AI-leaning
+      case "t4_poet_stockImagery": { var sp = firstClichePhrase(text); var sl = sp ? "" : lineContaining(text, ["shadow","ember","neon","crimson","velvet","silhouette","stardust"]); return sp ? '"' + sp + '"' : (sl ? '"' + clip(sl) + '"' : ""); }
+      case "t4_poet_senseDiversity":
+      case "t4_poet_concreteRatio":
+      case "t4_poet_imageDensity": { var pl = lineContaining(text, ["shadow","light","fire","rain","sky","glow","cold","whisper","gold"]); return pl ? '"' + clip(pl) + '"' : ""; }
+      case "t4_story_setting": { var st = lineMatching(text, /\b(street|streets|room|night|sky|road|city|rain|shadows?)\b/i); return st ? '"' + clip(st) + '"' : ""; }
+      case "t4_story_objects": { var ob = lineMatching(text, /\b(bottle|glass|cigarette|fire|flame|chains?|wings?)\b/i); return ob ? '"' + clip(ob) + '"' : ""; }
+      case "t4_rap_schemeEntropy": { var rp2 = firstRhymePair(text); return rp2 ? '"' + rp2.a + " / " + rp2.b + '"' : ""; }
       default: return "";
     }
   }
@@ -240,6 +285,18 @@
       case "f_hapaxRatio":
       case "s_contentDensity": return "varied, non-padded vocabulary";
       case "f_properNounDensity": { var pn2 = lineMatching(text, /\b[A-Z][a-z]{2,14}\b/); return pn2 ? '"' + clip(pn2) + '"' : ""; }
+      // tier-4 human-leaning
+      case "t4_story_namedEntities":
+      case "t4_wit_allusion": { var ne = lineMatching(text, /(^|\s)[A-Z][a-z]{2,14}\b/); return ne ? '"' + clip(ne) + '"' : ""; }
+      case "t4_psy_directAddress": { var da = lineMatching(text, /\byou\b/i) || lineMatching(text, /\?/); return da ? '"' + clip(da) + '"' : ""; }
+      case "t4_phil_rhetoricalQ": { var rq = lineMatching(text, /\?/); return rq ? '"' + clip(rq) + '"' : ""; }
+      case "t4_phil_causal": { var ca = lineMatching(text, /\b(because|so|'?cause|that'?s why)\b/i); return ca ? '"' + clip(ca) + '"' : ""; }
+      case "t4_psy_emoGranularity": { var eg = lineMatching(text, /\b(ashamed|jealous|relieved|embarrassed|proud|lonely|grateful|guilty|nostalgic|bitter)\b/i); return eg ? '"' + clip(eg) + '"' : ""; }
+      case "t4_wit_wordLength": return "precise, less-common word choices";
+      case "t4_rap_internalRhyme":
+      case "t4_rap_assonance":
+      case "t4_rap_multisyll":
+      case "t4_poet_alliteration": return "sound-play in the lines";
       default: return "";
     }
   }
@@ -431,6 +488,24 @@
       var w = Math.abs(denseWeight(model, "s_negNegPos")) || Math.abs(denseWeight(model, "s_antithesisNotBut")) || 0.3;
       moves.push({ move: 11, score: (0.8 + v) * w, text:
         "The “" + clip(tp, 40) + "” construction is a common AI scaffold — say it plain, in your own grammar." });
+    })();
+
+    // Move 13 — perspective-lens move: the weakest craft lens supplies a dynamic, example-rich tip.
+    (function () {
+      if (!G.SlopPerspectives) return;
+      var pr; try { pr = G.SlopPerspectives.analyze(text); } catch (e) { return; }
+      var bestName = "", bestScore = 0;
+      for (var n in pr.perspectives) {
+        var s = pr.perspectives[n] && pr.perspectives[n].score;
+        if (typeof s === "number" && s > bestScore) { bestScore = s; bestName = n; }
+      }
+      if (!bestName || bestScore <= 0.52) return;     // only when a lens flags something
+      var rep = pr.perspectives[bestName].report || "";
+      var parts = rep.split(/\.\s+/);                  // last sentence = the actionable tip
+      var tip = (parts[parts.length - 1] || "").replace(/\.$/, "").trim();
+      if (tip.length < 8) return;
+      tip = tip.charAt(0).toUpperCase() + tip.slice(1);
+      moves.push({ move: 13, score: (bestScore - 0.5) * 1.4, text: tip + "." });
     })();
 
     moves.sort(function (a, b) { return b.score - a.score; });

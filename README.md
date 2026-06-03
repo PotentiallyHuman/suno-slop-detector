@@ -13,6 +13,20 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
+## What's new in v0.3.0
+
+v0.3 makes the model **read like a panel of craft experts** and fixes a corpus blind-spot that was letting real AI songs slip through.
+
+- **Six craft-perspective "lenses," ~55 new text-only signals.** On top of the v0.2 features, the model now sees what a **🎤 freestyle rapper**, **✍️ poet**, **🧠 psychologist**, **🧩 philosopher**, **📖 storyteller**, and **💡 wit** would each notice — all computed deterministically from the text (no LLM, no network). Signals that actually separate human from AI in calibration: rhyme **density / internal rhyme / assonance** (humans rhyme richer), **direct address** to a listener, **named people/places** ("Texaco on Route 9"), **rich/rare vocabulary** and real-world **allusion** — versus AI's **over-stuffed sensory imagery**, **generic settings/objects**, and **stock images**. The single strongest signal is *assonance* (a human tell); the strongest AI tells are duplicate lines, cliché density, and generic objects.
+- **Eye-rhyme archive.** A 241-word table of sight-rhymes (*love/move, good/blood, though/through*) so the rhyme engine stops counting words that only rhyme on paper — and flags them as a (text-AI) tell.
+- **Rebalanced corpus = it now actually catches Suno.** Retrained on the **five real consumer-AI sources** (Suno-dominant + ChatGPT/Grok/Gemini) instead of letting locally-generated filler skew the AI class. Result on a real Suno song: **v0.2 scored it 17% AI (missed it); v0.3 scores it 98%** — while keeping human classics low (Bohemian Rhapsody **0%**, Baby **1%**) and *reducing* a Dylan false-positive (87%→53%). 5-fold CV: bag-of-words 89.7%, dense-features 84.2%, combined 82.8%.
+- **On-device non-English guard.** Lyrics in another language (the model is English-only) get an honest "Looks non-English" note + a translate suggestion instead of a meaningless score — detected by a function-word ratio, no network.
+- **Smarter panel.** The 5 ✅ / 1 🃏 / 5 ⚠️ notes now draw on the perspective lenses (with examples), the joker can surface a lens's dynamic tip ("collide two worlds — a feeling in money/weather/science terms"), and a bug where it suggested swapping the word *"the"* is fixed (function words are never targeted).
+
+Still 100% on-device, text-only, no network. Full design + per-lens calibration: [`analysis/perspectives/DESIGN_AND_CALIBRATION.md`](analysis/perspectives/DESIGN_AND_CALIBRATION.md).
+
+---
+
 ## What's new in v0.2.0
 
 v0.1 was a hand-tuned cliché lexicon squashed through a curve. **v0.2 replaces the guesswork with a real trained model** and adds a craft coach:

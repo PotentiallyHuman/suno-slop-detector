@@ -20,6 +20,8 @@ const feats = require(path.join(ROOT, 'src/features.js'));
 const pat   = require(path.join(ROOT, 'analysis/patterns.js'));
 const t3    = require(path.join(ROOT, 'analysis/tier3_detectors.js'));
 const emb   = require(path.join(ROOT, 'analysis/embeddings.js'));
+require(path.join(ROOT, 'src/common_words.js'));                    // SlopCommon global for wit lens
+const persp = require(path.join(ROOT, 'analysis/perspectives.js')); // tier-4 craft-perspective lenses (t4_*)
 
 const STOP = new Set("a an the and or but if then so as of to in on at by for with from into about over under up down out off i you he she it we they me him her us them my your his its our their this that these those is am are was were be been being do does did have has had will would can could should may might must shall not no n't oh yeah la na ooh".split(/\s+/));
 // Section-marker words — exclude from BoW + content frequencies. Even if used
@@ -39,10 +41,20 @@ const NONEN_STOP = new Set('el la los las un una que en por con para pero se mi 
 const contentTokens = t => (slop.stripSectionLabels(String(t)).toLowerCase().match(/[a-z']+/g) || []).filter(w => !STOP.has(w) && !SECTION_BLACKLIST.has(w) && !NONEN_STOP.has(w) && w.length > 2);
 const bowToks       = t => (slop.stripSectionLabels(String(t)).toLowerCase().match(/[a-z']+/g) || []).filter(w => !SECTION_BLACKLIST.has(w) && !NONEN_STOP.has(w) && (w.length > 1 || w === 'i'));
 
+// Persistent local cache so a re-run RESUMES instead of re-fetching (the live fetch gets
+// randomly SIGKILLed in this env). Local dev cache only — the shipped model stays numbers-only.
+const LYR_CACHE_FILE = process.env.LYR_CACHE || '/tmp/human_lyrics_cache.json';
+let LYR_CACHE = {}; try { LYR_CACHE = JSON.parse(fs.readFileSync(LYR_CACHE_FILE, 'utf8')); } catch (_) {}
+let _lyrDirty = 0;
+function saveLyrCache() { try { fs.writeFileSync(LYR_CACHE_FILE, JSON.stringify(LYR_CACHE)); } catch (_) {} }
 async function fetchLyrics(artist, title) {
-  try { const r = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`); if (r.ok) { const j = await r.json(); if (j.plainLyrics && j.plainLyrics.length > 60) return j.plainLyrics; } } catch (_) {}
-  try { const r = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);            if (r.ok) { const j = await r.json(); if (j.lyrics      && j.lyrics.length      > 60) return j.lyrics;      } } catch (_) {}
-  return '';
+  const key = artist + '' + title;
+  if (Object.prototype.hasOwnProperty.call(LYR_CACHE, key)) return LYR_CACHE[key];   // cached (incl. '' misses)
+  let out = '';
+  try { const r = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`); if (r.ok) { const j = await r.json(); if (j.plainLyrics && j.plainLyrics.length > 60) out = j.plainLyrics; } } catch (_) {}
+  if (!out) try { const r = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`); if (r.ok) { const j = await r.json(); if (j.lyrics && j.lyrics.length > 60) out = j.lyrics; } } catch (_) {}
+  LYR_CACHE[key] = out; if (++_lyrDirty % 40 === 0) saveLyrCache();              // persist incrementally
+  return out;
 }
 async function pool(items, n, fn) {
   let i = 0;
@@ -71,6 +83,8 @@ function denseDict(s) {
   for (const k in tf) d[k] = tf[k];
   // tier-3 embedding coherence (pre-computed on song object)
   if (s.t3emb) for (const k in s.t3emb) d[k] = s.t3emb[k];
+  // tier-4 craft-perspective lenses (rapper/poet/wit/psych/phil/story) — text-only. NO_T4=1 to A/B.
+  if (!process.env.NO_T4) { try { const pf = persp.features(text); for (const k in pf) d[k] = pf[k]; } catch (_) {} }
   return d;
 }
 
@@ -100,29 +114,34 @@ function denseDict(s) {
   const beforeN = aiRaw.length;
   aiRaw = aiRaw.filter(s => (s.text.match(NONEN) || []).length < 4);
   const afterEn = aiRaw.length;
-  const CLAUDE_CAP = 1000;
+  const CLAUDE_CAP = (process.env.CLAUDE_CAP != null) ? +process.env.CLAUDE_CAP : 1000;
   const claudeSongs = aiRaw.filter(s => /claude/i.test(s.model));
   const otherSongs = aiRaw.filter(s => !/claude/i.test(s.model));
   for (let i = claudeSongs.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[claudeSongs[i], claudeSongs[j]] = [claudeSongs[j], claudeSongs[i]]; }
   aiRaw = otherSongs.concat(claudeSongs.slice(0, CLAUDE_CAP));
   for (let i = aiRaw.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[aiRaw[i], aiRaw[j]] = [aiRaw[j], aiRaw[i]]; }
+  if (process.env.MAX_AI) aiRaw = aiRaw.slice(0, +process.env.MAX_AI);   // subsample for a fast run that finishes before the fetch-killer
   console.log(`  AI balance: ${beforeN} -> drop ${beforeN - afterEn} non-English -> cap Claude ${claudeSongs.length}->${Math.min(claudeSongs.length, CLAUDE_CAP)} -> ${aiRaw.length}`);
 
   // [2] Humans (live fetch)
   console.log('\n[2] fetching humans live...');
   const hp = JSON.parse(fs.readFileSync(path.join(ROOT, 'corpus/human_profiles.json')));
   let list = hp.profiles.filter(p => p.artist && p.title);
-  for (let i = list.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[list[i], list[j]] = [list[j], list[i]]; }
+  // SEEDED shuffle (deterministic) so re-runs target the SAME humans → the fetch cache converges.
+  let _seed = 1234567;
+  const _rnd = () => { _seed = (_seed * 1103515245 + 12345) & 0x7fffffff; return _seed / 0x7fffffff; };
+  for (let i = list.length - 1; i > 0; i--) { const j = (_rnd() * (i + 1)) | 0;[list[i], list[j]] = [list[j], list[i]]; }
   list = list.slice(0, Math.round(aiRaw.length * 1.12));   // down-sample humans ~1:1 with AI (+12% for fetch fails)
   console.log(`  target: ${list.length} human songs (balanced to AI)`);
   const humanRaw = []; let done = 0, fail = 0;
-  await pool(list, 10, async (s) => {
+  await pool(list, +(process.env.FETCH_POOL || 24), async (s) => {
     const tx = await fetchLyrics(s.artist, s.title);
     done++;
     if (tx && tx.length > 60) humanRaw.push({ artist: s.artist, title: s.title, year: s.year, genre: s.genre, text: tx });
     else fail++;
     if (done % 200 === 0) console.log(`  fetched ${done}/${list.length} (${fail} failed)`);
   });
+  saveLyrCache();   // flush full fetch cache so the next run reuses everything (resume-safe)
   console.log(`  human songs fetched: ${humanRaw.length}  (${fail} failed)`);
 
   // [2.5] Embedding-based coherence features. SKIPPED when NO_EMBED=1, because emb_ needs
@@ -300,12 +319,17 @@ function denseDict(s) {
   for (let j = 0; j < DN; j++) denseMean[j] /= X.length;
   for (const s of X) for (let j = 0; j < DN; j++) denseStd[j] += (s.dn[j] - denseMean[j]) ** 2;
   for (let j = 0; j < DN; j++) denseStd[j] = Math.sqrt(denseStd[j] / X.length) || 1;
-  for (const s of X) for (let j = 0; j < DN; j++) s.dn[j] = (s.dn[j] - denseMean[j]) / denseStd[j];
+  // CLIP standardized features to ±3σ so a near-zero-variance feature (e.g. t4_story_objects)
+  // can't explode into a +95 contribution on an out-of-distribution song (Queen "Radio Ga Ga").
+  const DCLIP = 3;
+  for (const s of X) for (let j = 0; j < DN; j++) { let z = (s.dn[j] - denseMean[j]) / denseStd[j]; s.dn[j] = z > DCLIP ? DCLIP : z < -DCLIP ? -DCLIP : z; }
 
   function train(tr, mode) {
     const wB = new Float64Array(VOCAB.length), wD = new Float64Array(DN);
     let b = 0;
-    const lr = 0.5, l2 = 3e-4, EP = 120;
+    const lr = 0.5, EP = 120;
+    // BoW (tiny TF values, 1600+ sparse cols) needs far LESS L2 than the dense cols, else bow underfits.
+    const l2B = +(process.env.L2_BOW || 3e-4), l2D = +(process.env.L2 || 2e-3);
     const nP = tr.filter(s => s.y).length, nN = tr.length - nP;
     const wP = tr.length / (2 * Math.max(1, nP)), wN = tr.length / (2 * Math.max(1, nN));
     for (let e = 0; e < EP; e++) {
@@ -316,8 +340,8 @@ function denseDict(s) {
         if (mode !== 'bow')   for (let j = 0; j < DN; j++) z += wD[j] * s.dn[j];
         const p = 1 / (1 + Math.exp(-z));
         const g = (s.y ? wP : wN) * (p - s.y);
-        if (mode !== 'dense') for (const i in s.bow) wB[i] -= lr * (g * s.bow[i] + l2 * wB[i]);
-        if (mode !== 'bow')   for (let j = 0; j < DN; j++) wD[j] -= lr * (g * s.dn[j] + l2 * wD[j]);
+        if (mode !== 'dense') for (const i in s.bow) wB[i] -= lr * (g * s.bow[i] + l2B * wB[i]);
+        if (mode !== 'bow')   for (let j = 0; j < DN; j++) wD[j] -= lr * (g * s.dn[j] + l2D * wD[j]);
         b -= lr * g;
       }
     }

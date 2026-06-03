@@ -6,13 +6,17 @@ Copy/paste into the AMO and Chrome Web Store dashboards when submitting the 0.3.
 
 ## What's new in 0.3.0 (release-notes blurb — paste in the "What's new" / version-notes field)
 
-**Non-English lyrics are now handled honestly.**
+**A panel of craft experts, a sharper model, and honest non-English handling.**
 
-- The model reads English words and clichés, so a number on Danish, Spanish, or any other
-  language wouldn't mean anything. v0.3 now detects non-English lyrics **on-device** (a tiny
-  function-word check — no network, no API, no LLM) and, instead of a misleading score, shows a
-  clear "English-only for now" note with a friendly **🃏 Translate these lyrics to English** tip.
-- Works the same on the song page and in the toolbar paste-to-test box.
+- **Six craft "lenses."** The detector now reads your lyrics the way a rapper, poet, psychologist,
+  philosopher, storyteller, and wit each would — ~55 new on-device signals (rhyme density &
+  internal rhyme, assonance, direct address, named places, vocabulary reach, imagery & sound, idea
+  structure…). The feedback panel quotes real lines and gives specific, example-rich fixes.
+- **Catches AI it used to miss.** Retrained on real consumer-AI sources (Suno-dominant) — it now
+  correctly flags Suno-style lyrics while keeping human classics low. Plus an eye-rhyme detector
+  (love/move "sight rhymes") and a fixed feedback bug.
+- **Non-English, handled honestly.** Lyrics in another language now get a clear "English-only for
+  now" note + a translate tip instead of a meaningless score — detected on-device, no network.
 - Still 100% on-device, text-only, no network — nothing is uploaded, ever.
 
 ---
@@ -36,9 +40,9 @@ Fun / Entertainment
 
 Open any Suno song and a little badge appears showing how much the lyrics read like AI — e.g. "62% AI". Click it for the craft-coach panel: what the song already does well, one creative move to try next, and what to work on — each note quoting a real word or line from your song.
 
-Under the hood it's no longer a hand-tuned word list. A logistic-regression model was trained on thousands of AI songs (ChatGPT, Gemini, Grok, Suno) versus real human songs, combining a bag-of-words half with 79 text-only craft and stylometric features: cliché density, rhyme predictability, line-length burstiness, named-referent specificity, over-personification, repeated lines, argument structure, and more. The score you see is the model's calibrated confidence that the lyrics are AI-written.
+Under the hood it's no longer a hand-tuned word list. A logistic-regression model was trained on real AI songs (Suno, ChatGPT, Grok, Gemini) versus real human songs, combining a bag-of-words half with 130+ text-only craft and stylometric features. New in v0.3, those features include **six craft-perspective lenses** — the detector reads your lyrics the way a rapper, poet, psychologist, philosopher, storyteller, and wit each would: rhyme density and internal rhyme, assonance, direct address, named people and places, vocabulary reach and allusion, imagery and sound devices, idea structure, and more. The score you see is the model's calibrated confidence that the lyrics are AI-written.
 
-New in 0.3: the model is English-only, so lyrics in another language now get an honest "English-only for now" note (detected on-device, no network) with a translate suggestion — instead of a meaningless score.
+New in 0.3: lyrics in another language now get an honest "English-only for now" note (detected on-device, no network) with a translate suggestion instead of a meaningless score; an eye-rhyme detector spots "sight rhymes" (love/move); and the craft panel quotes real lines with specific, example-rich fixes.
 
 It measures DEGREE of slop, not origin. A well-crafted song scores low even if AI made it, and a cliché-heavy human song scores high — it rates the texture of the words, never the person who wrote them.
 
