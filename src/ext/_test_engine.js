@@ -20,6 +20,7 @@ require(path.join(ROOT, 'src/common_words.js'));   // -> globalThis.SlopCommon
 require(path.join(ROOT, 'src/features.js'));        // -> globalThis.SlopFeatures
 require(path.join(ROOT, 'src/ext/patterns.browser.js')); // -> globalThis.SlopPatterns
 require(path.join(ROOT, 'src/ext/tier3.browser.js'));     // -> globalThis.SlopTier3
+require(path.join(ROOT, 'src/ext/perspectives.browser.js')); // -> Prosody/EyeRhymes/lenses/SlopPerspectives (tier-4)
 require(path.join(ROOT, 'src/ext/model.js'));        // -> globalThis.SLOP_MODEL
 require(path.join(ROOT, 'src/ext/v2-engine.js'));    // -> globalThis.SlopV2
 
@@ -47,6 +48,7 @@ function denseDict(text) {
   }
   d['lex_cliche'] = cl / nL; d['lex_rhyme'] = rh / nL;
   const tf = t3.analyze(text); for (const k in tf) d[k] = tf[k];
+  const pf = global.SlopPerspectives.features(text); for (const k in pf) d[k] = pf[k]; // tier-4 lenses
   return d; // no-embed
 }
 
@@ -57,11 +59,11 @@ function refPAI(text) {
   const n = Math.max(1, tk.length); for (const i in bow) bow[i] /= n;
   const d = denseDict(text);
   const dn = new Float64Array(M.denseNames.length);
-  M.denseNames.forEach((k, j) => { dn[j] = ((+d[k] || 0) - M.denseMean[j]) / (M.denseStd[j] || 1); });
+  M.denseNames.forEach((k, j) => { let z = ((+d[k] || 0) - M.denseMean[j]) / (M.denseStd[j] || 1); dn[j] = z > 3 ? 3 : z < -3 ? -3 : z; }); // ±3σ clip (matches engine + pipeline)
   let z = M.bias;
   for (const i in bow) z += M.wBow[i] * bow[i];
   for (let j = 0; j < dn.length; j++) z += M.wDense[j] * dn[j];
-  return 1 / (1 + Math.exp(-z));
+  return 1 / (1 + Math.exp(-z / 8)); // temperature scaling T=8 (matches v2-engine)
 }
 
 // ---- 3 sample lyrics ----

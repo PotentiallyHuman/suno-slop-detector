@@ -28,7 +28,14 @@ All notable changes to the Suno Slop Detector. Dates are release-submission date
   density) could blow up into a +95 contribution and pin out-of-distribution songs to 100% AI. Fixed
   with ±3σ clipping (training + inference) + per-group L2 (BoW 3e-4, dense 2e-3).
 - Feedback no longer suggests swapping function words (the "change 'the' to…" bug).
+- `SlopPanel.build` returns an empty panel on instrumental/empty input instead of throwing.
 - Resilient, cache-backed retrain (`build/retrain_loop.sh`) so the live human-lyric fetch resumes.
+
+### Audited
+- Security/robustness pass before release: 0 dangerous patterns (no eval / network / innerHTML /
+  storage), engine⇄model parity verified to <1e-6 (`src/ext/_test_engine.js`), 11/11 adversarial
+  inputs (empty, 50k-line, unicode, HTML-injection, emoji…) handled without crash, and AMO
+  `web-ext lint` reports **0 errors**.
 
 ## [0.2.0] — 2026-06-03
 ### Changed

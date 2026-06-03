@@ -524,6 +524,10 @@
     var model = G.SLOP_MODEL;
     if (!model) throw new Error("SLOP_MODEL not loaded");
     if (!scoreResult) scoreResult = G.SlopV2.score(text);
+    // Defensive: instrumental / empty inputs have no contributions — return an empty panel, never crash.
+    if (!scoreResult || scoreResult.instrumental || !scoreResult.contributions) {
+      return { good: [], joker: null, bad: [] };
+    }
     return {
       good:  buildGood(scoreResult, text, model),
       joker: buildJoker(scoreResult, text, model),
