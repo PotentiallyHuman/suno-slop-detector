@@ -4,7 +4,7 @@
 # the holdout-validated config. Then bake model.js + red-team. Resilient: if the train is SIGKILLed,
 # no success flag is written and the cron re-runs this next tick (resumes from the warm cache).
 cd "$(dirname "$0")/.."
-NODE=/home/potentiallyhumanspark/.nvm/versions/node/v22.22.2/bin/node
+NODE=node
 LOG=/tmp/finalize_v4.log
 [ -f /tmp/v4_finalized ] && { echo "$(date +%H:%M:%S) already finalized" >> "$LOG"; exit 0; }
 echo "=== $(date +%H:%M:%S) train production v4 (combined, full AI + balanced cached humans) ===" >> "$LOG"

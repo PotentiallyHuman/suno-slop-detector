@@ -58,7 +58,7 @@ New app submissions in 2026 **must target Android 15 (API level 35) or higher**.
 | **Full description** | ≤4000 chars | see below |
 | **App category** | — | **Tools** (alt: Music & Audio) |
 | **Tags** | up to 5 | lyrics, songwriting, writing, music, text analysis |
-| **Contact email** | required, public | augustosjclaw@outlook.com |
+| **Contact email** | required, public | <your-contact-email> |
 | **Website** | optional | https://github.com/PotentiallyHuman/suno-slop-detector |
 | **Privacy policy URL** | required | (GitHub Pages URL — see section 7) |
 
@@ -97,7 +97,7 @@ Path in Console: **App content → Data safety**. Because the app transmits noth
 
 Path: **App content → Content ratings → Start questionnaire**.
 
-- **Email address:** augustosjclaw@outlook.com (IARC correspondence).
+- **Email address:** <your-contact-email> (IARC correspondence).
 - **Category:** choose **"Reference, News, or Educational"** / **Utility / Productivity / Other** (NOT "Game"). This is a utility/tools app.
 - Then answer **No** to essentially every content question:
   - Violence (cartoon/fantasy/realistic/blood/gore): **No**
@@ -148,7 +148,7 @@ A publicly reachable HTTPS privacy-policy URL is **mandatory** to publish AND to
 
 ## 8. Exact local build commands (produce the signed AAB)
 
-Working dir: `/home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile`
+Working dir: `~/projects/28_suno_slop_detector/mobile`
 Signing is already wired: `mobile/android/app/build.gradle` loads `mobile/keystore/signing.properties` and applies `signingConfigs.release` to the release build automatically.
 
 ### Pre-build fix (REQUIRED — Blocker 2): bump to API 35
@@ -159,27 +159,27 @@ targetSdkVersion  = 35
 ```
 Then ensure the Android 15 platform is installed:
 ```
-source /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/android_env.sh
+source ~/projects/28_suno_slop_detector/mobile/android_env.sh
 sdkmanager "platforms;android-35" "build-tools;35.0.0"
 ```
 
 ### Build steps
 ```bash
 # 0) env (Android SDK + JDK 17)
-source /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/android_env.sh
+source ~/projects/28_suno_slop_detector/mobile/android_env.sh
 
 # 1) rebuild the single inlined www/index.html from ../app
 #    ⚠️ MEMORY NOTE: build_www.py's JS_ORDER is hardcoded. If app JS files were
 #    added since this list, add them here or the AAB ships STALE code silently.
-python3 /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/build_www.py
+python3 ~/projects/28_suno_slop_detector/mobile/build_www.py
 
 # 2) sync the web assets into the native Android project
-npx --prefix /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile cap sync android
+npx --prefix ~/projects/28_suno_slop_detector/mobile cap sync android
 #   (equivalently: cd mobile && npm run sync)
 
 # 3) build the signed release AAB
-/home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/android/gradlew \
-  -p /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/android \
+~/projects/28_suno_slop_detector/mobile/android/gradlew \
+  -p ~/projects/28_suno_slop_detector/mobile/android \
   bundleRelease
 
 # 4) the AAB lands here:
@@ -188,7 +188,7 @@ npx --prefix /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile c
 Verify it's signed with your upload key:
 ```bash
 jarsigner -verify -verbose -certs \
-  /home/potentiallyhumanspark/projects/28_suno_slop_detector/mobile/android/app/build/outputs/bundle/release/app-release.aab
+  ~/projects/28_suno_slop_detector/mobile/android/app/build/outputs/bundle/release/app-release.aab
 ```
 (For a quick on-phone smoke test you can also `./gradlew assembleRelease` to get an installable signed APK, but **upload the .aab** to Play.)
 
