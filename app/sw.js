@@ -1,7 +1,7 @@
 /* sw.js — offline cache for Lyric Humanizer.
  * Cache-first: after the first load the whole app (incl. the trained model)
  * runs with no network at all. Bump CACHE when any asset below changes. */
-var CACHE = "lyric-humanizer-v3-feedback";
+var CACHE = "lyric-humanizer-v4-model";
 
 var ASSETS = [
   ".",

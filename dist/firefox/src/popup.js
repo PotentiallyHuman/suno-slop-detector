@@ -177,14 +177,17 @@
   humanizeBtn.addEventListener("click", () => {
     const text = pasteEl.value || "";
     let res = null;
-    try { res = Humanize.next(text); } catch (e) {}
+    try { res = Humanize.runAll(text, { max: 6 }); } catch (e) {}
     if (!res) { showMsg("Nothing safe left to auto-fix — the rest needs your words."); return; }
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;
+    pasteEl.classList.add("hz-flash");
+    setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
-    const delta = (res.before > res.after) ? (res.before + "% → " + res.after + "% AI") : (res.after + "% AI");
-    showMsg("Applied: " + (res.detail || res.label) + " · " + delta);
+    const what = res.steps.map((s) => s.detail || s.label).join(" · ");
+    const n = res.count, plural = n === 1 ? "fix" : "fixes";
+    showMsg("Applied " + n + " " + plural + " (" + res.before + "% → " + res.after + "% AI): " + what);
   });
 
   undoBtn.addEventListener("click", () => {

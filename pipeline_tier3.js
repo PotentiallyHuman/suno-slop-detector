@@ -45,15 +45,27 @@ const bowToks       = t => (slop.stripSectionLabels(String(t)).toLowerCase().mat
 // randomly SIGKILLed in this env). Local dev cache only — the shipped model stays numbers-only.
 const LYR_CACHE_FILE = process.env.LYR_CACHE || '/tmp/human_lyrics_cache.json';
 let LYR_CACHE = {}; try { LYR_CACHE = JSON.parse(fs.readFileSync(LYR_CACHE_FILE, 'utf8')); } catch (_) {}
-let _lyrDirty = 0;
+let _lyrDirty = 0, _throttleUntil = 0;
+const _sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function saveLyrCache() { try { fs.writeFileSync(LYR_CACHE_FILE, JSON.stringify(LYR_CACHE)); } catch (_) {} }
 async function fetchLyrics(artist, title) {
   const key = artist + '' + title;
   if (Object.prototype.hasOwnProperty.call(LYR_CACHE, key)) return LYR_CACHE[key];   // cached (incl. '' misses)
-  let out = '';
-  try { const r = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`); if (r.ok) { const j = await r.json(); if (j.plainLyrics && j.plainLyrics.length > 60) out = j.plainLyrics; } } catch (_) {}
-  if (!out) try { const r = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`); if (r.ok) { const j = await r.json(); if (j.lyrics && j.lyrics.length > 60) out = j.lyrics; } } catch (_) {}
-  LYR_CACHE[key] = out; if (++_lyrDirty % 40 === 0) saveLyrCache();              // persist incrementally
+  const wait = _throttleUntil - Date.now(); if (wait > 0) await _sleep(wait);     // honor global backoff window
+  let out = '', throttled = false;
+  for (const url of [
+    `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`,
+    `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`]) {
+    if (out) break;
+    try {
+      const r = await fetch(url);
+      if (r.status === 429 || r.status >= 500) { throttled = true; _throttleUntil = Date.now() + 20000; continue; } // back off 20s on throttle
+      if (r.ok) { const j = await r.json(); const lyr = j.plainLyrics || j.lyrics; if (lyr && lyr.length > 60) out = lyr; }
+    } catch (_) { throttled = true; _throttleUntil = Date.now() + 20000; }
+  }
+  if (out) LYR_CACHE[key] = out;               // real hit
+  else if (!throttled) LYR_CACHE[key] = '';    // real "not found" -> cache the miss; throttle -> leave uncached for retry
+  if (++_lyrDirty % 40 === 0) saveLyrCache();
   return out;
 }
 async function pool(items, n, fn) {
@@ -131,7 +143,12 @@ function denseDict(s) {
   let _seed = 1234567;
   const _rnd = () => { _seed = (_seed * 1103515245 + 12345) & 0x7fffffff; return _seed / 0x7fffffff; };
   for (let i = list.length - 1; i > 0; i--) { const j = (_rnd() * (i + 1)) | 0;[list[i], list[j]] = [list[j], list[i]]; }
-  list = list.slice(0, Math.round(aiRaw.length * 1.12));   // down-sample humans ~1:1 with AI (+12% for fetch fails)
+  if (process.env.HUMAN_RANGE) {                            // experiment: pick a disjoint human slice "start:count"
+    const [st, ct] = process.env.HUMAN_RANGE.split(':').map(Number);
+    list = list.slice(st, st + ct);
+  } else {
+    list = list.slice(0, Math.round(aiRaw.length * 1.12)); // down-sample humans ~1:1 with AI (+12% for fetch fails)
+  }
   console.log(`  target: ${list.length} human songs (balanced to AI)`);
   const humanRaw = []; let done = 0, fail = 0;
   await pool(list, +(process.env.FETCH_POOL || 24), async (s) => {
@@ -143,6 +160,7 @@ function denseDict(s) {
   });
   saveLyrCache();   // flush full fetch cache so the next run reuses everything (resume-safe)
   console.log(`  human songs fetched: ${humanRaw.length}  (${fail} failed)`);
+  if (process.env.FETCH_ONLY) { console.log('FETCH_ONLY=1 -> cache warmed, exiting before training'); process.exit(0); }
 
   // [2.5] Embedding-based coherence features. SKIPPED when NO_EMBED=1, because emb_ needs
   // ollama, which a browser extension can't run — the extension must reproduce every feature
@@ -313,7 +331,7 @@ function denseDict(s) {
     denseNames.forEach((k, j) => dn[j] = (+d[k] || 0));
     return { bow, dn };
   }
-  const X = aiRaw.map(s => ({ ...vec(s), y: 1 })).concat(humanRaw.map(s => ({ ...vec(s), y: 0 })));
+  const X = aiRaw.map(s => ({ ...vec(s), y: 1, model: s.model })).concat(humanRaw.map(s => ({ ...vec(s), y: 0 })));
   const denseMean = new Float64Array(DN), denseStd = new Float64Array(DN);
   for (const s of X) for (let j = 0; j < DN; j++) denseMean[j] += s.dn[j];
   for (let j = 0; j < DN; j++) denseMean[j] /= X.length;
@@ -374,6 +392,34 @@ function denseDict(s) {
     const r = cv(mode); cvResults[mode] = r;
     console.log(mode.padEnd(10) + 'acc ' + (100 * r.acc).toFixed(1) + '%   precAI ' + (100 * r.prec).toFixed(1) + '%  recAI ' + (100 * r.rec).toFixed(1) + '%');
   }
+  // [7.4] LEAVE-ONE-GENERATOR-OUT — can the model catch an AI source it never trained on?
+  if (process.env.HOLDOUT) {
+    const gens = [...new Set(X.filter(s => s.y).map(s => s.model))].sort();
+    const hum = X.filter(s => !s.y);
+    const humTest = hum.filter((_, i) => i % 5 === 0), humTrain = hum.filter((_, i) => i % 5 !== 0);
+    console.log('\n=== LEAVE-ONE-GENERATOR-OUT (AI-recall on the held-out source — higher = better generalization) ===');
+    console.log('generator'.padEnd(11) + 'n'.padStart(4) + '   bow   dense  comb');
+    for (const g of gens) {
+      const test = X.filter(s => s.y && s.model === g);
+      const trBase = X.filter(s => s.y && s.model !== g).concat(humTrain);
+      const r = {};
+      for (const mode of ['bow', 'dense', 'combined']) {
+        const m = train(trBase.slice(), mode);
+        r[mode] = test.filter(s => predLR(m, s) >= 0.5).length / Math.max(1, test.length);
+      }
+      console.log(g.padEnd(11) + String(test.length).padStart(4) + '  ' +
+        (100 * r.bow).toFixed(0).padStart(4) + '% ' + (100 * r.dense).toFixed(0).padStart(4) + '% ' + (100 * r.combined).toFixed(0).padStart(4) + '%');
+    }
+    const hr = {};
+    for (const mode of ['bow', 'dense', 'combined']) {
+      const m = train(X.filter(s => s.y).concat(humTrain).slice(), mode);
+      hr[mode] = humTest.filter(s => predLR(m, s) < 0.5).length / Math.max(1, humTest.length);
+    }
+    console.log('human-recall (held-out 20% humans): bow ' + (100 * hr.bow).toFixed(0) + '%  dense ' + (100 * hr.dense).toFixed(0) + '%  combined ' + (100 * hr.combined).toFixed(0) + '%');
+    console.log('\n(HOLDOUT diagnostic only — model NOT rewritten)');
+    process.exit(0);
+  }
+
   const full = train(X, 'combined');
   const dRanked = denseNames.map((k, j) => [k, full.wD[j]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
   console.log('\n=== TOP 20 DENSE FEATURES (|weight|) ===');
@@ -383,7 +429,8 @@ function denseDict(s) {
   console.log('\n=== TOP 15 AI / TOP 15 human words ===');
   console.log('AI:    ' + wRanked.slice(0, 15).map(x => x[0]).join(', '));
   console.log('human: ' + wRanked.slice(-15).reverse().map(x => x[0]).join(', '));
-  fs.writeFileSync(path.join(ROOT, 'corpus/combined_model.json'),
+  const OUT_PATH = process.env.EXP_OUT || path.join(ROOT, 'corpus/combined_model.json');
+  fs.writeFileSync(OUT_PATH,
     JSON.stringify({
       note: 'combined BoW+dense logistic-regression (pipeline_tier3)',
       vocab: VOCAB,
@@ -393,7 +440,8 @@ function denseDict(s) {
       denseMean: Array.from(denseMean),
       denseStd: Array.from(denseStd),
       bias: full.b,
+      nHuman: humanRaw.length, nAI: aiRaw.length,
     }));
-  console.log('\nwrote corpus/combined_model.json');
+  console.log('\nwrote ' + OUT_PATH);
   console.log('=== pipeline_tier3 DONE ===');
 })();

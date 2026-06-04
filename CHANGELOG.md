@@ -2,6 +2,26 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.4.0] — 2026-06-04
+### Added
+- **Bigger, cleaner AI corpus, mined from the real tools people use.** Grok (grok-3 + grok-4 via the
+  xAI API), Claude (the *bare* Anthropic API — no assistant system-prompt/personality leakage),
+  Gemini + ChatGPT (logged-out browser), Suno. Context-contaminated locally-generated samples excluded.
+- **Punchier Humanize.** One click now applies several targeted edits in a greedy pass (biggest
+  score-drop first), an expanded cliché→plain lexicon, and strips throwaway "oh/hey/yeah" openers;
+  the box flashes + shows a multi-fix summary so the change is visible.
+### Changed
+- **Retrained model (v4).** Combined BoW + dense logistic regression, balanced ~1:1. 5-fold CV
+  **86.6%** (precision 85.4 / recall 87.9), up from v0.3's 82.8%.
+- **Evidence-based feature config.** A leave-one-generator-out study showed bag-of-words *alone*
+  overfits each generator's vocabulary — fragile on unseen generators and ~67% human-recall
+  (over-flags real songs). The shipped model stays **combined** (vocabulary + structural craft),
+  which generalizes better and rarely false-flags humans. A 3-model stability experiment (same AI
+  vs three disjoint human sets) confirmed the core signal is stable (~0.87 weight-cosine).
+### Verified
+- Red-team 11/11 adversarial inputs handled without crash. No copyrighted lyrics in any shipped
+  artifact — the model is numbers + a single-word vocabulary only.
+
 ## [0.3.0] — 2026-06-03
 ### Added
 - **Six craft-perspective lenses** (`analysis/perspectives/*`) — rapper, poet, psychologist,

@@ -13,6 +13,19 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
+## What's new in v0.4.0
+
+v0.4 is a **bigger, cleaner retrain**, with the feature mix chosen by *evidence* instead of assumption.
+
+- **Corpus mined from the real tools people use.** The AI side now comes from live APIs and apps — **Grok** (grok-3 + grok-4), **Claude** (clean, via the *bare* API so no assistant-personality leaks in), **Gemini**, **ChatGPT**, and **Suno** — instead of locally-generated filler. ~1,700 clean AI songs against a balanced set of real human songs.
+- **Combined model, chosen on evidence.** A leave-one-generator-out test showed bag-of-words *alone* scores highest in cross-validation but **cheats** — it memorizes each generator's pet vocabulary, so it collapses on a generator it's never seen and **false-flags ~1 in 3 real human songs**. The shipped model keeps the **combined vocabulary + structural-craft** signal, which generalizes to new generators and rarely mislabels humans. 5-fold CV **86.6%** (balanced precision/recall), up from 82.8%.
+- **Stability, proven.** Three independent models trained against three *disjoint* sets of human songs agree ~0.87 on their core weights — so the score reflects a real signal, not the luck of which humans it saw.
+- **Punchier Humanize.** One click now lands several targeted de-clichéing edits at once, with a visible flash + a summary of exactly what changed.
+
+Still 100% on-device, text-only, no network — and **no copyrighted lyrics are stored or shipped** (the model is numbers + a word list).
+
+---
+
 ## What's new in v0.3.0
 
 v0.3 makes the model **read like a panel of craft experts** and fixes a corpus blind-spot that was letting real AI songs slip through.

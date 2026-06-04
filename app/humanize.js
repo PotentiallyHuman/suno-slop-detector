@@ -114,7 +114,14 @@
     drowning: "sinking", endless: "long", eternal: "lasting", demons: "ghouls", demon: "beast",
     angels: "spirits", void: "gap", flicker: "blink", flickering: "blinking", glimmer: "shine",
     shimmer: "shine", unbreakable: "solid", beneath: "under", skyline: "rooftops",
-    streetlight: "lamppost", streetlights: "lampposts"
+    streetlight: "lamppost", streetlights: "lampposts",
+    // common AI-lyric clichés -> plainer words (runAll only applies the ones that lower the score)
+    dreams: "plans", dream: "plan", pale: "dim", broken: "cracked", desire: "want",
+    chasing: "following", chase: "follow", wings: "arms", storm: "squall", storms: "squalls",
+    tears: "crying", heart: "chest", hearts: "chests", forever: "for good", whispered: "muttered",
+    glow: "light", dawn: "morning", dusk: "evening", ocean: "sea", oceans: "seas",
+    fire: "heat", desperate: "anxious", chains: "ropes", lost: "adrift",
+    shining: "glinting", endlessly: "on and on", breathe: "inhale", aching: "sore", ache: "soreness"
   };
   function replaceStockWord(text) {
     var WW = (G.SlopScore && G.SlopScore.WORD_WEIGHTS) || {};
@@ -203,7 +210,8 @@
     s_vocableLines: deleteFillerLine, s_vocables: deleteFillerLine,
     lex_cliche: replaceStockWord, f_clicheDensity: replaceStockWord, t4_poet_stockImagery: replaceStockWord,
     lex_rhyme: breakRhyme, f_perfectRhymeRatio: breakRhyme, f_endRhymeRate: breakRhyme,
-    t4_poet_imageDensity: cutImageStackedLine, t4_poet_senseDiversity: cutImageStackedLine
+    t4_poet_imageDensity: cutImageStackedLine, t4_poet_senseDiversity: cutImageStackedLine,
+    s_ohHeyOpener: stripFillerOpener
   };
 
   // ===========================================================================
@@ -240,8 +248,61 @@
     return null;
   }
 
+  // runAll — GREEDY multi-edit pass for one click. Each round it tries every safe
+  // transform and applies whichever lowers the AI score the most, repeating until no
+  // edit helps, a step cap is hit, or the score is already low. Each edit still
+  // addresses a real cliché/structure issue the panel flags — it just keeps going past
+  // the top-5 window that next() is limited to, so the box visibly transforms.
+  // (6) trim a throwaway "oh / hey / baby / yeah" opener off a line (keeps the real words)
+  var OPENER = /^(oh+|hey+|baby|yeah+|whoa+|ooh+|na+|la+)\b[\s,!.-]*/i;
+  function stripFillerOpener(text) {
+    var S = structure(text);
+    for (var k = 0; k < S.lyric.length; k++) {
+      var idx = S.lyric[k], line = S.lines[idx];
+      if (!OPENER.test(line.trim())) continue;
+      var stripped = line.replace(OPENER, "");
+      stripped = stripped.charAt(0).toUpperCase() + stripped.slice(1);
+      if (stripped.trim().length >= 4 && stripped !== line) {
+        var lines = String(text).split("\n"); lines[idx] = stripped;
+        return { text: lines.join("\n"), detail: "trimmed a throwaway opener" };
+      }
+    }
+    return null;
+  }
+
+  var ALL_TRANSFORMS = [removeDuplicateLine, deleteFillerLine, cutImageStackedLine,
+                        replaceStockWord, breakRhyme, stripFillerOpener];
+  function runAll(text, opts) {
+    opts = opts || {};
+    var max = opts.max || 8, floor = (typeof opts.floor === "number") ? opts.floor : 18;
+    if (!G.SlopV2) return null;
+    var cur = text, curSc;
+    try { curSc = G.SlopV2.score(cur); } catch (e) { return null; }
+    if (!curSc || curSc.instrumental || typeof curSc.pAI !== "number") return null;
+    var before = curSc.score, curP = curSc.pAI, steps = [], after = before;
+    for (var k = 0; k < max; k++) {
+      var best = null;
+      for (var t = 0; t < ALL_TRANSFORMS.length; t++) {
+        var out;
+        try { out = ALL_TRANSFORMS[t](cur); } catch (e) { out = null; }
+        if (!out || out.text == null || out.text === cur) continue;
+        var asc;
+        try { asc = G.SlopV2.score(out.text); } catch (e) { continue; }
+        if (!asc || typeof asc.pAI !== "number" || asc.pAI >= curP - 1e-4) continue; // must read more human
+        if (!best || asc.pAI < best.pAI) best = { text: out.text, pAI: asc.pAI, score: asc.score, detail: out.detail };
+      }
+      if (!best) break;
+      steps.push({ detail: best.detail, after: best.score });
+      cur = best.text; curP = best.pAI; after = best.score;
+      if (after <= floor) break;          // reads human enough — stop
+    }
+    if (!steps.length) return null;
+    return { text: cur, steps: steps, before: before, after: after, count: steps.length };
+  }
+
   var api = {
     next: next,
+    runAll: runAll,
     // exposed for tests / reuse
     transforms: {
       removeDuplicateLine: removeDuplicateLine,

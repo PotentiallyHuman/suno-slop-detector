@@ -16,12 +16,28 @@ print = functools.partial(print, flush=True)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'corpus', 'models', 'chatgpt.json')
-WIN = "10485783"
+
+def _firefox_win():
+    # explicit override, else the Private-Browsing window (dodges the rate-block), else first firefox
+    env = os.environ.get("CHATGPT_WIN")
+    if env: return env
+    r = subprocess.run(["env", "DISPLAY=:1", "xdotool", "search", "--class", "firefox"],
+                       capture_output=True, text=True)
+    ids = [w for w in r.stdout.split() if w.strip()]
+    for w in ids:
+        nm = subprocess.run(["env", "DISPLAY=:1", "xdotool", "getwindowname", w],
+                            capture_output=True, text=True).stdout
+        if "Private" in nm: return w
+    return ids[0] if ids else "0"
+WIN = _firefox_win()
 TARGET = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
 OFFSET = int(sys.argv[2]) if len(sys.argv) > 2 else 0
 
-INPUT = (550, 894)     # "Ask anything" box on a fresh page
-BODY  = (540, 600)     # conversation body (focus here before Ctrl+A so we copy the page, not the input)
+# logged-OUT PRIVATE window layout (calibrated 2026-06-03). Logged-out = nothing saved anyway.
+CHAT_URL = os.environ.get("CHATGPT_URL", "https://chatgpt.com/")
+INPUT = (730, 892)     # "Ask anything" composer
+BODY  = (730, 450)     # conversation body (focus here before Ctrl+A so we copy the page)
+MON = "/tmp/cg_mon.png"  # screenshot checkpoint refreshed every 5 saves
 
 def x(*a): subprocess.run(["env", "DISPLAY=:1", "xdotool", *a], capture_output=True)
 def click(p): x("mousemove", str(p[0]), str(p[1]), "click", "1")
@@ -127,10 +143,33 @@ def get_reply(prompt, wait0=27, max_wait=110, minlen=120):
         prev = len(last); time.sleep(5); waited += 5
     return last if len(last) >= minlen else None
 
+def _composer_text():
+    click(INPUT); time.sleep(0.4)
+    key("ctrl+a"); time.sleep(0.3); key("ctrl+c"); time.sleep(0.3)
+    return getclip()
+
 def send(prompt):
-    click(INPUT); time.sleep(0.8)
-    setclip(prompt); time.sleep(0.3)
-    key("ctrl+v"); time.sleep(0.7); key("Return")
+    """Paste, VERIFY it landed in the box, submit, VERIFY it echoed on the page.
+    Returns True only if both pass — never blind-proceeds (the bug that wasted stories)."""
+    tail = prompt.strip().split('\n')[-1].strip()[-40:]
+    for attempt in range(2):
+        key("Escape"); time.sleep(0.4)        # dismiss the "Stay logged out" modal if present
+        click(INPUT); time.sleep(0.7)
+        key("ctrl+a"); time.sleep(0.2); key("Delete"); time.sleep(0.2)
+        setclip(prompt); time.sleep(0.3)
+        key("ctrl+v"); time.sleep(0.9)
+        if tail in _composer_text().replace('\r', ''):
+            click(INPUT); time.sleep(0.3); key("End"); time.sleep(0.2)
+            key("Return"); time.sleep(3.0)
+            if tail in capture().replace('\r', ''):
+                return True
+            print(f"   [send] submit not echoed (attempt {attempt+1}) — retry")
+        else:
+            print(f"   [send] paste did NOT land (attempt {attempt+1}) — retry")
+        time.sleep(2)
+    subprocess.run(["env", "DISPLAY=:1", "gnome-screenshot", "-f", "/tmp/chatgpt_send_fail.png"],
+                   capture_output=True)
+    return False
 
 def is_songlike(t):
     lines = [l for l in t.split('\n') if l.strip()]
@@ -160,22 +199,22 @@ def gen_song(scn, idx):
     r = random.Random(idx * 40503 + 7)
     if r.random() < 0.35:
         # stage A: story -> stage B (new chat): song about the story
-        nav("https://chatgpt.com/"); time.sleep(10)
-        send(story_prompt(scn))
+        nav(CHAT_URL); time.sleep(12)
+        if not send(story_prompt(scn)): return None, None, "story2song(story-send-fail)"
         story = get_reply(story_prompt(scn), minlen=400)
-        if not story: return None, None, "story2song"
+        if not story: return None, None, "story2song(no-story)"
         story = story[:3000]
-        nav("https://chatgpt.com/"); time.sleep(10)
-        send(SONG_PROMPT + story)
+        nav(CHAT_URL); time.sleep(12)
+        if not send(SONG_PROMPT + story): return None, story, "story2song(song-send-fail)"
         song = get_reply(SONG_PROMPT + story, minlen=180)
-        if not song or not is_songlike(song): return None, story, "story2song"
+        if not song or not is_songlike(song): return None, story, "story2song(no-song)"
         return song, story, "story2song"
     else:
         prompt = one_stage_prompt(scn, r)
-        nav("https://chatgpt.com/"); time.sleep(10)
-        send(prompt)
+        nav(CHAT_URL); time.sleep(12)
+        if not send(prompt): return None, None, "direct(send-fail)"
         song = get_reply(prompt, minlen=180)
-        if not song or not is_songlike(song): return None, None, "direct"
+        if not song or not is_songlike(song): return None, None, "direct(no-song)"
         return song, None, "direct"
 
 def bigrams(t):
@@ -210,6 +249,9 @@ def main():
                       "scenario": scn, "story": story, "lyrics": song})
         seen.append(nb); n += 1; added += 1; consec = 0; save(data)
         print(f"   SAVED chatgpt {n}/{TARGET} (+{added} this run)  [{len([l for l in song.split(chr(10)) if l.strip()])} lines]")
+        if added % 5 == 0:    # screenshot checkpoint every 5 lyrics
+            subprocess.run(["env", "DISPLAY=:1", "gnome-screenshot", "-f", MON], capture_output=True)
+            print(f"   [checkpoint] screenshot -> {MON} after {added} saves")
         time.sleep(random.randint(4, 9))
     print(f"=== done: chatgpt now {n} (added {added}) ===")
 

@@ -175,18 +175,27 @@
     var text = lyricsEl.value || "";
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
     var res;
-    try { res = Humanize.next(text); } catch (e) { res = null; }
+    try { res = Humanize.runAll(text, { max: 6 }); } catch (e) { res = null; }
     if (!res) {
       showToast("Nothing safe left to auto-fix — the rest needs your words.");
       return;
     }
-    undoStack.push(text);              // stash so this click is reversible
+    undoStack.push(text);              // stash so this click is reversible (one undo = all of this click)
     undoBtn.hidden = false;
     lyricsEl.value = res.text;
     clearBtn.hidden = false;
+    flashBox();                        // make the change impossible to miss
     analyse();                         // re-score + repaint meter/panel from the new text
-    var delta = (res.before > res.after) ? (res.before + "% → " + res.after + "% AI") : (res.after + "% AI");
-    showToast("Applied: " + (res.detail || res.label) + " · " + delta);
+    var what = res.steps.map(function (s) { return s.detail || s.label; }).join(" · ");
+    var n = res.count, plural = n === 1 ? "fix" : "fixes";
+    showToast("Applied " + n + " " + plural + " (" + res.before + "% → " + res.after + "% AI): " + what);
+  }
+
+  // brief highlight so the user SEES the textarea changed (textareas can't style ranges)
+  function flashBox() {
+    if (!lyricsEl) return;
+    lyricsEl.classList.add("hz-flash");
+    setTimeout(function () { lyricsEl.classList.remove("hz-flash"); }, 700);
   }
 
   function undo() {

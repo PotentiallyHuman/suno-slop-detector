@@ -92,3 +92,6 @@ code { color: #ffc04d; }
 .craft-label { color: #eaeaea; }
 .craft-row.joker .craft-label { color: #d9c4ff; }
 .craft-detail { color: #9a9a9a; font-size: 10.5px; margin-top: 2px; font-style: italic; }
+
+#paste.hz-flash { animation: hzflash 0.7s ease-out; }
+@keyframes hzflash { 0% { background-color: rgba(95,208,104,0.55); } 100% { background-color: transparent; } }

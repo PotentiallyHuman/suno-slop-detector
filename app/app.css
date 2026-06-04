@@ -192,3 +192,12 @@ button:active { transform: translateY(1px); }
 .foot p { font-size: 12px; line-height: 1.55; color: var(--faint); margin: 0 0 8px; }
 .foot b { color: var(--muted); }
 .priv { color: #5f6168 !important; }
+
+/* Humanize: brief highlight so a programmatic textarea change is visible */
+#lyrics.hz-flash {
+  animation: hzflash 0.7s ease-out;
+}
+@keyframes hzflash {
+  0%   { background-color: rgba(95, 208, 104, 0.55); }
+  100% { background-color: transparent; }
+}
