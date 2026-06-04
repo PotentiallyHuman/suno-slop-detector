@@ -2,6 +2,38 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [Unreleased] — v5 model retrain (2026-06-05)
+_Model + analysis only; the extension is not yet wired to it. Full results, red-team, and
+integration steps: `analysis/V5_MODEL_RESULTS_AND_INTEGRATION.md`._
+### Added
+- **Retrained detector (`corpus/model_v5.json`).** AI corpus reweighted to real-world tool usage
+  (ChatGPT 35 / Suno 30 / Gemini 12 / Claude 12 / Grok 5) via per-song loss weights; Gemini added
+  (5-way); English-only filter; human side fetched live (4,750 songs) with a 3-round rotating
+  method and generalization checked on unseen humans.
+- **New "typicality" feature** — share of a song's 3-word phrases that recur in the AI phrase bank
+  (closeness to the AI corpus). Strongest new signal (held-out, subject-disjoint d≈1.03); adds
+  +6 pts accuracy / +8 pts precision.
+- **Model attribution** — which LLM likely wrote it (suno/claude/grok/chatgpt/gemini),
+  confidence-gated. Powered by per-model phrase banks.
+- New structural detectors logged (`analysis/portability_tells.js`): filler-"just",
+  contraction-aware negation-anaphora, self-qualify (weak/mixed — kept for completeness).
+### Results (v5.1 — pruned + calibrated)
+- 5-fold CV **87.9%** acc at the calibrated threshold (vs 79.6% without typicality). **Human
+  false-positive 9.8%** at threshold **0.55** (down from 13.5% at 0.5), recall 85%. Unseen-human
+  recall 89.9%. Attribution **86.2% argmax / 94.2% when confident** (honest, per-fold banks).
+  The old model couldn't tell an AI Suno song from Bohemian Rhapsody; the new one scores the AI
+  song 100% (AI) and the human hits 0% (human).
+### Fixed
+- Overfit artifact: a rare feature (`s_halfXHalfY`, <1% of songs) got a +40 weight under weak L2.
+  Now **pruned at the source** (drop dense features <1% prevalence) + moderate L2 → robust, and
+  recovered the accuracy lost to blunt regularization.
+- **Threshold calibrated** (0.55, baked into `model_v5.json` as `threshold`) via out-of-fold sweep.
+- `hedgeJust` counted at most one "just" per line (greedy regex) → now counts all.
+### Known / TODO before release
+- **Attribution must be gated behind the AI verdict** in the UI (ungated it mis-attributes human
+  songs, e.g. "Bohemian Rhapsody = Suno"). See integration doc §3/§5.
+- Human corpus is famous hits (older) — part of the human↔AI gap is era/genre.
+
 ## [0.4.1] — 2026-06-04
 ### Changed
 - **Humanize now uses the data-vetted swap catalogs.** One-click Humanize swaps only the
