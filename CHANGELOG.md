@@ -2,6 +2,27 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.4.1] — 2026-06-04
+### Changed
+- **Humanize now uses the data-vetted swap catalogs.** One-click Humanize swaps only the
+  flagged cliché **word/phrase** for a corpus-proven, human-reading equivalent — never a whole
+  line (honors the "don't replace the writer's content" rule). Wired in:
+  - adjective-stack swaps (`adjstack_swaps`: e.g. *fading dreams → worn dreams*),
+  - `-ing`-verb swaps (`ingverb_swaps`: *burning love → warm love*),
+  - prepositional scene-phrase swaps, meter-matched (`prepphrase_swaps`: *in the dark → after dark*),
+  - rhyme-**preserving** concrete end-word swap for feeling-word line endings (`rhyme_index`).
+  Each swap is kept only if it lowers the AI score; every change is reversible.
+- **Transparent-only, honored in code.** Words/structures the data says read human are flagged
+  but never auto-edited: *heart, soul, forever, neon, shadow*, "in the night", and adjectives like
+  *shattered / broken / endless* (corpus-neutral). Vague/personification/cliché-line/simile
+  features are advice-only.
+### Fixed
+- Humanize no longer **deletes** image-stacked lines (that removed the user's own content) and no
+  longer word-swaps the transparent-only words above — both contradicted the design but had shipped.
+### Verified
+- 27/27 Humanize unit assertions; red-team 11/11 (engine **and** Humanize, loaded the browser way);
+  engine⇄model parity unchanged (<1e-6). No copyrighted text in any shipped artifact.
+
 ## [0.4.0] — 2026-06-04
 ### Added
 - **Bigger, cleaner AI corpus, mined from the real tools people use.** Grok (grok-3 + grok-4 via the

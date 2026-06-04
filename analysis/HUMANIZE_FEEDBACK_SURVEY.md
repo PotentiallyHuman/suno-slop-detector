@@ -1,3 +1,10 @@
+# === SHIPPED in v0.4.1 (2026-06-04): WORD/PHRASE SWAPS ONLY ===
+# Final call (user): one-click Humanize swaps only flagged WORDS/PHRASES, never whole lines.
+# Wired: items 5 (rhyme_index end-word), 7 (adjstack), 8 (ingverb), 9 (prepphrase), 11 (opener).
+# Items 1-4 (whole-line vague/personification/cliché/simile) -> TRANSPARENT-ONLY (advice), NOT
+# auto-edited; replacement_catalog.js kept in analysis/ for a future opt-in suggestion mode.
+# See analysis/HUMANIZE_DEFERRED.md for the shipped status. Original survey decisions below.
+
 # === SURVEY COMPLETE (2026-06-04) ===
 All 28 items decided. Build spec for Humanize v4.x:
 - EDIT (build these transforms): 1 vague->catalog, 2 personification->catalog, 3 ai-cliche-line->catalog,

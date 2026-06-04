@@ -99,7 +99,7 @@
   //     Only swaps words the model itself flags (WORD_WEIGHTS), and only to a
   //     replacement that is NOT itself flagged — so the cliché mass strictly drops.
   var STOCK_SWAP = {
-    neon: "bright", horizon: "distance", horizons: "distances", shadows: "corners", shadow: "corner",
+    horizon: "distance", horizons: "distances",
     echoes: "sounds", echo: "sound", whisper: "mutter", whispers: "mutters", whispering: "muttering",
     ember: "coal", embers: "coals", ashes: "remains", abyss: "pit", paradise: "haven", wildfire: "brushfire",
     silhouette: "outline", crimson: "red", velvet: "smooth", ethereal: "faint", cascade: "spill",
@@ -108,7 +108,9 @@
     celestial: "distant", cosmic: "huge", radiant: "bright", flame: "torch", flames: "torches",
     thunder: "rumble", lightning: "flash", midnight: "late", moonlight: "evening", starlight: "evening",
     stardust: "specks", scars: "marks", scar: "mark", phantom: "figure", veins: "wrists", bones: "ribs",
-    soul: "spirit", souls: "spirits", heartbeat: "pulse", shattered: "cracked", fragments: "shards",
+    heartbeat: "pulse", shattered: "cracked", fragments: "shards",
+    // NOTE: neon / shadow(s) / soul(s) are TRANSPARENT-ONLY too (survey item 6 names them
+    // alongside heart as "too normal to disallow") — flagged in the panel, never auto-swapped.
     fading: "dimming", faded: "dimmed", rising: "climbing", burning: "smoking", electric: "buzzing",
     frozen: "icy", golden: "yellow", diamond: "crystal", fragile: "brittle", hollow: "empty",
     drowning: "sinking", endless: "long", eternal: "lasting", demons: "ghouls", demon: "beast",
@@ -118,7 +120,10 @@
     // common AI-lyric clichés -> plainer words (runAll only applies the ones that lower the score)
     dreams: "plans", dream: "plan", pale: "dim", broken: "cracked", desire: "want",
     chasing: "following", chase: "follow", wings: "arms", storm: "squall", storms: "squalls",
-    tears: "crying", heart: "chest", hearts: "chests", forever: "for good", whispered: "muttered",
+    tears: "crying", whispered: "muttered",
+    // NOTE: "heart"/"hearts" (survey item 6) and "forever" (item 10) are intentionally
+    // TRANSPARENT-ONLY — too normal to auto-edit; the panel still flags them, but Humanize
+    // must not rewrite them. Do NOT re-add them here.
     glow: "light", dawn: "morning", dusk: "evening", ocean: "sea", oceans: "seas",
     fire: "heat", desperate: "anxious", chains: "ropes", lost: "adrift",
     shining: "glinting", endlessly: "on and on", breathe: "inhale", aching: "sore", ache: "soreness"
@@ -202,6 +207,65 @@
     return best ? { text: dropLine(text, best.idx), detail: "trimmed an image-stacked line" } : null;
   }
 
+  // ===========================================================================
+  // v4.x DATA-VETTED CATALOG TRANSFORMS — WORD/PHRASE swaps only (survey items 5,7,8,9,11).
+  //   Per the survey's final RULE OF THUMB ("never inject/replace CONTENT into a user's song;
+  //   only swap a flagged word/phrase for a data-vetted equivalent, or be transparent"), we do
+  //   NOT replace whole lines. Vague/personification/cliché-LINE/simile features (items 1-4)
+  //   are therefore TRANSPARENT-ONLY: flagged in the panel, never auto-edited. (replacement_catalog.js
+  //   stays in analysis/ for a future opt-in suggestion mode; it is intentionally not shipped/wired.)
+  //   Each transform guards on its catalog global; the caller keeps an edit only when it lowers pAI.
+  // ===========================================================================
+
+  // (item 5) abstract/feeling line-ending -> a CONCRETE single-word ending that RHYMES with
+  //   the line's partner (preserves the scheme) and matches syllables, via RhymeIndex.
+  function swapAbstractEnding(text) {
+    var RI = G.RhymeIndex, P = G.Prosody;
+    if (!RI || !RI.suggestConcreteRhyme || !RI.isAbstractWord || !P || !P.rhymeKey) return null;
+    var S = structure(text), idxs = S.lyric;
+    for (var i = 0; i < idxs.length; i++) {
+      var ew = lastWord(S.lines[idxs[i]]); if (!ew || !RI.isAbstractWord(ew)) continue;
+      var ak = P.rhymeKey(ew), partner = null;
+      for (var d = 1; d <= 4 && !partner; d++) {
+        var a = (i - d >= 0) ? idxs[i - d] : null, b = (i + d < idxs.length) ? idxs[i + d] : null;
+        if (a != null) { var w1 = lastWord(S.lines[a]); if (w1 && w1 !== ew && P.rhymeKey(w1) === ak) partner = w1; }
+        if (!partner && b != null) { var w2 = lastWord(S.lines[b]); if (w2 && w2 !== ew && P.rhymeKey(w2) === ak) partner = w2; }
+      }
+      var all; try { all = RI.suggestConcreteRhyme(ew, partner, { all: true }) || []; } catch (e) { all = []; }
+      var sugg = null;
+      for (var s2 = 0; s2 < all.length; s2++) if (all[s2].indexOf(" ") === -1) { sugg = all[s2]; break; }
+      if (!sugg) continue;
+      var lines = String(text).split("\n");
+      lines[idxs[i]] = replaceEndWord(lines[idxs[i]], sugg);
+      if (lines[idxs[i]] === S.lines[idxs[i]]) continue;
+      return { text: lines.join("\n"), detail: "concrete ending (“" + ew + "” → “" + sugg + "”)" };
+    }
+    return null;
+  }
+
+  // (items 7,8,9) thin wrappers over the data-vetted swap tables. Each applies its
+  //   table's swaps; TRANSPARENT/EXCLUDED words are left alone inside the table itself.
+  function moreTail(n) { return n > 1 ? " (+" + (n - 1) + " more)" : ""; }
+  function swapAdjStackCat(text) {
+    var M = G.ADJSTACK_SWAPS; if (!M || !M.swapAdjStack) return null;
+    var r; try { r = M.swapAdjStack(text); } catch (e) { return null; }
+    if (!r || !r.swaps || !r.swaps.length || r.text === text) return null;
+    var s = r.swaps[0];
+    return { text: r.text, detail: "“" + s.from + " " + s.noun + "” → “" + s.to + " " + s.noun + "”" + moreTail(r.swaps.length) };
+  }
+  function swapIngVerbCat(text) {
+    var M = G.INGVERB_SWAPS; if (!M || !M.swapIngVerb) return null;
+    var r; try { r = M.swapIngVerb(text); } catch (e) { return null; }
+    if (!r || !r.swaps || !r.swaps.length || r.text === text) return null;
+    return { text: r.text, detail: "“" + r.swaps[0].from + "” → “" + r.swaps[0].to + "”" + moreTail(r.swaps.length) };
+  }
+  function swapPrepPhraseCat(text) {
+    var M = G.PREPPHRASE_SWAPS; if (!M || !M.swapPrepPhrase) return null;
+    var r; try { r = M.swapPrepPhrase(text); } catch (e) { return null; }
+    if (!r || !r.swaps || !r.swaps.length || r.text === text) return null;
+    return { text: r.text, detail: "“" + r.swaps[0].from + "” → “" + r.swaps[0].to + "”" + moreTail(r.swaps.length) };
+  }
+
   // ---- feature -> transform dispatch (matches the dense feature ids the panel reports) ----
   var DISPATCH = {
     s_dupLinesTotal: removeDuplicateLine, s_consecDupLines: removeDuplicateLine,
@@ -210,7 +274,14 @@
     s_vocableLines: deleteFillerLine, s_vocables: deleteFillerLine,
     lex_cliche: replaceStockWord, f_clicheDensity: replaceStockWord, t4_poet_stockImagery: replaceStockWord,
     lex_rhyme: breakRhyme, f_perfectRhymeRatio: breakRhyme, f_endRhymeRate: breakRhyme,
-    t4_poet_imageDensity: cutImageStackedLine, t4_poet_senseDiversity: cutImageStackedLine,
+    // data-vetted WORD/PHRASE swaps (survey items 5, 7, 8, 9)
+    s_abstractEnding: swapAbstractEnding,
+    t3_adjStack: swapAdjStackCat,
+    t3_ingVerbAbstract: swapIngVerbCat, s_ingEmotionVerb: swapIngVerbCat,
+    s_prepInTheNight: swapPrepPhraseCat,
+    // TRANSPARENT-ONLY (flagged in panel, NO auto-edit): vague/personification/cliché-line/simile
+    // content features (items 1-4, never replace a whole line) and wall-to-wall imagery /
+    // image density (item 12, deleting an image line removes the user's own content).
     s_ohHeyOpener: stripFillerOpener
   };
 
@@ -270,7 +341,11 @@
     return null;
   }
 
-  var ALL_TRANSFORMS = [removeDuplicateLine, deleteFillerLine, cutImageStackedLine,
+  // cutImageStackedLine is intentionally ABSENT (survey item 12: transparent-only — never
+  // delete the user's image lines). The data-vetted catalog swaps run first; the generic
+  // proxies (replaceStockWord/breakRhyme) cover the lexical features the catalogs don't.
+  var ALL_TRANSFORMS = [removeDuplicateLine, deleteFillerLine,
+                        swapAdjStackCat, swapIngVerbCat, swapPrepPhraseCat, swapAbstractEnding,
                         replaceStockWord, breakRhyme, stripFillerOpener];
   function runAll(text, opts) {
     opts = opts || {};
@@ -309,7 +384,11 @@
       deleteFillerLine: deleteFillerLine,
       replaceStockWord: replaceStockWord,
       breakRhyme: breakRhyme,
-      cutImageStackedLine: cutImageStackedLine
+      cutImageStackedLine: cutImageStackedLine,
+      swapAbstractEnding: swapAbstractEnding,
+      swapAdjStackCat: swapAdjStackCat,
+      swapIngVerbCat: swapIngVerbCat,
+      swapPrepPhraseCat: swapPrepPhraseCat
     }
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

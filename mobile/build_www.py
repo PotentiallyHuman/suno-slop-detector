@@ -21,6 +21,8 @@ JS_ORDER = [
     "engine/ext/perspectives.browser.js",
     "engine/ext/model.js", "engine/ext/clean-lyrics.js",
     "engine/ext/v2-engine.js", "engine/ext/v2-panel.js",
+    # data-vetted Humanize word/phrase-swap catalogs — MUST precede humanize.js (it reads these globals)
+    "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js",
     "humanize.js", "app.js",
 ]
 
