@@ -44,7 +44,8 @@
     const text = node.innerText || node.textContent || "";
     if (text.trim().length < 12) return null; // too short to mean anything
 
-    // v2: pure trained-model confidence P(AI). score = round(pAI*100). No blend.
+    // Old model drives the craft-panel jokers; the v5 model (if loaded) drives the
+    // headline score + LLM attribution. Graceful fallback to the old score.
     const sc = SlopV2.score(text);
     // Instrumental (nothing but bracket-tags / blank after cleaning) -> no score, no feedback.
     if (sc && sc.instrumental) { lastResult = { instrumental: true, _text: text }; return lastResult; }
@@ -53,6 +54,9 @@
     // give a meaningful number here, so show an honest notice instead of a fake score.
     if (looksNonEnglish(text)) { lastResult = { nonEnglish: true, _text: text }; return lastResult; }
 
+    let v5 = null;
+    try { if (globalThis.SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) { /* fall back */ }
+
     let panel = null;
     try {
       panel = SlopPanel.build(text, sc);
@@ -60,10 +64,13 @@
       /* panel optional */
     }
 
+    const headScore = (v5 && v5.score != null) ? v5.score : sc.score;
     const result = {
-      score: sc.score, // = round(pAI*100)
-      pAI: sc.pAI,
-      label: SlopScore.verdict(sc.score),
+      score: headScore, // v5 P(AI)*100 if available, else old model
+      pAI: (v5 && v5.pAI != null) ? v5.pAI : sc.pAI,
+      label: SlopScore.verdict(headScore),
+      attribution: v5 ? v5.attribution : null, // {model,conf} | {model:null} | null — gated behind AI verdict
+      verdict: v5 ? v5.verdict : null,
       panel: panel,
       _text: text,
     };
@@ -197,6 +204,18 @@
     clear(refs.verdict);
     refs.verdict.appendChild(el("span", { class: "slop-big", style: "color:" + c, text: result.score + "% AI" }));
     refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: result.label }));
+
+    // v5 model attribution — only named when confident, gated behind the AI verdict
+    if (result.attribution) {
+      const NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
+      const a = result.attribution;
+      const attrText = a.model
+        ? `likely ${NAMES[a.model] || a.model} (${Math.round(a.conf * 100)}%)`
+        : "AI — model uncertain";
+      refs.verdict.appendChild(el("span", { class: "slop-attribution", text: attrText }));
+    } else if (result.verdict === "human") {
+      refs.verdict.appendChild(el("span", { class: "slop-attribution", text: "likely human-written" }));
+    }
 
     refs.components.textContent = `model confidence this is AI: ${result.score}%`;
 
