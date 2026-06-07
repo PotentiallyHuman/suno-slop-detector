@@ -138,18 +138,30 @@
     if (!sc || sc.instrumental) { showInstrumental(); return; }
     if (looksNonEnglish(text)) { showNonEnglish(); return; }
 
-    var col = colorFor(sc.score);
+    // v5 model (if loaded) drives the headline score + LLM attribution; old model still
+    // drives the craft panel jokers. Graceful fallback to the old score.
+    var v5 = null;
+    try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) {}
+    var headScore = (v5 && v5.score != null) ? v5.score : sc.score;
+
+    var col = colorFor(headScore);
     resultEl.hidden = false;
     humanizeBtn.hidden = false;
     scoreEl.className = "score";
     scoreEl.style.color = col;
-    scoreEl.textContent = String(sc.score);
+    scoreEl.textContent = String(headScore);
     verdictEl.style.color = col;
-    verdictEl.textContent = SlopScore.verdict(sc.score);
+    verdictEl.textContent = SlopScore.verdict(headScore);
     // reflow so the meter transition animates from its prior position
     void meterFill.offsetWidth;
-    meterFill.style.left = sc.score + "%";
-    subnoteEl.textContent = "Model confidence these lyrics read as AI: " + sc.score + "%.";
+    meterFill.style.left = headScore + "%";
+    var sub = "Model confidence these lyrics read as AI: " + headScore + "%.";
+    if (v5 && v5.attribution) {
+      var NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
+      var a = v5.attribution;
+      sub += a.model ? "  Likely written by " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)." : "  AI — model uncertain.";
+    } else if (v5 && v5.verdict === "human") { sub += "  Likely human-written."; }
+    subnoteEl.textContent = sub;
 
     var panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) { /* panel optional */ }

@@ -19,7 +19,7 @@ JS_ORDER = [
     "engine/slop-core.js", "engine/common_words.js", "engine/features.js",
     "engine/ext/patterns.browser.js", "engine/ext/tier3.browser.js",
     "engine/ext/perspectives.browser.js",
-    "engine/ext/model.js", "engine/ext/clean-lyrics.js",
+    "engine/ext/model.js", "engine/ext/model_v5.browser.js", "engine/ext/portability_tells.browser.js", "engine/ext/clean-lyrics.js",
     "engine/ext/v2-engine.js", "engine/ext/v2-panel.js",
     # data-vetted Humanize word/phrase-swap catalogs — MUST precede humanize.js (it reads these globals)
     "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js",
