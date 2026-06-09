@@ -6,9 +6,9 @@
 (function () {
   "use strict";
 
-  // ---- SAFETY GATE #1: URL must be a Suno song page -------------------------
-  const ON_SONG_PAGE = /^https:\/\/suno\.com\/song\//.test(location.href);
-  if (!ON_SONG_PAGE) return; // never read, never analyse anywhere else
+  // ---- SAFETY GATE #1: URL must be a Suno song OR create page ---------------
+  const ON_SCORABLE = /^https:\/\/suno\.com\/(song|create)\b/.test(location.href);
+  if (!ON_SCORABLE) return; // never read, never analyse anywhere else
 
   // ---- SAFETY GATE #2: the ONLY element we are allowed to read --------------
   // The lyrics paragraph. We intentionally use the stable, non-responsive
@@ -25,6 +25,26 @@
     return document.querySelector(LYRICS_SELECTOR);
   }
 
+  // Which suno page we score on: a song page OR the create page.
+  function isScorablePage() {
+    return /^https:\/\/suno\.com\/(song|create)\b/.test(location.href);
+  }
+
+  // The ONLY text we read: the song-page lyrics <p>, or (on /create) the lyrics
+  // input box. Returns "" if neither is present. Reads nothing else on the page.
+  function getLyricsText() {
+    const p = getLyricsNode();
+    if (p) return p.innerText || p.textContent || "";
+    if (/^https:\/\/suno\.com\/create\b/.test(location.href)) {
+      // Conservative: only a textarea explicitly labelled "lyrics" (so we never
+      // grab the style/title box and show a false score). Refine selector after
+      // a live DOM check; until matched, /create shows no score rather than a wrong one.
+      const box = document.querySelector('textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]');
+      if (box && typeof box.value === "string") return box.value;
+    }
+    return "";
+  }
+
   // The model is English-only (its bag-of-words + cliché lexicon are English keywords).
   // On other languages almost no words/clichés match, so the score would be noise.
   // Cheap on-device check: share of very common English function words. If tiny, it isn't English.
@@ -39,10 +59,8 @@
   }
 
   function analyse() {
-    const node = getLyricsNode();
-    if (!node) return null;
-    const text = node.innerText || node.textContent || "";
-    if (text.trim().length < 12) return null; // too short to mean anything
+    const text = getLyricsText();
+    if (!text || text.trim().length < 12) return null; // too short to mean anything
 
     // Old model drives the craft-panel jokers; the v5 model (if loaded) drives the
     // headline score + LLM attribution. Graceful fallback to the old score.
@@ -222,16 +240,37 @@
     renderCraft(result.panel);
   }
 
-  // ---- Suno is a SPA: lyrics load late & change on navigation ---------------
+  // ---- Suno is a SPA: lyrics load late, and the page changes without reload ---
+  // flush() drops the previous analysis (removes the pill) so a refreshed/changed
+  // page never shows a stale score; a fresh pill is rebuilt on the next render.
+  function flush() {
+    if (host) { host.remove(); host = null; badge = null; panel = null; refs = {}; }
+    lastResult = null;
+  }
+
   let debounce = null;
   function scheduleAnalyse() {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-      if (!/^https:\/\/suno\.com\/song\//.test(location.href)) return; // re-gate
+      if (!isScorablePage()) { flush(); return; } // left song/create -> clear it
       const r = analyse();
       render(r);
     }, 400);
   }
+
+  // SPA navigation: Suno changes the URL via the History API (no full reload).
+  // On ANY url change -> flush the old analysis, then re-analyse if still scorable.
+  let lastUrl = location.href;
+  function onUrlChange() {
+    if (location.href === lastUrl) return;
+    lastUrl = location.href;
+    flush();                                 // always drop the previous page's score
+    if (isScorablePage()) scheduleAnalyse();  // make a new one if on song/create
+  }
+  const wrapHist = (orig) => function () { const ret = orig.apply(this, arguments); onUrlChange(); return ret; };
+  history.pushState = wrapHist(history.pushState);
+  history.replaceState = wrapHist(history.replaceState);
+  window.addEventListener("popstate", onUrlChange);
 
   const observer = new MutationObserver(scheduleAnalyse);
   observer.observe(document.body, { childList: true, subtree: true });

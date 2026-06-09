@@ -1,6 +1,6 @@
 {
   "name": "suno-slop-detector",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Browser extension that scores how AI a Suno song's lyrics read with a trained model, plus a craft-coach panel.",
   "scripts": {
     "test": "node test/calibrate.js",
