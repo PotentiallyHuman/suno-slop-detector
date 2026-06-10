@@ -156,49 +156,96 @@
       humanizeBtn.hidden = true;
       return false;
     }
-    // Use the v5 model for the headline number + attribution (same as the on-page
-    // pill) so the two never disagree; old model still drives the craft panel.
-    let v5 = null;
+    // Headline = v8 (if loaded) -> v5 -> old model, same as the on-page pill. Attribution
+    // gated on the displayed (v8) headline so it never names an LLM under a human score.
+    let v5 = null, v8 = null;
     try { if (globalThis.SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) {}
-    const headScore = (v5 && v5.score != null) ? v5.score : sc.score;
+    try { if (globalThis.SLOP_MODEL_V8 && globalThis.SlopV8 && SlopV8.scoreV8) v8 = SlopV8.scoreV8(text); } catch (e) {}
+    const headScore = (v8 && v8.score != null) ? v8.score : ((v5 && v5.score != null) ? v5.score : sc.score);
     let panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) {}
     pasteScore.textContent = headScore + "% AI";
     pasteScore.style.color = colorFor(headScore);
     let lbl = SlopScore.verdict(headScore) + " · model confidence";
-    if (v5 && v5.attribution) {
+    if (headScore >= 50 && v5 && v5.attribution) {
       const NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
       const a = v5.attribution;
       lbl += a.model ? " · likely " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)" : " · model uncertain";
     }
     pasteLabel.textContent = lbl;
     humanizeBtn.hidden = false;            // a real score → one-click cleanup is available
+    { const rb = document.getElementById("rewrite"); if (rb) rb.hidden = false; }   // line-by-line rewrite available
     renderCraft(pasteCraft, panel);
     return true;
   }
 
   function showMsg(txt) { pasteMsg.textContent = txt; pasteMsg.hidden = !txt; }
 
+  // Headline score EXACTLY as the big "% AI" shows it (v5 if loaded, else old model).
+  // The Humanize message must report THIS, never the old-model res.before/res.after.
+  function headlineScore(t) {
+    try {
+      const sc = SlopV2.score(t); if (!sc || sc.instrumental) return null;
+      let h8 = null;
+      try { if (typeof SLOP_MODEL_V8 !== "undefined" && SLOP_MODEL_V8 && typeof SlopV8 !== "undefined" && SlopV8.scoreV8) h8 = SlopV8.scoreV8(t); } catch (e) {}
+      if (h8 && h8.score != null) return h8.score;
+      let hv = null;
+      try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreV5) hv = SlopV2.scoreV5(t); } catch (e) {}
+      return (hv && hv.score != null) ? hv.score : sc.score;
+    } catch (e) { return null; }
+  }
+
   document.getElementById("analyze").addEventListener("click", () => {
     showMsg("");
     analysePaste();
   });
 
-  // Humanize: apply ONE mechanical fix, re-score, show the drop. Reversible via Undo.
+  // Humanize: apply mechanical fixes, re-score, report the SAME number the meter shows. Reversible via Undo.
   humanizeBtn.addEventListener("click", () => {
     const text = pasteEl.value || "";
     let res = null;
     try { res = Humanize.runAll(text, { max: 6 }); } catch (e) {}
-    if (!res) { showMsg("Nothing safe left to auto-fix — the rest needs your words."); return; }
+    if (!res) {
+      const sc0 = headlineScore(text);
+      if (sc0 != null && sc0 >= 55) showMsg("Still reads " + sc0 + "% AI — that's the STRUCTURE, not the words. To bring it down, change what's sung: vary your line lengths, break up a repeated chorus, and let a line spill past the rhyme instead of stopping dead on it.");
+      else showMsg("Nothing left to auto-fix — it already reads human.");
+      return;
+    }
+    const before = headlineScore(text);   // same model as the big % , BEFORE
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;
     pasteEl.classList.add("hz-flash");
     setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
+    const after = headlineScore(res.text); // same model as the big % , AFTER
     const what = res.steps.map((s) => s.detail || s.label).join(" · ");
     const n = res.count, plural = n === 1 ? "fix" : "fixes";
-    showMsg("Applied " + n + " " + plural + " (" + res.before + "% → " + res.after + "% AI): " + what);
+    const delta = (before != null && after != null)
+      ? (after < before ? (before + "% → " + after + "% AI") : ("AI score held at " + after + "%"))
+      : "done";
+    showMsg("Applied " + n + " " + plural + " (" + delta + "): " + what);
+  });
+
+  // Rewrite: line-by-line v8 transform, keeps only AI-lowering changes, never invents content. Reversible.
+  const rewriteBtn = document.getElementById("rewrite");
+  if (rewriteBtn) rewriteBtn.addEventListener("click", () => {
+    const text = pasteEl.value || "";
+    let res = null;
+    try { res = (typeof RewriteV8 !== "undefined" && RewriteV8.rewrite) ? RewriteV8.rewrite(text) : null; } catch (e) {}
+    if (!res || res.text == null) { showMsg("Rewrite engine not loaded, or nothing to change."); return; }
+    const before = headlineScore(text);
+    undoStack.push(text);
+    undoBtn.hidden = false;
+    pasteEl.value = res.text;
+    pasteEl.classList.add("hz-flash");
+    setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
+    analysePaste();
+    const after = headlineScore(res.text);
+    const delta = (before != null && after != null)
+      ? (after < before ? (before + "% → " + after + "% AI") : ("held at " + after + "%"))
+      : "done";
+    showMsg("Rewrote line by line, keeping only AI-lowering changes (" + delta + ").");
   });
 
   undoBtn.addEventListener("click", () => {

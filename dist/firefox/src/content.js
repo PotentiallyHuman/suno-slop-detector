@@ -84,8 +84,9 @@
     // give a meaningful number here, so show an honest notice instead of a fake score.
     if (looksNonEnglish(text)) { lastResult = { nonEnglish: true, _text: text }; return lastResult; }
 
-    let v5 = null;
+    let v5 = null, v8 = null;
     try { if (globalThis.SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) { /* fall back */ }
+    try { if (globalThis.SLOP_MODEL_V8 && globalThis.SlopV8 && SlopV8.scoreV8) v8 = SlopV8.scoreV8(text); } catch (e) { /* fall back */ }
 
     let panel = null;
     try {
@@ -94,13 +95,17 @@
       /* panel optional */
     }
 
-    const headScore = (v5 && v5.score != null) ? v5.score : sc.score;
+    // Headline = v8 (if loaded) -> v5 -> old model. Attribution is gated on the DISPLAYED
+    // score (v8), not v5: post-port they can disagree, and we must never show "likely Suno"
+    // under a human-reading number.
+    const headScore = (v8 && v8.score != null) ? v8.score : ((v5 && v5.score != null) ? v5.score : sc.score);
+    const headIsAI = headScore >= 50;
     const result = {
-      score: headScore, // v5 P(AI)*100 if available, else old model
-      pAI: (v5 && v5.pAI != null) ? v5.pAI : sc.pAI,
+      score: headScore, // v8 P(AI)*100 if available, else v5, else old model
+      pAI: (v8 && v8.pAI != null) ? v8.pAI : ((v5 && v5.pAI != null) ? v5.pAI : sc.pAI),
       label: SlopScore.verdict(headScore),
-      attribution: v5 ? v5.attribution : null, // {model,conf} | {model:null} | null — gated behind AI verdict
-      verdict: v5 ? v5.verdict : null,
+      attribution: (headIsAI && v5) ? v5.attribution : null, // only named under an AI headline
+      verdict: headIsAI ? "ai" : "human",
       panel: panel,
       _text: text,
     };

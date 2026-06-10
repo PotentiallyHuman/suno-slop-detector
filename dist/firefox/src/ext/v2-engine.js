@@ -222,9 +222,36 @@
     return { pAI: pAI, score: Math.round(pAI * 100), verdict: isAI ? "AI" : "human", threshold: M.threshold, attribution: attribution };
   }
 
+  // CONTENT score — same v5 model, but FORMAT/STRUCTURE feature weights discounted ×0.3 so the
+  // number reads WHAT IS SAID, not how it's lined up. (Same words run-on vs line-broken flips the
+  // full score 0↔100; the content score barely moves. It's also what Humanize can actually lower.)
+  var STRUCT_FEATS = { f_avgLineLen:1, f_lineLenCV:1, f_avgWordLen:1, s_endStoppedRatio:1, s_dupLinesTotal:1, s_consecDupLines:1, s_maxConsecDup:1, f_repetition:1, f_rhymePerLine:1, f_perfectRhymeRatio:1, f_endRhymeRate:1, lex_rhyme:1, s_everyEnum:1, s_anaphora:1, s_iLineOpeners:1, s_youLineOpeners:1, s_firstPersonIOpener:1, s_immediateWordDouble:1, s_repeatedWordInLine:1, s_hookMaxRepeat:1, s_titleDropRepeat:1, f_phrasePerLine:1, s_vocableLines:1, s_vocables:1, s_ohHeyOpener:1, s_exclaimInterjection:1, s_tricolon:1 };
+  var STRUCT_DISC = 0.3;
+  function scoreContent(text) {
+    var M = G.SLOP_MODEL_V5;
+    if (!M) throw new Error("SLOP_MODEL_V5 not loaded");
+    var cleaned = (G.SlopClean ? G.SlopClean.clean(text) : { lyrics: String(text == null ? "" : text), instrumental: false });
+    if (cleaned.instrumental) return { instrumental: true, pAI: null, score: null };
+    text = cleaned.lyrics;
+    var banks = v5banks(M);
+    var raw = denseDict(text);
+    if (G.SLOP_PX) { var px = G.SLOP_PX.features(text, banks.aiSet, banks.mSets); for (var pk in px) raw[pk] = px[pk]; }
+    var DN = M.denseNames.length, dnz = new Array(DN);
+    for (var j = 0; j < DN; j++) { var r = +raw[M.denseNames[j]] || 0; dnz[j] = (r - M.denseMean[j]) / (M.denseStd[j] || 1); }
+    var tk = bowToks(text), nTok = Math.max(1, tk.length), bow = {}, idx = {};
+    for (var vi = 0; vi < M.vocab.length; vi++) idx[M.vocab[vi]] = vi;
+    for (var ti = 0; ti < tk.length; ti++) { var bi = idx[tk[ti]]; if (bi !== undefined) bow[bi] = (bow[bi] || 0) + 1; }
+    var z = M.binary.bias;
+    for (var bk in bow) z += M.binary.wBow[bk] * (bow[bk] / nTok);
+    for (var jj = 0; jj < DN; jj++) { var w = STRUCT_FEATS[M.denseNames[jj]] ? M.binary.wDense[jj] * STRUCT_DISC : M.binary.wDense[jj]; z += w * dnz[jj]; }
+    var pAI = 1 / (1 + Math.exp(-z));
+    return { pAI: pAI, score: Math.round(pAI * 100) };
+  }
+
   var api = {
     score: score,
     scoreV5: scoreV5,
+    scoreContent: scoreContent,
     denseDict: denseDict,
     bowToks: bowToks,
     nLinesOf: nLinesOf,

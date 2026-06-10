@@ -2,6 +2,20 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.6.0] — v8 detector model + line-rewrite (2026-06-10)
+### Added
+- **v8 detector model** as the headline scorer (replaces v5). Format-stripped features
+  (no more line-break-style false positives) + 9 craft features; 88% cross-validated.
+  Deterministic, on-device, no LLM/network. v5 is retained only for the gated LLM attribution.
+- **Rewrite button** (the line-rewrite / "edit-line-inserter"). Rewrites pasted lyrics line
+  by line with the v8 gated transformer, keeping **only** changes that lower the AI score;
+  never invents content, never deletes lines (line count preserved), no LLM. Reversible via Undo.
+### Changed
+- Attribution is gated on the **displayed (v8) headline** (`>=50`), not the v5 verdict — they
+  can disagree, and "likely Suno" must never show under a human-reading number.
+### Fixed
+- Folds in 0.5.2: the false-0% / inconsistent-score selector fix.
+
 ## [0.5.2] — robust lyrics selector + navigation flush (2026-06-10)
 ### Fixed
 - **Inconsistent and false-0% scores across Suno page layouts.** The song-page lyrics
