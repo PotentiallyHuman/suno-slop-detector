@@ -182,8 +182,49 @@
     };
   }
 
+  // ---- v5 scoring (SLOP_MODEL_V5): mirrors analysis/score_v5.js EXACTLY ----
+  // No ±3σ clip and no temperature — the 0.55 threshold was calibrated on the raw
+  // sigmoid. Adds px_/typ_ dense features (SLOP_PX) + gated 5-way attribution.
+  var _v5banks = null;
+  function v5banks(M) {
+    if (_v5banks) return _v5banks;
+    var mSets = {}; for (var m in M.modelBanks) mSets[m] = new Set(M.modelBanks[m]);
+    _v5banks = { aiSet: new Set(M.aiBank), mSets: mSets };
+    return _v5banks;
+  }
+  function headScoreV5(head, bow, dnz, nTok) {
+    var z = head.bias;
+    for (var bk in bow) z += head.wBow[bk] * (bow[bk] / nTok);
+    for (var j = 0; j < dnz.length; j++) z += head.wDense[j] * dnz[j];
+    return 1 / (1 + Math.exp(-z));
+  }
+  function scoreV5(text) {
+    var M = G.SLOP_MODEL_V5;
+    if (!M) throw new Error("SLOP_MODEL_V5 not loaded");
+    var cleaned = (G.SlopClean ? G.SlopClean.clean(text) : { lyrics: String(text == null ? "" : text), instrumental: false });
+    if (cleaned.instrumental) return { instrumental: true, pAI: null, score: null, verdict: null, attribution: null };
+    text = cleaned.lyrics;
+    var banks = v5banks(M);
+    var raw = denseDict(text);                       // f_/s_/lex_ (+t3_/t4_ unused here)
+    if (G.SLOP_PX) { var px = G.SLOP_PX.features(text, banks.aiSet, banks.mSets); for (var pk in px) raw[pk] = px[pk]; }
+    var DN = M.denseNames.length, dnz = new Array(DN);
+    for (var j = 0; j < DN; j++) { var r = +raw[M.denseNames[j]] || 0; dnz[j] = (r - M.denseMean[j]) / (M.denseStd[j] || 1); }
+    var tk = bowToks(text), nTok = Math.max(1, tk.length), bow = {}, idx = {};
+    for (var vi = 0; vi < M.vocab.length; vi++) idx[M.vocab[vi]] = vi;
+    for (var ti = 0; ti < tk.length; ti++) { var bi = idx[tk[ti]]; if (bi !== undefined) bow[bi] = (bow[bi] || 0) + 1; }
+    var pAI = headScoreV5(M.binary, bow, dnz, nTok);
+    var isAI = pAI >= M.threshold, attribution = null;
+    if (isAI) {
+      var models = Object.keys(M.attribution);
+      var sc = models.map(function (m) { return [m, headScoreV5(M.attribution[m], bow, dnz, nTok)]; }).sort(function (a, b) { return b[1] - a[1]; });
+      attribution = (sc[0][1] >= 0.5 && sc[0][1] - sc[1][1] >= 0.15) ? { model: sc[0][0], conf: sc[0][1] } : { model: null };
+    }
+    return { pAI: pAI, score: Math.round(pAI * 100), verdict: isAI ? "AI" : "human", threshold: M.threshold, attribution: attribution };
+  }
+
   var api = {
     score: score,
+    scoreV5: scoreV5,
     denseDict: denseDict,
     bowToks: bowToks,
     nLinesOf: nLinesOf,

@@ -15,14 +15,25 @@
   // class fragments from the user-supplied selector chain (responsive classes
   // like `xl:pr-8` are brittle across breakpoints and need escaping). This
   // still pins us to the lyrics <p> and nothing else.
-  const LYRICS_SELECTOR =
-    "section div.font-sans.text-foreground-primary p.pr-6.whitespace-pre-wrap";
-
+  // The lyrics <p>. We identify it by STRUCTURE + the one stable semantic class
+  // `whitespace-pre-wrap` (Suno uses it to preserve lyric line breaks), NOT by brittle
+  // styling classes (`pr-6`/`font-sans`/`text-foreground-primary`) that change across
+  // layout variants. That fragility was the bug: when those classes changed the selector
+  // missed, read "", and showed a false 0%. Still scoped to a <section>, so it can never
+  // grab a heading, the prompt box, or anything outside the lyrics window.
   let lastResult = null;
 
   function getLyricsNode() {
-    // Strictly the lyrics paragraph; if it isn't there, we read NOTHING.
-    return document.querySelector(LYRICS_SELECTOR);
+    let nodes = document.querySelectorAll("section p.whitespace-pre-wrap");
+    if (!nodes.length) nodes = document.querySelectorAll("p.whitespace-pre-wrap");
+    if (!nodes.length) return null;
+    // if several match, the lyrics are the largest text block
+    let best = null, bestLen = 0;
+    nodes.forEach((n) => {
+      const t = (n.innerText || n.textContent || "").trim();
+      if (t.length > bestLen) { bestLen = t.length; best = n; }
+    });
+    return best;
   }
 
   // Which suno page we score on: a song page OR the create page.
@@ -33,16 +44,17 @@
   // The ONLY text we read: the song-page lyrics <p>, or (on /create) the lyrics
   // input box. Returns "" if neither is present. Reads nothing else on the page.
   function getLyricsText() {
-    const p = getLyricsNode();
-    if (p) return p.innerText || p.textContent || "";
+    // /create: the lyrics editor, pinned to the STABLE data-testid="lyrics-textarea"
+    // (verified live), with fuzzy fallbacks. Never the style/title box.
     if (/^https:\/\/suno\.com\/create\b/.test(location.href)) {
-      // Conservative: only a textarea explicitly labelled "lyrics" (so we never
-      // grab the style/title box and show a false score). Refine selector after
-      // a live DOM check; until matched, /create shows no score rather than a wrong one.
-      const box = document.querySelector('textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]');
-      if (box && typeof box.value === "string") return box.value;
+      const box = document.querySelector(
+        'textarea[data-testid="lyrics-textarea"], textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]'
+      );
+      return (box && typeof box.value === "string") ? box.value : "";
     }
-    return "";
+    // /song: the rendered lyrics paragraph (or "" — never anything else on the page).
+    const p = getLyricsNode();
+    return p ? (p.innerText || p.textContent || "") : "";
   }
 
   // The model is English-only (its bag-of-words + cliché lexicon are English keywords).
@@ -252,6 +264,10 @@
   function scheduleAnalyse() {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
+      // Belt-and-suspenders: if the SPA changed the URL in a way our history hooks
+      // didn't catch, the on-screen score is stale -> flush BEFORE re-reading, so a
+      // new page never inherits the previous song's %AI.
+      if (location.href !== lastUrl) { lastUrl = location.href; flush(); }
       if (!isScorablePage()) { flush(); return; } // left song/create -> clear it
       const r = analyse();
       render(r);

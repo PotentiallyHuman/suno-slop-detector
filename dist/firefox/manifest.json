@@ -1,23 +1,46 @@
 {
   "manifest_version": 3,
   "name": "Suno Slop Detector",
-  "version": "0.4.1",
+  "version": "0.5.2",
   "description": "Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun. And spite.",
-  "permissions": ["activeTab"],
+  "permissions": [
+    "activeTab"
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "suno-slop-detector@local",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   },
   "content_scripts": [
     {
-      "matches": ["https://suno.com/song/*"],
-      "js": ["src/slop-core.js", "src/common_words.js", "src/features.js", "src/ext/patterns.browser.js", "src/ext/tier3.browser.js", "src/ext/perspectives.browser.js", "src/ext/model.js", "src/ext/clean-lyrics.js", "src/ext/v2-engine.js", "src/ext/v2-panel.js", "src/content.js"],
-      "css": ["src/overlay.css"],
+      "matches": [
+        "https://suno.com/song/*",
+        "https://suno.com/create*"
+      ],
+      "js": [
+        "src/slop-core.js",
+        "src/common_words.js",
+        "src/features.js",
+        "src/ext/patterns.browser.js",
+        "src/ext/tier3.browser.js",
+        "src/ext/perspectives.browser.js",
+        "src/ext/model.js",
+        "src/ext/model_v5.browser.js",
+        "src/ext/portability_tells.browser.js",
+        "src/ext/clean-lyrics.js",
+        "src/ext/v2-engine.js",
+        "src/ext/v2-panel.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/overlay.css"
+      ],
       "run_at": "document_idle"
     }
   ],

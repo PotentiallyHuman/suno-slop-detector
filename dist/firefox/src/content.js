@@ -6,23 +6,55 @@
 (function () {
   "use strict";
 
-  // ---- SAFETY GATE #1: URL must be a Suno song page -------------------------
-  const ON_SONG_PAGE = /^https:\/\/suno\.com\/song\//.test(location.href);
-  if (!ON_SONG_PAGE) return; // never read, never analyse anywhere else
+  // ---- SAFETY GATE #1: URL must be a Suno song OR create page ---------------
+  const ON_SCORABLE = /^https:\/\/suno\.com\/(song|create)\b/.test(location.href);
+  if (!ON_SCORABLE) return; // never read, never analyse anywhere else
 
   // ---- SAFETY GATE #2: the ONLY element we are allowed to read --------------
   // The lyrics paragraph. We intentionally use the stable, non-responsive
   // class fragments from the user-supplied selector chain (responsive classes
   // like `xl:pr-8` are brittle across breakpoints and need escaping). This
   // still pins us to the lyrics <p> and nothing else.
-  const LYRICS_SELECTOR =
-    "section div.font-sans.text-foreground-primary p.pr-6.whitespace-pre-wrap";
-
+  // The lyrics <p>. We identify it by STRUCTURE + the one stable semantic class
+  // `whitespace-pre-wrap` (Suno uses it to preserve lyric line breaks), NOT by brittle
+  // styling classes (`pr-6`/`font-sans`/`text-foreground-primary`) that change across
+  // layout variants. That fragility was the bug: when those classes changed the selector
+  // missed, read "", and showed a false 0%. Still scoped to a <section>, so it can never
+  // grab a heading, the prompt box, or anything outside the lyrics window.
   let lastResult = null;
 
   function getLyricsNode() {
-    // Strictly the lyrics paragraph; if it isn't there, we read NOTHING.
-    return document.querySelector(LYRICS_SELECTOR);
+    let nodes = document.querySelectorAll("section p.whitespace-pre-wrap");
+    if (!nodes.length) nodes = document.querySelectorAll("p.whitespace-pre-wrap");
+    if (!nodes.length) return null;
+    // if several match, the lyrics are the largest text block
+    let best = null, bestLen = 0;
+    nodes.forEach((n) => {
+      const t = (n.innerText || n.textContent || "").trim();
+      if (t.length > bestLen) { bestLen = t.length; best = n; }
+    });
+    return best;
+  }
+
+  // Which suno page we score on: a song page OR the create page.
+  function isScorablePage() {
+    return /^https:\/\/suno\.com\/(song|create)\b/.test(location.href);
+  }
+
+  // The ONLY text we read: the song-page lyrics <p>, or (on /create) the lyrics
+  // input box. Returns "" if neither is present. Reads nothing else on the page.
+  function getLyricsText() {
+    // /create: the lyrics editor, pinned to the STABLE data-testid="lyrics-textarea"
+    // (verified live), with fuzzy fallbacks. Never the style/title box.
+    if (/^https:\/\/suno\.com\/create\b/.test(location.href)) {
+      const box = document.querySelector(
+        'textarea[data-testid="lyrics-textarea"], textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]'
+      );
+      return (box && typeof box.value === "string") ? box.value : "";
+    }
+    // /song: the rendered lyrics paragraph (or "" — never anything else on the page).
+    const p = getLyricsNode();
+    return p ? (p.innerText || p.textContent || "") : "";
   }
 
   // The model is English-only (its bag-of-words + cliché lexicon are English keywords).
@@ -39,12 +71,11 @@
   }
 
   function analyse() {
-    const node = getLyricsNode();
-    if (!node) return null;
-    const text = node.innerText || node.textContent || "";
-    if (text.trim().length < 12) return null; // too short to mean anything
+    const text = getLyricsText();
+    if (!text || text.trim().length < 12) return null; // too short to mean anything
 
-    // v2: pure trained-model confidence P(AI). score = round(pAI*100). No blend.
+    // Old model drives the craft-panel jokers; the v5 model (if loaded) drives the
+    // headline score + LLM attribution. Graceful fallback to the old score.
     const sc = SlopV2.score(text);
     // Instrumental (nothing but bracket-tags / blank after cleaning) -> no score, no feedback.
     if (sc && sc.instrumental) { lastResult = { instrumental: true, _text: text }; return lastResult; }
@@ -53,6 +84,9 @@
     // give a meaningful number here, so show an honest notice instead of a fake score.
     if (looksNonEnglish(text)) { lastResult = { nonEnglish: true, _text: text }; return lastResult; }
 
+    let v5 = null;
+    try { if (globalThis.SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) { /* fall back */ }
+
     let panel = null;
     try {
       panel = SlopPanel.build(text, sc);
@@ -60,10 +94,13 @@
       /* panel optional */
     }
 
+    const headScore = (v5 && v5.score != null) ? v5.score : sc.score;
     const result = {
-      score: sc.score, // = round(pAI*100)
-      pAI: sc.pAI,
-      label: SlopScore.verdict(sc.score),
+      score: headScore, // v5 P(AI)*100 if available, else old model
+      pAI: (v5 && v5.pAI != null) ? v5.pAI : sc.pAI,
+      label: SlopScore.verdict(headScore),
+      attribution: v5 ? v5.attribution : null, // {model,conf} | {model:null} | null — gated behind AI verdict
+      verdict: v5 ? v5.verdict : null,
       panel: panel,
       _text: text,
     };
@@ -198,21 +235,58 @@
     refs.verdict.appendChild(el("span", { class: "slop-big", style: "color:" + c, text: result.score + "% AI" }));
     refs.verdict.appendChild(el("span", { class: "slop-verdict-text", text: result.label }));
 
+    // v5 model attribution — only named when confident, gated behind the AI verdict
+    if (result.attribution) {
+      const NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
+      const a = result.attribution;
+      const attrText = a.model
+        ? `likely ${NAMES[a.model] || a.model} (${Math.round(a.conf * 100)}%)`
+        : "AI — model uncertain";
+      refs.verdict.appendChild(el("span", { class: "slop-attribution", text: attrText }));
+    } else if (result.verdict === "human") {
+      refs.verdict.appendChild(el("span", { class: "slop-attribution", text: "likely human-written" }));
+    }
+
     refs.components.textContent = `model confidence this is AI: ${result.score}%`;
 
     renderCraft(result.panel);
   }
 
-  // ---- Suno is a SPA: lyrics load late & change on navigation ---------------
+  // ---- Suno is a SPA: lyrics load late, and the page changes without reload ---
+  // flush() drops the previous analysis (removes the pill) so a refreshed/changed
+  // page never shows a stale score; a fresh pill is rebuilt on the next render.
+  function flush() {
+    if (host) { host.remove(); host = null; badge = null; panel = null; refs = {}; }
+    lastResult = null;
+  }
+
   let debounce = null;
   function scheduleAnalyse() {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-      if (!/^https:\/\/suno\.com\/song\//.test(location.href)) return; // re-gate
+      // Belt-and-suspenders: if the SPA changed the URL in a way our history hooks
+      // didn't catch, the on-screen score is stale -> flush BEFORE re-reading, so a
+      // new page never inherits the previous song's %AI.
+      if (location.href !== lastUrl) { lastUrl = location.href; flush(); }
+      if (!isScorablePage()) { flush(); return; } // left song/create -> clear it
       const r = analyse();
       render(r);
     }, 400);
   }
+
+  // SPA navigation: Suno changes the URL via the History API (no full reload).
+  // On ANY url change -> flush the old analysis, then re-analyse if still scorable.
+  let lastUrl = location.href;
+  function onUrlChange() {
+    if (location.href === lastUrl) return;
+    lastUrl = location.href;
+    flush();                                 // always drop the previous page's score
+    if (isScorablePage()) scheduleAnalyse();  // make a new one if on song/create
+  }
+  const wrapHist = (orig) => function () { const ret = orig.apply(this, arguments); onUrlChange(); return ret; };
+  history.pushState = wrapHist(history.pushState);
+  history.replaceState = wrapHist(history.replaceState);
+  window.addEventListener("popstate", onUrlChange);
 
   const observer = new MutationObserver(scheduleAnalyse);
   observer.observe(document.body, { childList: true, subtree: true });

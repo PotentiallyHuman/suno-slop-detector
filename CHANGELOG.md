@@ -2,6 +2,20 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.5.2] — robust lyrics selector + navigation flush (2026-06-10)
+### Fixed
+- **Inconsistent and false-0% scores across Suno page layouts.** The song-page lyrics
+  selector was pinned to brittle styling classes (`pr-6` / `font-sans` /
+  `text-foreground-primary`). When Suno changed those for a layout variant, the selector
+  missed, read an empty string, and showed it as a real **0% AI** score (same song could
+  read 98% on the create page, 100% on one song page, 0% on another). Now the lyrics are
+  identified by the stable semantic class `whitespace-pre-wrap` scoped to a `<section>`
+  (largest matching block); the create-page editor is pinned to the stable
+  `data-testid="lyrics-textarea"`. Empty/no-match shows `?`, never a number.
+- **Stale score lingering after navigation.** Added a URL-change flush on every re-check so
+  a new song page can never inherit the previous song's %AI (belt-and-suspenders on top of
+  the existing history hooks).
+
 ## [Unreleased] — v5 model retrain (2026-06-05)
 _Model + analysis only; the extension is not yet wired to it. Full results, red-team, and
 integration steps: `analysis/V5_MODEL_RESULTS_AND_INTEGRATION.md`._

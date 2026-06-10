@@ -156,11 +156,22 @@
       humanizeBtn.hidden = true;
       return false;
     }
+    // Use the v5 model for the headline number + attribution (same as the on-page
+    // pill) so the two never disagree; old model still drives the craft panel.
+    let v5 = null;
+    try { if (globalThis.SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) {}
+    const headScore = (v5 && v5.score != null) ? v5.score : sc.score;
     let panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) {}
-    pasteScore.textContent = sc.score + "% AI";
-    pasteScore.style.color = colorFor(sc.score);
-    pasteLabel.textContent = SlopScore.verdict(sc.score) + " · model confidence";
+    pasteScore.textContent = headScore + "% AI";
+    pasteScore.style.color = colorFor(headScore);
+    let lbl = SlopScore.verdict(headScore) + " · model confidence";
+    if (v5 && v5.attribution) {
+      const NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
+      const a = v5.attribution;
+      lbl += a.model ? " · likely " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)" : " · model uncertain";
+    }
+    pasteLabel.textContent = lbl;
     humanizeBtn.hidden = false;            // a real score → one-click cleanup is available
     renderCraft(pasteCraft, panel);
     return true;
