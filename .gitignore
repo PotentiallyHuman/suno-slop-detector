@@ -23,3 +23,5 @@ corpus/models/*.heldout
 SESSION_LOG.md
 __pycache__/
 *.pyc
+# raw scraped lyrics — NEVER commit (copyright); structure tables are fine
+corpus/human_lyrics_cache2.json

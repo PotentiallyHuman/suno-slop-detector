@@ -39,7 +39,7 @@
       var cands = rev3[out[0] + "\t" + out[1]] || rev2[out[0]]; if (!cands || !cands.length) break;
       var cs = cands.filter(allowed); if (!cs.length) cs = cands;
       var wt = [], tot = 0, j;
-      for (j = 0; j < cs.length; j++) { var w = Math.max(0.02, 1 + 2.5 * Math.max(0, onTheme(cs[j], theme)) + 0.15 * humanness(cs[j])); wt.push(w); tot += w; }
+      for (j = 0; j < cs.length; j++) { var w = Math.max(0.02, 1 + 2.5 * Math.max(0, onTheme(cs[j], theme)) + 0.15 * humanness(cs[j])); if (cs[j].length <= 3) w *= 0.6; wt.push(w); tot += w; }   // bias the walk toward content words
       var r = Math.random() * tot, p = cs[0];
       for (j = 0; j < cs.length; j++) { r -= wt[j]; if (r <= 0) { p = cs[j]; break; } }
       out.unshift(p); syl += nsyl(p);
@@ -71,8 +71,24 @@
       var bg = arr[r] + "" + arr[r + 1]; if (seen[bg]) return false; seen[bg] = 1;  // line ("braff goodbye harry braff goodbye harry")
     }
     var pos = []; for (var i = 0; i < arr.length; i++) pos.push(WPOS[arr[i]] || "NN");
-    return TEMPLATES.has(pos.join("|"));
+    // The old rule demanded the EXACT whole-line POS template be known. The 2000-song cross-corpus
+    // study killed that: exact templates are corpus one-offs (15% coverage on independent humans),
+    // and the demand made 13+ syllable lines unbuildable. What replicates across independent
+    // corpora (0.85-0.92 overlap): how lines OPEN, how they CLOSE, and the transition inventory.
+    // Known template stays as a fast-path accept.
+    if (TEMPLATES.has(pos.join("|"))) return true;
+    if (!STARTBG.has(pos[0] + " " + pos[1])) return false;                            // opens like a real line
+    if (!ENDBG.has(pos[pos.length - 2] + " " + pos[pos.length - 1])) return false;    // closes like a real line
+    if (DANGLE.has(pos[pos.length - 1])) return false;                                // never end on a hanging word
+    if (pos.length >= 2 && pos[pos.length - 2] === "MD" && pos[pos.length - 1] !== "VB") return false;   // "will always" dangles; "can add" is fine
+    for (var b = 0; b < pos.length - 1; b++) if (!VALIDBG.has(pos[b] + " " + pos[b + 1])) return false;
+    // content quota: without the exact-template constraint the walk drifts into pronoun soup
+    // ("and i like it but i know what they are") — demand the human minimum of substance
+    var content = {}, nc = 0;
+    for (var c = 0; c < arr.length; c++) if (arr[c].length > 3 && !content[arr[c]]) { content[arr[c]] = 1; nc++; }
+    return nc >= 2 && nc / arr.length >= 0.25;
   }
+  var DANGLE = new Set(["IN", "TO", "CC", "DT", "MD", "PRP$", "WDT", "WP", "WRB"]);
   function genLine(rhymeWord, theme, targetSyl, N) {
     var vk = VK[rhymeWord]; if (!vk) return null;
     var rhymes = (slant[vk] || []).filter(function (w) { return w !== rhymeWord && rev2[w]; });
@@ -112,6 +128,15 @@
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----
   function judgeLine(l, scoreFn) {
     var j = scoreFn(l) + 200 * clicheCount(l);                 // AI% dominates; clichés are near-fatal
+    // anti-soup: the loosened professor admits fluent-but-empty pronoun runs
+    // ("you know what you like it") — penalize repeated content words and thin lines
+    var ws = words(l), content = {}, short_ = 0, i;
+    for (i = 0; i < ws.length; i++) {
+      if (ws[i].length <= 3) short_++;
+      else { if (content[ws[i]]) j += 30; content[ws[i]] = 1; }   // same content word twice in one line
+    }
+    var shortShare = ws.length ? short_ / ws.length : 0;
+    if (shortShare > 0.58) j += (shortShare - 0.58) * 80;          // mostly function words = filler
     try {
       if (globalThis.SlopPerspectives) {
         var pr = globalThis.SlopPerspectives.analyze(l), s = 0, n = 0;

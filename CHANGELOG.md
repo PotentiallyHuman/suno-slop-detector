@@ -2,6 +2,25 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.7.2] — line grammar learned from 2000 fresh human songs (2026-06-12)
+A cross-corpus study (2000 newly fetched human songs vs the 6388 training songs, with a
+split-half baseline as ceiling) settled what "a human line structure" actually is:
+- Exact whole-line POS templates do NOT replicate across independent human corpora (15%
+  coverage) — they are corpus one-offs. The generator's old rule demanded them, which is
+  why long (13+ syllable) lines could almost never be rebuilt.
+- What replicates at the ceiling: how lines OPEN (0.85-0.92 overlap), how they CLOSE
+  (0.89), the POS-transition inventory, rhyme-with-previous-line (~33%), first-word echo
+  (~14%), sentence spillover (~6%), and neighbor-relative length (peak ±0-1 syllables).
+### Changed
+- The line-acceptance rule now uses the proven-universal grammar (open + close + valid
+  transitions; known templates remain a fast path). Long clichéd lines finally regenerate.
+- Model retrained on all 8388 human songs (richer word chains, 16k vocab).
+- The candidate judge gained anti-filler penalties (repeated content words, function-word
+  share) so the looser grammar can't admit fluent-but-empty pronoun runs.
+### Data
+- The learned structure tables (no lyric text, structures only) ship in
+  corpus/context_grammar.json; the raw fetched lyrics never enter the repo.
+
 ## [0.7.1] — the humanizer now only touches lines that earn it (2026-06-11)
 Found by a real before/after on a finished song ("Hydrogen"): the song scored 95% AI from its
 STRUCTURE alone (repeated chorus, identical hook lines), every individual line read human, and
