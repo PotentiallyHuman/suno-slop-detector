@@ -19,10 +19,16 @@ JS_ORDER = [
     "engine/slop-core.js", "engine/common_words.js", "engine/features.js",
     "engine/ext/patterns.browser.js", "engine/ext/tier3.browser.js",
     "engine/ext/perspectives.browser.js",
-    "engine/ext/model.js", "engine/ext/model_v5.browser.js", "engine/ext/portability_tells.browser.js", "engine/ext/clean-lyrics.js",
-    "engine/ext/v2-engine.js", "engine/ext/v2-panel.js",
+    "engine/ext/model.js", "engine/ext/model_v5.browser.js", "engine/ext/model_v8.browser.js", "engine/ext/portability_tells.browser.js", "engine/ext/clean-lyrics.js",
+    "engine/ext/v2-engine.js",
+    # v8 detector (88% CV, format-stripped + craft) + gated rewriter — MUST follow v2-engine.js (reads SlopV2.denseDict, CraftFeatures, SLOP_MODEL_V8)
+    "engine/ext/craft_features.browser.js", "engine/ext/v8-score.browser.js", "engine/ext/v8-rewrite.browser.js",
+    "engine/ext/v2-panel.js",
+    # freestyle humanizer (Humanize Line / Humanize Rewrite) — model MUST precede gen; both need v8-score loaded
+    "engine/ext/humanizer_model.browser.js", "engine/ext/humanizer-gen.browser.js",
     # data-vetted Humanize word/phrase-swap catalogs — MUST precede humanize.js (it reads these globals)
     "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js",
+    "human_pool.browser.js",   # 4005 mined specific/atypical human lines — MUST precede humanize.js (humanizeContent reads G.HUMAN_POOL)
     "humanize.js", "app.js",
 ]
 

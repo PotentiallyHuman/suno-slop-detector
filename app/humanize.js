@@ -267,11 +267,15 @@
   }
 
   // ---- feature -> transform dispatch (matches the dense feature ids the panel reports) ----
+  // V5-RETARGETED + STRUCTURE-PRESERVING. The line-deleting transforms (removeDuplicateLine,
+  // deleteFillerLine) are intentionally NOT dispatched any more — a 4-line segment stays 4 lines.
+  // modelScore() = what the model LEARNED from the data drives every accept/reject: an edit is
+  // kept only if it lowers the V5 score (falls back to the old model only if v5 isn't loaded).
+  function modelScore(t) {
+    try { if (G.SLOP_MODEL_V5 && G.SlopV2 && G.SlopV2.scoreV5) { var v = G.SlopV2.scoreV5(t); if (v && typeof v.pAI === "number") return v; } } catch (e) {}
+    try { return G.SlopV2.score(t); } catch (e) { return null; }
+  }
   var DISPATCH = {
-    s_dupLinesTotal: removeDuplicateLine, s_consecDupLines: removeDuplicateLine,
-    s_maxConsecDup: removeDuplicateLine, s_hookMaxRepeat: removeDuplicateLine,
-    s_titleDropRepeat: removeDuplicateLine, f_repetition: removeDuplicateLine,
-    s_vocableLines: deleteFillerLine, s_vocables: deleteFillerLine,
     lex_cliche: replaceStockWord, f_clicheDensity: replaceStockWord, t4_poet_stockImagery: replaceStockWord,
     lex_rhyme: breakRhyme, f_perfectRhymeRatio: breakRhyme, f_endRhymeRate: breakRhyme,
     // data-vetted WORD/PHRASE swaps (survey items 5, 7, 8, 9)
@@ -296,9 +300,10 @@
   function next(text) {
     if (!G.SlopV2 || !G.SlopPanel) return null;
     var sc;
-    try { sc = G.SlopV2.score(text); } catch (e) { return null; }
+    try { sc = G.SlopV2.score(text); } catch (e) { return null; }   // old-model panel PICKS candidate fixes
     if (!sc || sc.instrumental || !sc.contributions) return null;
-    var before = sc.score, beforeP = sc.pAI;
+    var mb = modelScore(text); if (!mb || typeof mb.pAI !== "number") return null;  // V5 ACCEPTS/REJECTS
+    var before = mb.score, beforeP = mb.pAI;
 
     var panel;
     try { panel = G.SlopPanel.build(text, sc); } catch (e) { return null; }
@@ -310,9 +315,8 @@
       var out;
       try { out = fn(text); } catch (e) { out = null; }
       if (!out || out.text == null || out.text === text) continue;  // transform didn't apply
-      var asc;
-      try { asc = G.SlopV2.score(out.text); } catch (e) { continue; }
-      if (!asc || typeof asc.pAI !== "number" || asc.pAI >= beforeP) continue;  // must read more human
+      var asc = modelScore(out.text);
+      if (!asc || typeof asc.pAI !== "number" || asc.pAI >= beforeP) continue;  // must read more human to V5
       return { text: out.text, label: b.label, feature: b.feature,
                before: before, after: asc.score, detail: out.detail };
     }
@@ -344,15 +348,16 @@
   // cutImageStackedLine is intentionally ABSENT (survey item 12: transparent-only — never
   // delete the user's image lines). The data-vetted catalog swaps run first; the generic
   // proxies (replaceStockWord/breakRhyme) cover the lexical features the catalogs don't.
-  var ALL_TRANSFORMS = [removeDuplicateLine, deleteFillerLine,
-                        swapAdjStackCat, swapIngVerbCat, swapPrepPhraseCat, swapAbstractEnding,
+  // STRUCTURE-PRESERVING set: NO removeDuplicateLine / deleteFillerLine (keep the line count).
+  // Only word/phrase swaps that the v5 model accepts as more-human.
+  var ALL_TRANSFORMS = [swapAdjStackCat, swapIngVerbCat, swapPrepPhraseCat, swapAbstractEnding,
                         replaceStockWord, breakRhyme, stripFillerOpener];
   function runAll(text, opts) {
     opts = opts || {};
     var max = opts.max || 8, floor = (typeof opts.floor === "number") ? opts.floor : 18;
     if (!G.SlopV2) return null;
     var cur = text, curSc;
-    try { curSc = G.SlopV2.score(cur); } catch (e) { return null; }
+    try { curSc = modelScore(cur); } catch (e) { return null; }   // V5-retargeted guard
     if (!curSc || curSc.instrumental || typeof curSc.pAI !== "number") return null;
     var before = curSc.score, curP = curSc.pAI, steps = [], after = before;
     for (var k = 0; k < max; k++) {
@@ -362,8 +367,8 @@
         try { out = ALL_TRANSFORMS[t](cur); } catch (e) { out = null; }
         if (!out || out.text == null || out.text === cur) continue;
         var asc;
-        try { asc = G.SlopV2.score(out.text); } catch (e) { continue; }
-        if (!asc || typeof asc.pAI !== "number" || asc.pAI >= curP - 1e-4) continue; // must read more human
+        try { asc = modelScore(out.text); } catch (e) { continue; }   // re-score on V5
+        if (!asc || typeof asc.pAI !== "number" || asc.pAI >= curP - 1e-4) continue; // must read more human to V5
         if (!best || asc.pAI < best.pAI) best = { text: out.text, pAI: asc.pAI, score: asc.score, detail: out.detail };
       }
       if (!best) break;
@@ -375,9 +380,39 @@
     return { text: cur, steps: steps, before: before, after: after, count: steps.length };
   }
 
+  // ---- CONTENT-HUMANIZE (rung 2): replace generic/typical lines with SPECIFIC + ATYPICAL lines
+  // from the mined human-corpus pool (G.HUMAN_POOL), matched by syllable for meter, keeping only
+  // swaps that lower the CONTENT score (structure-discounted). This is the rung that actually moves
+  // a saturated song (groove 100->0) because pool lines carry numerals/proper-nouns/low-typicality.
+  function _syl(line){ return Math.max(1, (String(line).toLowerCase().match(/[aeiouy]+/g) || []).length); }
+  var _pbs = null, _prot = 0;
+  function _poolBySyl(){ if (_pbs) return _pbs; _pbs = {}; var p = G.HUMAN_POOL || []; for (var i = 0; i < p.length; i++){ var s = p[i].syl; (_pbs[s] = _pbs[s] || []).push(p[i].line); } return _pbs; }
+  function _poolCands(syl){ var by = _poolBySyl(), o = []; var ds = [0,1,-1,2,-2]; for (var d = 0; d < ds.length; d++){ if (by[syl+ds[d]]) o = o.concat(by[syl+ds[d]]); } return o.length ? o : null; }
+  function _cScore(t){ try { if (G.SlopV2 && G.SlopV2.scoreContent){ var r = G.SlopV2.scoreContent(t); if (r && typeof r.pAI === "number") return r; } } catch (e) {} return null; }
+  function humanizeContent(text){
+    if (!G.HUMAN_POOL || !G.SlopV2 || !G.SlopV2.scoreContent) return null;
+    var cur = text, sc = _cScore(cur); if (!sc) return null;
+    var before = sc.score, base = sc.pAI, steps = [];
+    for (var round = 0; round < 5; round++){
+      var imp = false, lines = cur.split("\n");
+      for (var i = 0; i < lines.length; i++){
+        var ln = lines[i]; if (/^\s*\[/.test(ln) || !ln.trim()) continue;
+        var opts = _poolCands(_syl(ln)); if (!opts) continue;
+        var best = null, bp = base;
+        for (var k = 0; k < 6; k++){ var c = opts[(_prot++) % opts.length]; if (c === ln) continue; var cc = lines.slice(); cc[i] = c; var s = _cScore(cc.join("\n")); if (s && s.pAI < bp - 1e-4){ bp = s.pAI; best = c; } }
+        if (best){ steps.push({ detail: "“" + ln.trim().slice(0,22) + "…” → a sharper line" }); lines[i] = best; cur = lines.join("\n"); base = bp; imp = true; }
+      }
+      if (!imp) break;
+    }
+    if (!steps.length) return null;
+    var aft = _cScore(cur);
+    return { text: cur, before: before, after: aft ? aft.score : before, count: steps.length, steps: steps };
+  }
+
   var api = {
     next: next,
     runAll: runAll,
+    humanizeContent: humanizeContent,
     // exposed for tests / reuse
     transforms: {
       removeDuplicateLine: removeDuplicateLine,

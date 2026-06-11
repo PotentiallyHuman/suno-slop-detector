@@ -2,6 +2,40 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.7.0] — on-device freestyle humanizer, every surface (2026-06-11)
+### Added
+- **The freestyle humanizer**, now wired into the extension popup (Chrome + Firefox), the
+  PWA, and the Android app. Instead of patching words, it rebuilds the most-AI lines as
+  **new** lines — constructed backward from the end-rhyme the way a freestyler writes:
+  rhyme locked first, then the line built word-by-word to the syllable target, themed to
+  the song's own embedding.
+  - **Cliché-free by construction** — the detector's 125-word AI-cliché blocklist is
+    excluded from the generator's vocabulary at build time (it literally cannot say
+    "whisper").
+  - **Grammar professor** — a candidate line is kept only if its whole-line
+    part-of-speech structure matches a real human line's structure, so output reads as a
+    complete standalone thought, never a fragment.
+  - **Anti-copy** — any candidate containing 4 consecutive corpus words is rejected
+    (FNV-1a hash check), so no human lyric is ever reproduced.
+  - **v8-gated** — a rebuilt line is kept only if the song's v8 AI score doesn't rise; a
+    press can only improve the song or do nothing.
+  - Pure on-device: a 3.7 MB distilled model (word transitions, rhyme banks, int8 GloVe
+    theme vectors, POS templates). No LLM, no network, **no new permissions**.
+- Two buttons, two speeds: **"Humanize Line"** rebuilds the single worst line per click
+  (worst-first, so you watch the song clean up); **"Humanize Rewrite"** rebuilds the worst
+  half in one press and keeps the better half yours. Both reversible via Undo.
+### Changed
+- The popup's old **Humanize** (mechanical word-swaps) and **Rewrite** (gated line
+  transform) handlers are repointed at the freestyle generator; buttons relabeled
+  "Humanize Line" / "Humanize Rewrite" to match the PWA.
+- Android app rebuilt to 1.2.0 with the same generator (the 1.1.0 APK still carried the
+  old broken pool-transplant humanizer).
+### Quality (measured)
+- 3000-line scale test: 99% grammar-clean, 100% rhyme-correct, 98% syllable-within-2,
+  0 clichés. Every surface interaction-audited: simulated button presses to convergence on
+  real AI songs + edge cases — a press never worsens a song, never throws, and never
+  silently does nothing on an AI song.
+
 ## [0.6.0] — v8 detector model + line-rewrite (2026-06-10)
 ### Added
 - **v8 detector model** as the headline scorer (replaces v5). Format-stripped features

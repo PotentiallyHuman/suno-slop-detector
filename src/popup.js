@@ -181,71 +181,48 @@
 
   function showMsg(txt) { pasteMsg.textContent = txt; pasteMsg.hidden = !txt; }
 
-  // Headline score EXACTLY as the big "% AI" shows it (v5 if loaded, else old model).
-  // The Humanize message must report THIS, never the old-model res.before/res.after.
-  function headlineScore(t) {
-    try {
-      const sc = SlopV2.score(t); if (!sc || sc.instrumental) return null;
-      let h8 = null;
-      try { if (typeof SLOP_MODEL_V8 !== "undefined" && SLOP_MODEL_V8 && typeof SlopV8 !== "undefined" && SlopV8.scoreV8) h8 = SlopV8.scoreV8(t); } catch (e) {}
-      if (h8 && h8.score != null) return h8.score;
-      let hv = null;
-      try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreV5) hv = SlopV2.scoreV5(t); } catch (e) {}
-      return (hv && hv.score != null) ? hv.score : sc.score;
-    } catch (e) { return null; }
-  }
+  // v8 line/song AI score (0..100) — ranks lines and gates the freestyle rebuilds.
+  // Same scoreFn as app/app.js, so both surfaces report identical numbers.
+  function aiScore(t) { try { const r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; } }
 
   document.getElementById("analyze").addEventListener("click", () => {
     showMsg("");
     analysePaste();
   });
 
-  // Humanize: apply mechanical fixes, re-score, report the SAME number the meter shows. Reversible via Undo.
+  // "Humanize Line": rebuild the single most-AI line with the on-device freestyle
+  // generator. One line per click, worst-first. Reversible via Undo.
   humanizeBtn.addEventListener("click", () => {
     const text = pasteEl.value || "";
+    if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
-    try { res = Humanize.runAll(text, { max: 6 }); } catch (e) {}
-    if (!res) {
-      const sc0 = headlineScore(text);
-      if (sc0 != null && sc0 >= 55) showMsg("Still reads " + sc0 + "% AI — that's the STRUCTURE, not the words. To bring it down, change what's sung: vary your line lengths, break up a repeated chorus, and let a line spill past the rhyme instead of stopping dead on it.");
-      else showMsg("Nothing left to auto-fix — it already reads human.");
-      return;
-    }
-    const before = headlineScore(text);   // same model as the big % , BEFORE
+    try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
+    if (!res) { showMsg("Every line already reads human — nothing left to rebuild."); return; }
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;
     pasteEl.classList.add("hz-flash");
     setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
-    const after = headlineScore(res.text); // same model as the big % , AFTER
-    const what = res.steps.map((s) => s.detail || s.label).join(" · ");
-    const n = res.count, plural = n === 1 ? "fix" : "fixes";
-    const delta = (before != null && after != null)
-      ? (after < before ? (before + "% → " + after + "% AI") : ("AI score held at " + after + "%"))
-      : "done";
-    showMsg("Applied " + n + " " + plural + " (" + delta + "): " + what);
+    showMsg("Rebuilt your most-AI line (#" + (res.lineIndex + 1) + "): " + res.before + "% → " + res.after + "% AI. Click again for the next-worst — Undo to revert.");
   });
 
-  // Rewrite: line-by-line v8 transform, keeps only AI-lowering changes, never invents content. Reversible.
+  // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the
+  // better half the user's. Press again to take the worst half of what remains.
   const rewriteBtn = document.getElementById("rewrite");
   if (rewriteBtn) rewriteBtn.addEventListener("click", () => {
     const text = pasteEl.value || "";
+    if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
-    try { res = (typeof RewriteV8 !== "undefined" && RewriteV8.rewrite) ? RewriteV8.rewrite(text) : null; } catch (e) {}
-    if (!res || res.text == null) { showMsg("Rewrite engine not loaded, or nothing to change."); return; }
-    const before = headlineScore(text);
+    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
+    if (!res) { showMsg("Every line already reads human — nothing to rewrite."); return; }
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;
     pasteEl.classList.add("hz-flash");
     setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
-    const after = headlineScore(res.text);
-    const delta = (before != null && after != null)
-      ? (after < before ? (before + "% → " + after + "% AI") : ("held at " + after + "%"))
-      : "done";
-    showMsg("Rewrote line by line, keeping only AI-lowering changes (" + delta + ").");
+    showMsg("Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines") + " (" + res.before + "% → " + res.after + "% AI), kept the rest yours. Press again for the worst half of what's left — Undo to revert.");
   });
 
   undoBtn.addEventListener("click", () => {

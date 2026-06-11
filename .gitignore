@@ -17,6 +17,8 @@ build/_amo/
 dist/android/
 *.apk
 *.aab
+# Android signing secrets — NEVER commit
+mobile/keystore/
 corpus/models/*.heldout
 SESSION_LOG.md
 __pycache__/

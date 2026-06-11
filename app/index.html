@@ -31,7 +31,8 @@
         spellcheck="false" placeholder="Paste your lyrics here…&#10;&#10;Section tags like [Chorus] are fine — they're stripped before scoring."></textarea>
       <div class="actions">
         <button id="howai" class="primary" type="button">How AI?</button>
-        <button id="humanize" class="ghost" type="button" hidden>Humanize</button>
+        <button id="humanize" class="ghost" type="button" hidden>Humanize Line</button>
+        <button id="rewrite" class="ghost" type="button" hidden>Humanize Rewrite</button>
         <button id="undo" class="ghost" type="button" hidden>Undo</button>
         <button id="clear" class="ghost" type="button" hidden>Clear</button>
         <button id="example" class="link" type="button">Try an example</button>
@@ -71,10 +72,16 @@
   <script src="engine/ext/perspectives.browser.js"></script>
   <script src="engine/ext/model.js"></script>
   <script src="engine/ext/model_v5.browser.js"></script>
+  <script src="engine/ext/model_v8.browser.js"></script>
   <script src="engine/ext/portability_tells.browser.js"></script>
   <script src="engine/ext/clean-lyrics.js"></script>
   <script src="engine/ext/v2-engine.js"></script>
+  <script src="engine/ext/craft_features.browser.js"></script>
+  <script src="engine/ext/v8-score.browser.js"></script>
+  <script src="engine/ext/v8-rewrite.browser.js"></script>
   <script src="engine/ext/v2-panel.js"></script>
+  <script src="engine/ext/humanizer_model.browser.js"></script>
+  <script src="engine/ext/humanizer-gen.browser.js"></script>
   <script src="rhyme_index.js"></script>
   <script src="adjstack_swaps.js"></script>
   <script src="ingverb_swaps.js"></script>

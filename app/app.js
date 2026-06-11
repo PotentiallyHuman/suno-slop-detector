@@ -9,6 +9,7 @@
   var lyricsEl = $("lyrics");
   var howaiBtn = $("howai");
   var humanizeBtn = $("humanize");
+  var rewriteBtn = $("rewrite");
   var undoBtn  = $("undo");
   var clearBtn = $("clear");
   var exampleBtn = $("example");
@@ -140,13 +141,18 @@
 
     // v5 model (if loaded) drives the headline score + LLM attribution; old model still
     // drives the craft panel jokers. Graceful fallback to the old score.
-    var v5 = null;
+    var v5 = null, content = null, v8 = null;
     try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreV5) v5 = SlopV2.scoreV5(text); } catch (e) {}
-    var headScore = (v5 && v5.score != null) ? v5.score : sc.score;
+    try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreContent) content = SlopV2.scoreContent(text); } catch (e) {}
+    try { if (typeof SLOP_MODEL_V8 !== "undefined" && SLOP_MODEL_V8 && typeof SlopV8 !== "undefined" && SlopV8.scoreV8) v8 = SlopV8.scoreV8(text); } catch (e) {}
+    // Meter = v8 score (format-robust, 88% CV): reads WHAT IS SAID, not how it's lined up, and it's
+    // the number Rewrite can actually move. v5 still drives the LLM attribution below.
+    var headScore = (v8 && v8.score != null) ? v8.score : ((content && content.score != null) ? content.score : ((v5 && v5.score != null) ? v5.score : sc.score));
 
     var col = colorFor(headScore);
     resultEl.hidden = false;
     humanizeBtn.hidden = false;
+    if (rewriteBtn) rewriteBtn.hidden = false;
     scoreEl.className = "score";
     scoreEl.style.color = col;
     scoreEl.textContent = String(headScore);
@@ -156,11 +162,13 @@
     void meterFill.offsetWidth;
     meterFill.style.left = headScore + "%";
     var sub = "Model confidence these lyrics read as AI: " + headScore + "%.";
-    if (v5 && v5.attribution) {
+    var headIsAI = headScore >= 50;   // gate attribution on the v8 HEADLINE, not v5 (they can disagree post-rewrite)
+    if (headIsAI && v5 && v5.attribution && v5.attribution.model) {
       var NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
       var a = v5.attribution;
-      sub += a.model ? "  Likely written by " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)." : "  AI — model uncertain.";
-    } else if (v5 && v5.verdict === "human") { sub += "  Likely human-written."; }
+      sub += "  Likely written by " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%).";
+    } else if (headIsAI) { sub += "  AI — model uncertain."; }
+    else { sub += "  Likely human-written."; }
     subnoteEl.textContent = sub;
 
     var panel = null;
@@ -183,24 +191,37 @@
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, 4200);
   }
 
-  function humanize() {
+  // The headline score EXACTLY as the meter shows it (v5 if loaded, else old model).
+  // Humanize must report this same number, never the old-model res.before/res.after.
+  function headlineScore(t) {
+    try {
+      var sc = SlopV2.score(t); if (!sc || sc.instrumental) return null;
+      try { if (typeof SLOP_MODEL_V8 !== "undefined" && SLOP_MODEL_V8 && typeof SlopV8 !== "undefined" && SlopV8.scoreV8) { var v8 = SlopV8.scoreV8(t); if (v8 && v8.score != null) return v8.score; } } catch (e) {}
+      var cv = null;
+      try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreContent) cv = SlopV2.scoreContent(t); } catch (e) {}
+      if (cv && cv.score != null) return cv.score;   // content score = the meter (what Humanize moves)
+      var hv = null;
+      try { if (typeof SLOP_MODEL_V5 !== "undefined" && SLOP_MODEL_V5 && SlopV2.scoreV5) hv = SlopV2.scoreV5(t); } catch (e) {}
+      return (hv && hv.score != null) ? hv.score : sc.score;
+    } catch (e) { return null; }
+  }
+
+  // v8 line-level AI score (0..100) — ranks lines and gates the freestyle rebuilds
+  function aiScore(t) { try { var r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; } }
+  function humanize() {   // "Humanize Line" — rebuild the single worst line, one per click
     var text = lyricsEl.value || "";
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
-    var res;
-    try { res = Humanize.runAll(text, { max: 6 }); } catch (e) { res = null; }
-    if (!res) {
-      showToast("Nothing safe left to auto-fix — the rest needs your words.");
-      return;
-    }
-    undoStack.push(text);              // stash so this click is reversible (one undo = all of this click)
+    // "Humanize Line": rebuild the single most-AI line with the on-device freestyle generator. One per click.
+    var res = null;
+    try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
+    if (!res) { showToast("Every line already reads human — nothing left to rebuild."); return; }
+    undoStack.push(text);              // one undo reverts this whole click
     undoBtn.hidden = false;
     lyricsEl.value = res.text;
     clearBtn.hidden = false;
-    flashBox();                        // make the change impossible to miss
-    analyse();                         // re-score + repaint meter/panel from the new text
-    var what = res.steps.map(function (s) { return s.detail || s.label; }).join(" · ");
-    var n = res.count, plural = n === 1 ? "fix" : "fixes";
-    showToast("Applied " + n + " " + plural + " (" + res.before + "% → " + res.after + "% AI): " + what);
+    flashBox();
+    analyse();                         // re-score + repaint meter from the new text
+    showToast("Rebuilt your most-AI line (#" + (res.lineIndex + 1) + "): " + res.before + "% → " + res.after + "% AI. Click again for the next-worst — Undo to revert.");
   }
 
   // brief highlight so the user SEES the textarea changed (textareas can't style ranges)
@@ -218,6 +239,25 @@
     analyse();
     showToast("Undid last change.");
   }
+
+  // ---- Rewrite: full-song gated rewrite (v8). Sweeps every line in random order, keeps ONLY
+  //      changes that lower the v8 AI%. Never worsens the song. Pure on-device, no network. ----
+  function rewrite() {
+    var text = lyricsEl.value || "";
+    if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
+    // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the better half the user's.
+    var res = null;
+    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
+    if (!res) { showToast("Every line already reads human — nothing to rewrite."); return; }
+    undoStack.push(text);
+    undoBtn.hidden = false;
+    lyricsEl.value = res.text;
+    clearBtn.hidden = false;
+    flashBox();
+    analyse();
+    showToast("Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines") + " (" + res.before + "% → " + res.after + "% AI), kept the rest yours. Press again for the worst half of what's left — Undo to revert.");
+  }
+  if (rewriteBtn) rewriteBtn.addEventListener("click", rewrite);
 
   humanizeBtn.addEventListener("click", humanize);
   undoBtn.addEventListener("click", undo);

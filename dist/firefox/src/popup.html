@@ -20,8 +20,8 @@
       <textarea id="paste" rows="8" placeholder="Paste lyrics here…"></textarea>
       <div class="paste-actions">
         <button id="analyze">Analyze</button>
-        <button id="humanize" class="ghost" hidden>Humanize ✨</button>
-        <button id="rewrite" class="ghost" hidden>Rewrite ✨</button>
+        <button id="humanize" class="ghost" hidden>Humanize Line</button>
+        <button id="rewrite" class="ghost" hidden>Humanize Rewrite</button>
         <button id="undo" class="ghost" hidden>Undo</button>
       </div>
       <div id="paste-result" hidden>
@@ -52,6 +52,8 @@
     <script src="ext/craft_features.browser.js"></script>
     <script src="ext/v8-score.browser.js"></script>
     <script src="ext/v8-rewrite.browser.js"></script>
+    <script src="ext/humanizer_model.browser.js"></script>
+    <script src="ext/humanizer-gen.browser.js"></script>
     <script src="ext/v2-panel.js"></script>
     <script src="rhyme_index.js"></script>
     <script src="adjstack_swaps.js"></script>

@@ -21,6 +21,12 @@ cp "$SRC/ext/portability_tells.browser.js" "$DST/ext/portability_tells.browser.j
 cp "$SRC/ext/clean-lyrics.js"     "$DST/ext/clean-lyrics.js"
 cp "$SRC/ext/v2-engine.js"        "$DST/ext/v2-engine.js"
 cp "$SRC/ext/v2-panel.js"         "$DST/ext/v2-panel.js"
+cp "$SRC/ext/model_v8.browser.js" "$DST/ext/model_v8.browser.js"
+cp "$SRC/ext/craft_features.browser.js" "$DST/ext/craft_features.browser.js"
+cp "$SRC/ext/v8-score.browser.js" "$DST/ext/v8-score.browser.js"
+cp "$SRC/ext/v8-rewrite.browser.js" "$DST/ext/v8-rewrite.browser.js"
+cp "$SRC/ext/humanizer_model.browser.js" "$DST/ext/humanizer_model.browser.js"
+cp "$SRC/ext/humanizer-gen.browser.js" "$DST/ext/humanizer-gen.browser.js"
 
 echo "Engine synced into $DST :"
 ls -1 "$DST" "$DST/ext"

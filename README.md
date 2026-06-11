@@ -13,6 +13,17 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
+## What's new in v0.7.0
+
+The **freestyle humanizer**: the Humanize buttons no longer patch words — they rebuild your most-AI lines as **new** lines, written the way a freestyler writes: end-rhyme locked first, the line built backward to the syllable target, themed to your song.
+
+- **"Humanize Line"** rebuilds the single most-AI line per click, worst-first. **"Humanize Rewrite"** rebuilds the worst half of the song in one press and keeps the better half yours. Undo reverts either.
+- It **cannot** write a cliché — the detector's own AI-cliché blocklist is excluded from the generator's vocabulary at build time. Every line's grammar must match a real human line's part-of-speech structure (no fragments), and no 4 consecutive words can come from any corpus song (nothing is ever copied).
+- Every change is **gated on the v8 score**: a press can only lower your song's AI% or leave it alone — never raise it.
+- Still 100% on-device: a 3.7 MB distilled model, no LLM, no network, no new permissions. Measured at scale: 99% grammar-clean, 100% rhyme-correct, 0 clichés over 3000 generated lines.
+
+---
+
 ## What's new in v0.4.0
 
 v0.4 is a **bigger, cleaner retrain**, with the feature mix chosen by *evidence* instead of assumption.
