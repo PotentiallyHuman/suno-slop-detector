@@ -107,26 +107,72 @@
   // clean up worst-line-first. Already-fixed lines are cliché-free, so they fall to the bottom of the
   // ranking and aren't touched again. Returns null when no line still reads AI.
   function clicheCount(line) { var ws = words(line), c = 0, i; for (i = 0; i < ws.length; i++) if (CLICHE.has(ws[i])) c++; return c; }
+  // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
+  // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
+  // same calibration the craft panel uses), and hand back the suggestions best-first. ----
+  function judgeLine(l, scoreFn) {
+    var j = scoreFn(l) + 200 * clicheCount(l);                 // AI% dominates; clichés are near-fatal
+    try {
+      if (globalThis.SlopPerspectives) {
+        var pr = globalThis.SlopPerspectives.analyze(l), s = 0, n = 0;
+        for (var k in pr.perspectives) { var v = pr.perspectives[k].score; if (typeof v === "number") { s += v; n++; } }
+        if (n) j += 40 * (s / n - 0.5);                        // craft lenses break ties among low-AI lines
+      }
+    } catch (e) {}
+    return j;
+  }
+  function genSuggestions(rhymeWord, theme, targetSyl, want, scoreFn) {
+    var seen = {}, out = [], t;
+    for (t = 0; t < want * 6 && out.length < want; t++) {
+      var l = genLine(rhymeWord, theme, targetSyl, 100);
+      if (l && !seen[l]) { seen[l] = 1; out.push(l); }
+    }
+    if (scoreFn) out.sort(function (a, b) { return judgeLine(a, scoreFn) - judgeLine(b, scoreFn); });
+    return out;
+  }
   function humanizeOne(text, scoreFn) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
-    for (i = 0; i < lines.length; i++) {                       // rank EVERY line; clichés dominate, line-AI orders within
+    // Hooks/choruses are STRUCTURE: a line repeated verbatim is there on purpose — never rebuild it.
+    var freq = {};
+    for (i = 0; i < lines.length; i++) { var fk = lines[i].trim().toLowerCase(); if (fk) freq[fk] = (freq[fk] || 0) + 1; }
+    // Candidates = ONLY lines carrying their own AI evidence: blocklist clichés, or a high line-level
+    // AI score. A line that reads human is never touched, no matter how AI the whole song scores —
+    // on a good song the song-level % is the STRUCTURE (repeated chorus, uniform stanzas), and
+    // "fixing" that by rewriting innocent lines destroys the song to please the meter (the Hydrogen
+    // lesson: clichéd verse lines failed to regenerate, so the walk fell through and ate the hook).
+    for (i = 0; i < lines.length; i++) {
       if (words(lines[i]).length < 3) continue;
-      ranked.push({ i: i, r: clicheCount(lines[i]) * 1000 + scoreFn(lines[i]) });
+      if (freq[lines[i].trim().toLowerCase()] > 1) continue;   // hook immunity
+      var cc = clicheCount(lines[i]), lai = scoreFn(lines[i]);
+      if (cc === 0 && lai < 55) continue;                      // no evidence -> not a candidate
+      ranked.push({ i: i, r: cc * 1000 + lai });
     }
     if (!ranked.length) return null;
     ranked.sort(function (a, b) { return b.r - a.r; });
-    // Go worst-first. If the generator can't make a clean line for that rhyme, OR it would worsen the whole
-    // song, move to the NEXT-worst line — never give up after one. A song reads AI in aggregate, so use the
-    // SONG score (not the line) to decide when we're done.
+    // Walk the evidence-bearing candidates worst-first. If the generator can't make a clean line for a
+    // candidate, try the next CANDIDATE — and if none works, return null. Doing nothing is honest;
+    // wandering into human-reading lines is not.
     for (var k = 0; k < ranked.length; k++) {
-      if (songScore < 45 && ranked[k].r < 45) break;          // the remaining lines all read human
       var idx = ranked[k].i, orig = lines[idx], rw = lastWord(orig); if (!rw) continue;
-      var repl = genLine(rw, theme, nsylLine(orig), 200); if (!repl) continue;   // generator couldn't — try next line
-      var trial = lines.slice(); trial[idx] = cap(repl);
-      var newSong = scoreFn(trial.join("\n"));
-      if (newSong > songScore + 1) continue;                  // would worsen the song — try next line
-      return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
+      // 10 distinct suggestions, judged best-first (line AI + clichés + craft lenses) —
+      // then the first one that survives the end-word dedup and the song gate wins.
+      var sugs = genSuggestions(rw, theme, nsylLine(orig), 10, scoreFn);
+      for (var s = 0; s < sugs.length; s++) {
+        var repl = sugs[s];
+        // a replacement may not duplicate another line's end word ("...airport / ...airport")
+        // nor open with another line's first 3 words ("When you mean it..." twice)
+        var rend = lastWord(repl), rstart = words(repl).slice(0, 3).join(" "), dup = false;
+        for (var j = 0; j < lines.length; j++) {
+          if (j === idx) continue;
+          if (lastWord(lines[j]) === rend || words(lines[j]).slice(0, 3).join(" ") === rstart) { dup = true; break; }
+        }
+        if (dup) continue;
+        var trial = lines.slice(); trial[idx] = cap(repl);
+        var newSong = scoreFn(trial.join("\n"));
+        if (newSong > songScore + 1) continue;                // would worsen the song — try next suggestion
+        return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
+      }
     }
     return null;
   }
@@ -146,5 +192,5 @@
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
   }
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, themeVec: themeVec };
+  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec };
 })();

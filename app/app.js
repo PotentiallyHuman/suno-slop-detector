@@ -214,7 +214,12 @@
     // "Humanize Line": rebuild the single most-AI line with the on-device freestyle generator. One per click.
     var res = null;
     try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
-    if (!res) { showToast("Every line already reads human — nothing left to rebuild."); return; }
+    if (!res) {
+      var s0 = aiScore(text);
+      if (s0 >= 55) showToast("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      else showToast("Every line already reads human — nothing left to rebuild.");
+      return;
+    }
     undoStack.push(text);              // one undo reverts this whole click
     undoBtn.hidden = false;
     lyricsEl.value = res.text;
@@ -248,7 +253,12 @@
     // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the better half the user's.
     var res = null;
     try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
-    if (!res) { showToast("Every line already reads human — nothing to rewrite."); return; }
+    if (!res) {
+      var s0 = aiScore(text);
+      if (s0 >= 55) showToast("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      else showToast("Every line already reads human — nothing to rewrite.");
+      return;
+    }
     undoStack.push(text);
     undoBtn.hidden = false;
     lyricsEl.value = res.text;

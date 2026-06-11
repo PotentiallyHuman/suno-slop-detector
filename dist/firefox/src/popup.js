@@ -197,7 +197,12 @@
     if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
     try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
-    if (!res) { showMsg("Every line already reads human — nothing left to rebuild."); return; }
+    if (!res) {
+      const s0 = aiScore(text);
+      if (s0 >= 55) showMsg("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      else showMsg("Every line already reads human — nothing left to rebuild.");
+      return;
+    }
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;
@@ -215,7 +220,12 @@
     if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
     try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
-    if (!res) { showMsg("Every line already reads human — nothing to rewrite."); return; }
+    if (!res) {
+      const s0 = aiScore(text);
+      if (s0 >= 55) showMsg("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      else showMsg("Every line already reads human — nothing to rewrite.");
+      return;
+    }
     undoStack.push(text);
     undoBtn.hidden = false;
     pasteEl.value = res.text;

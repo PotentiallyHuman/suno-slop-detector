@@ -2,6 +2,28 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [0.7.1] — the humanizer now only touches lines that earn it (2026-06-11)
+Found by a real before/after on a finished song ("Hydrogen"): the song scored 95% AI from its
+STRUCTURE alone (repeated chorus, identical hook lines), every individual line read human, and
+the humanizer — unable to regenerate the long clichéd verse lines — fell through its ranking and
+rewrote the hook and chorus instead. Score 95% → 0%; song ruined. Three fixes:
+### Changed
+- **Evidence-only selection.** A line is a rebuild candidate ONLY if it carries its own AI
+  evidence (blocklist clichés, or a high line-level AI score). Human-reading lines are never
+  touched, no matter what the whole song scores. If no candidate can be rebuilt, the button now
+  says so honestly: "that's the song's SHAPE, not its words — vary line lengths, break up a
+  repeated chorus" instead of editing something innocent.
+- **Hook immunity.** Lines repeated verbatim (hooks/choruses) are structure, never rebuilt.
+- **Best-of-10 with a judge.** Each press generates up to 10 distinct replacement lines and
+  judges them all — trained line AI score + cliché count + the 6 craft lenses (same calibration
+  as the craft panel) — and keeps the winner that passes the never-worsen gate. A replacement
+  also may not duplicate another line's end word ("...airport / ...airport").
+### Fixed
+- **Corpus junk leak.** The model could stitch publisher footers from scraped lyric pages into a
+  song ("Copyright nazareth tiflis tunes inc ascap"). Footer lines are now stripped at corpus
+  ingestion, metadata words are banned from the vocabulary, and 3-letter tokens must be real
+  words (kills "game ame"). Model re-exported.
+
 ## [0.7.0] — on-device freestyle humanizer, every surface (2026-06-11)
 ### Added
 - **The freestyle humanizer**, now wired into the extension popup (Chrome + Firefox), the
