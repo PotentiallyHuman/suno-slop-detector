@@ -24,8 +24,10 @@ JS_ORDER = [
     # v8 detector (88% CV, format-stripped + craft) + gated rewriter — MUST follow v2-engine.js (reads SlopV2.denseDict, CraftFeatures, SLOP_MODEL_V8)
     "engine/ext/craft_features.browser.js", "engine/ext/v8-score.browser.js", "engine/ext/v8-rewrite.browser.js",
     "engine/ext/v2-panel.js",
-    # freestyle humanizer (Humanize Line / Humanize Rewrite) — model MUST precede gen; both need v8-score loaded
-    "engine/ext/humanizer_model.browser.js", "engine/ext/humanizer-gen.browser.js",
+    # freestyle humanizer (Humanize Line / Humanize Rewrite) — model parts MUST precede gen (p3 merges
+    # them into HZ_MODEL); split into <4MB parts for AMO's linter, all surfaces stay in lockstep
+    "engine/ext/humanizer_model_p1.browser.js", "engine/ext/humanizer_model_p2.browser.js",
+    "engine/ext/humanizer_model_p3.browser.js", "engine/ext/humanizer-gen.browser.js",
     # data-vetted Humanize word/phrase-swap catalogs — MUST precede humanize.js (it reads these globals)
     "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js",
     "human_pool.browser.js",   # 4005 mined specific/atypical human lines — MUST precede humanize.js (humanizeContent reads G.HUMAN_POOL)
