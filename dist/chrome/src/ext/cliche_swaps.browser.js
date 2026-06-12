@@ -7,6 +7,8 @@
  * Pure data — no network, no storage, nothing fetched. */
 (function () {
   "use strict";
+  // Deliberately ABSENT (not gaps): days (too functional - "no days off" broke), and
+  // heart/eyes (humans own those words; swaps read clinical - "My chest and all it can give").
   globalThis.CLICHE_SWAPS = {
     abyss: ["chasm", "trench", "ravine"],
     amber: ["copper", "honey", "russet"],
@@ -90,6 +92,7 @@
     roads: ["highways", "backroads"],
     scar: ["welt", "bruise"],
     scars: ["welts", "bruises", "stitches"],
+    sacred: ["hallowed", "godly", "burial"],
     serenade: ["ballad"],
     shadow: ["outline"],
     shadowed: ["shaded", "dimmed"],
@@ -103,6 +106,7 @@
     silver: ["pewter"],
     sky: ["clouds", "stratosphere"],
     skyline: ["rooftops", "treeline"],
+    song: ["record", "refrain", "jingle"],
     soul: ["core", "marrow", "gut", "spine"],
     souls: ["spirits", "bodies"],
     stardust: ["glitter", "confetti"],

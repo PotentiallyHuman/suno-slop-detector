@@ -2,7 +2,7 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
-## [1.0.0] — the honest humanizer (2026-06-12)
+## [1.0.0] — the honest humanizer (2026-06-13)
 The release where every edit class is corpus-proven, human-audited, and deterministic.
 (Folds in the unreleased 0.8.0–0.9.0 work.)
 ### The two edit tiers (both keep the song yours)
@@ -33,6 +33,21 @@ The release where every edit class is corpus-proven, human-audited, and determin
 ### Removed
 - Dead modules from every bundle (~75 KB): the old mechanical Humanize + its four swap
   catalogs, the v8 line-rewriter, the mined human line pool.
+### Polish (the standalone-ready pass)
+- Press feedback: buttons show "Working…" and disable while computing; hard work caps
+  (first 200 lines, top 12 candidates) so no paste can freeze a phone. Measured: ≤30 ms
+  per press on desktop even at the cap.
+- Every blocklist word now has corpus-validated substitutes or a documented reason not to
+  (sacred→hallowed/godly/burial, song→record/refrain/jingle; days/heart/eyes deliberately
+  untouchable).
+- Sentence-fingerprint attribution: when the word-model can't name the LLM, mold
+  signatures can ("I trace the…" → Claude, "like it knows my name" → Suno).
+- The PWA is publicly hosted: https://potentiallyhuman.github.io/suno-slop-detector/
+  (offline-capable; also hosts a permanent APK download — no more throwaway tunnel links).
+- mobile/serve_apk.sh regenerates a QR/tunnel in one command when needed.
+- Tested and rejected (kept honest): retraining the detector with the neighborhood
+  stamping features — CV 87.8% vs v8's 88.0%; the signal is already absorbed by existing
+  features. v8 stays.
 ### Red-team
 - 15 adversarial cases clean: CRLF, smart quotes, ALL-CAPS, section tags, prose blobs,
   non-English with English clichés, hook-only songs, triple-maybe, tabs, numerals.

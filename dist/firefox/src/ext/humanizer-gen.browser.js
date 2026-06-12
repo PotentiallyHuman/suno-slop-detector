@@ -185,7 +185,7 @@
       if (mv === 3 || parts.length !== 2) {                      // or-join; also the safe fallback for
         var p2 = parts.length === 2 ? parts : l.split(/\s+[Mm]aybe\s+/);   // comma-less pairs ("maybe A maybe B")
         if (p2.length === 2) {
-          var head = p2[0].replace(/^\s*[Mm]aybe\s+/, "");
+          var head = p2[0].replace(/^\s*[Mm]aybe\s+/, "").replace(/[\s,]+(and|but|or)\s*$/, "");   // "A and maybe B" -> "A — or B"
           return head.charAt(0).toUpperCase() + head.slice(1) + " — or " + p2[1];
         }
         if (parts.length !== 2) return null;                     // 3+ maybes: leave for the panel
@@ -212,7 +212,7 @@
   }
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
   var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up",
-    "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night"];
+    "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night", "holding hands", "hold hands", "held hands", "lot of soul", "heart and soul", "body and soul", "good night", "goodnight", "out of your hands", "out of my hands", "in your hands", "in my hands", "love you so", "love me so", "love her so", "love him so"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
@@ -249,6 +249,9 @@
       var subs = SW[lw];
       var nxt = raw.slice(off + tok.length).match(/[A-Za-z']+/);
       var nxtL = nxt ? nxt[0].toLowerCase() : "";
+      // "lost" is adjectival at line starts ("Lost in the moment" -> Stranded) but a VERB after
+      // a subject/auxiliary ("you've almost lost your will") — swap only the adjectival uses
+      if (lw === "lost" && /^(i|you|we|they|he|she|i've|you've|we've|they've|have|has|had|almost|nearly|just|never|who)$/.test(prev)) return tok;
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
@@ -305,12 +308,14 @@
     if (scoreFn) out.sort(function (a, b) { return judgeLine(a, scoreFn) - judgeLine(b, scoreFn); });
     return out;
   }
+  var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
   function humanizeOne(text, scoreFn) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
+    if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
     // Hooks/choruses are STRUCTURE: a line repeated verbatim is there on purpose — never rebuild it.
     var freq = {};
-    for (i = 0; i < lines.length; i++) { var fk = lines[i].trim().toLowerCase(); if (fk) freq[fk] = (freq[fk] || 0) + 1; }
+    for (i = 0; i < lines.length; i++) { var fk = words(lines[i]).join(" "); if (fk) freq[fk] = (freq[fk] || 0) + 1; }
     // Candidates = ONLY lines carrying their own AI evidence: blocklist clichés, or a high line-level
     // AI score. A line that reads human is never touched, no matter how AI the whole song scores —
     // on a good song the song-level % is the STRUCTURE (repeated chorus, uniform stanzas), and
@@ -319,7 +324,7 @@
     for (i = 0; i < lines.length; i++) {
       var wn = words(lines[i]).length;
       if (wn < 3 || wn > 16) continue;                         // not a lyric line (prose blob / fragment)
-      if (freq[lines[i].trim().toLowerCase()] > 1) continue;   // hook immunity
+      if (freq[words(lines[i]).join(" ")] > 1) continue;   // hook immunity (punctuation-blind)
       // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
       // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
       // teeth, engine coughing black") — it may rank candidates, never condemn.
@@ -329,6 +334,7 @@
     }
     if (!ranked.length) return null;
     ranked.sort(function (a, b) { return b.r - a.r; });
+    if (ranked.length > MAX_CANDIDATES) ranked.length = MAX_CANDIDATES;
     // Walk the evidence-bearing candidates worst-first. If the generator can't make a clean line for a
     // candidate, try the next CANDIDATE — and if none works, return null. Doing nothing is honest;
     // wandering into human-reading lines is not.

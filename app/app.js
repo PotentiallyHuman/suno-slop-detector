@@ -167,7 +167,10 @@
       var NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
       var a = v5.attribution;
       sub += "  Likely written by " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%).";
-    } else if (headIsAI) { sub += "  AI — model uncertain."; }
+    } else if (headIsAI) {
+      var fp = moldFingerprint(text);
+      sub += fp ? "  Likely written by " + fp + " (sentence fingerprint)." : "  AI — model uncertain.";
+    }
     else { sub += "  Likely human-written."; }
     subnoteEl.textContent = sub;
 
@@ -208,6 +211,28 @@
 
   // v8 line-level AI score (0..100) — ranks lines and gates the freestyle rebuilds
   function aiScore(t) { try { var r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; } }
+
+  // Press feedback: heavy work runs after one paint so the button visibly enters "Working…",
+  // and the button is disabled meanwhile (double-presses queue nothing).
+
+  // Sentence-mold fingerprints (full-corpus leave-one-out study): "I trace the..." and
+  // maybe-pairs are Claude signatures; "like it knows/knew my name" is Suno's. Used only
+  // when the word-level attribution is uncertain.
+  function moldFingerprint(text) {
+    var t = String(text).toLowerCase();
+    if (/\bi trace (the|my|your|a)\b/.test(t)) return "Claude";
+    if (/\blike it (knows|knew) my name\b/.test(t)) return "Suno";
+    if (/\bmaybe\b[^\n]*\bmaybe\b/.test(t) && /\b(\w{5,})\b[^\n]*\b\1\b/.test(t)) return "Claude";
+    return null;
+  }
+  function busyRun(btn, work) {
+    if (!btn || btn.disabled) return;
+    var label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Working…";
+    setTimeout(function () {
+      try { work(); } finally { btn.disabled = false; btn.textContent = label; }
+    }, 30);
+  }
   function humanize() {   // "Humanize Line" — rebuild the single worst line, one per click
     var text = lyricsEl.value || "";
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
@@ -267,9 +292,9 @@
     analyse();
     showToast("Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines") + " (" + res.before + "% → " + res.after + "% AI), kept the rest yours. Press again for the worst half of what's left — Undo to revert.");
   }
-  if (rewriteBtn) rewriteBtn.addEventListener("click", rewrite);
+  if (rewriteBtn) rewriteBtn.addEventListener("click", function () { busyRun(rewriteBtn, rewrite); });
 
-  humanizeBtn.addEventListener("click", humanize);
+  humanizeBtn.addEventListener("click", function () { busyRun(humanizeBtn, humanize); });
   undoBtn.addEventListener("click", undo);
 
   // Ctrl/Cmd+Enter from the textarea = analyse

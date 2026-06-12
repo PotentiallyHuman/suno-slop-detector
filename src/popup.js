@@ -170,7 +170,8 @@
     if (headScore >= 50 && v5 && v5.attribution) {
       const NAMES = { suno: "Suno", claude: "Claude", grok: "Grok", chatgpt: "ChatGPT", gemini: "Gemini" };
       const a = v5.attribution;
-      lbl += a.model ? " · likely " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)" : " · model uncertain";
+      if (a.model) lbl += " · likely " + (NAMES[a.model] || a.model) + " (" + Math.round(a.conf * 100) + "%)";
+      else { var fp = moldFingerprint(text); lbl += fp ? " · likely " + fp + " (sentence fingerprint)" : " · model uncertain"; }
     }
     pasteLabel.textContent = lbl;
     humanizeBtn.hidden = false;            // a real score → one-click cleanup is available
@@ -190,9 +191,31 @@
     analysePaste();
   });
 
+
+  // Press feedback: heavy work runs after one paint so the button visibly enters "Working…",
+  // and the button is disabled meanwhile (double-presses queue nothing).
+
+  // Sentence-mold fingerprints (full-corpus leave-one-out study): "I trace the..." and
+  // maybe-pairs are Claude signatures; "like it knows/knew my name" is Suno's. Used only
+  // when the word-level attribution is uncertain.
+  function moldFingerprint(text) {
+    var t = String(text).toLowerCase();
+    if (/\bi trace (the|my|your|a)\b/.test(t)) return "Claude";
+    if (/\blike it (knows|knew) my name\b/.test(t)) return "Suno";
+    if (/\bmaybe\b[^\n]*\bmaybe\b/.test(t) && /\b(\w{5,})\b[^\n]*\b\1\b/.test(t)) return "Claude";
+    return null;
+  }
+  function busyRun(btn, work) {
+    if (!btn || btn.disabled) return;
+    var label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Working…";
+    setTimeout(function () {
+      try { work(); } finally { btn.disabled = false; btn.textContent = label; }
+    }, 30);
+  }
   // "Humanize Line": rebuild the single most-AI line with the on-device freestyle
   // generator. One line per click, worst-first. Reversible via Undo.
-  humanizeBtn.addEventListener("click", () => {
+  humanizeBtn.addEventListener("click", () => busyRun(humanizeBtn, () => {
     const text = pasteEl.value || "";
     if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
@@ -210,12 +233,12 @@
     setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
     showMsg("Rebuilt your most-AI line (#" + (res.lineIndex + 1) + "): " + res.before + "% → " + res.after + "% AI. Click again for the next-worst — Undo to revert.");
-  });
+  }));
 
   // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the
   // better half the user's. Press again to take the worst half of what remains.
   const rewriteBtn = document.getElementById("rewrite");
-  if (rewriteBtn) rewriteBtn.addEventListener("click", () => {
+  if (rewriteBtn) rewriteBtn.addEventListener("click", () => busyRun(rewriteBtn, () => {
     const text = pasteEl.value || "";
     if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
@@ -233,7 +256,7 @@
     setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
     analysePaste();
     showMsg("Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines") + " (" + res.before + "% → " + res.after + "% AI), kept the rest yours. Press again for the worst half of what's left — Undo to revert.");
-  });
+  }));
 
   undoBtn.addEventListener("click", () => {
     if (!undoStack.length) return;
