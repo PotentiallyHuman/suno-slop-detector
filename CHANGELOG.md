@@ -2,6 +2,41 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [1.0.0] — the honest humanizer (2026-06-12)
+The release where every edit class is corpus-proven, human-audited, and deterministic.
+(Folds in the unreleased 0.8.0–0.9.0 work.)
+### The two edit tiers (both keep the song yours)
+- **Word surgery** (20/20 human-audit accepted): cliché words swap to hand-curated,
+  corpus-validated substitutes — your sentence untouched. One press cleans a whole line,
+  noun and verb positions both ("Every heartbeat echoes your name" → "Every drumbeat
+  repeats your name"). Guards: idioms ("caught fire", "my love", "for the night",
+  "lights, cameras"), hooks, intentional repetition, hyphen compounds, rhyme-scheme
+  preservation (vowel keys now ship for blocklist + substitutes), plural slots, ALL-CAPS,
+  a/an agreement, dialect-ambiguous verbs skipped, "heart"/"eyes" never touched. Every
+  substitute passed an AI-lean corpus check — naive picks like quiet/salt/hush/devotion
+  are MODERN AI vocabulary and were auto-rejected.
+- **Structural transforms** (designed frames, 100% of the user's words kept): the
+  leave-one-out ablation study over the full AI corpus proved the molds — "Every X…"
+  opens 48 of the 100 most song-implicating lines — and each mold gets a designed,
+  corpus-validated rewrite: every→That/This/Some (rotating; "The last/One more" were
+  rejected as AI's own openers, 4–12× AI-leaning), maybe-pairs→commit / Perhaps /
+  Could-be / or-join (humans say "perhaps" 17× more than AI in lyrics), too-too→broken
+  parallel, not-not-just→Forget-frame. Fires only when the song reads ≥55% AI AND
+  removing that line alone provably drops this song's score (runtime leave-one-out).
+### Honesty
+- The n-gram line generator is retired from the press path (its rolls fail human
+  review); presses are fully deterministic. Molds it can't transform are NAMED in the
+  craft panel ("AI's favorite sentence shape") instead of mangled.
+- The "it's the structure" message now MEASURES the song (neighborhood-grammar study: AI
+  stamps line lengths and couplet rhyme — 26–29% of neighbors vs human 20% — while
+  humans repeat openers 2× more) and names the dominant tell with the song's own numbers.
+### Removed
+- Dead modules from every bundle (~75 KB): the old mechanical Humanize + its four swap
+  catalogs, the v8 line-rewriter, the mined human line pool.
+### Red-team
+- 15 adversarial cases clean: CRLF, smart quotes, ALL-CAPS, section tags, prose blobs,
+  non-English with English clichés, hook-only songs, triple-maybe, tabs, numerals.
+
 ## [0.7.2] — line grammar learned from 2000 fresh human songs (2026-06-12)
 A cross-corpus study (2000 newly fetched human songs vs the 6388 training songs, with a
 split-half baseline as ceiling) settled what "a human line structure" actually is:

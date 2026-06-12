@@ -19,7 +19,7 @@ cp manifest.json "$stage/manifest.json"
 for n in 16 32 48 128; do cp "icons/icon${n}.png" "$stage/icons/icon${n}.png"; done
 # copy the whole src/ tree, then prune node-only tests + sourcemaps + editor cruft
 cp -r src "$stage/src"
-find "$stage/src" -type f \( -name '_test_engine.js' -o -name '*.map' -o -name '*.prev_v2' \) -delete
+find "$stage/src" -type f \( -name '_test_engine.js' -o -name '*.map' -o -name '*.prev_v2' -o -name 'humanize.js' -o -name 'rhyme_index.js' -o -name 'adjstack_swaps.js' -o -name 'ingverb_swaps.js' -o -name 'prepphrase_swaps.js' -o -name 'v8-rewrite.browser.js' -o -name 'human_pool.browser.js' \) -delete
 
 # --- zip from the staging dir so the archive layout matches exactly ---
 ( cd "$stage" && zip -qr "../suno-slop-detector-${ver}.zip" manifest.json icons src )

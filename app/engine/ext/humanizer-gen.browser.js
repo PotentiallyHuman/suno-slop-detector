@@ -160,8 +160,59 @@
     /\btoo \w+ to \w+.*\btoo \w+ to \w+/i,                                     // too X to A, too Y to B
   ];
   function moldLine(l) { for (var i = 0; i < MOLD.length; i++) if (MOLD[i].test(l)) return true; return false; }
+  // Auto-rebuild of mold lines is OFF until the generator writes well enough for the 95% bar
+  // (rolls like "Every shaky start" -> "When you thought it was bronze" fail human review).
+  // Molds still surface via the craft panel (move 14) and the honest stop message.
+  var MOLD_AUTOREBUILD = false;
+  // ---- STRUCTURAL TRANSFORMS (user-designed): rearrange the mold FRAME, keep 100% of the
+  // user's own words. The mold IS the structure, so only the structure changes:
+  //   "Maybe I stay broke, maybe I stay small"  -> "I stay broke, I stay small"   (commit)
+  //   "Every heart in this room is breaking"    -> "The last heart in this room is breaking"
+  //   "Too young to A, too young to B"          -> "Too young to A — or to B"
+  // everyAlt rotates within a song so three every-lines don't become three "The last" lines.
+  // Every variant below is CORPUS-VALIDATED as a line opener (AI-vs-human rate): the first
+  // designs ("The last", "One more") turned out to be AI's own openers (3.9x/12x AI-leaning)
+  // and were replaced. "Perhaps" is the most human uncertainty word in lyrics (AI says
+  // "maybe" 17x more); "That/This/Some" are the neutral-to-human de-universalizers.
+  function restructure(line, rotIdx) {
+    var l = String(line), m;
+    var r = rotIdx || 0;
+    if (/\bmaybe\b[\s\S]*\bmaybe\b/i.test(l)) {
+      var mv = r % 4;
+      if (mv === 1) return l.replace(/\b[Mm]aybe\b/g, function (t) { return t[0] === "M" ? "Perhaps" : "perhaps"; });
+      if (mv === 2) return l.replace(/\b[Mm]aybe\b/g, function (t) { return t[0] === "M" ? "Could be" : "could be"; });
+      var parts = l.split(/,\s*[Mm]aybe\s+/);
+      if (mv === 3 || parts.length !== 2) {                      // or-join; also the safe fallback for
+        var p2 = parts.length === 2 ? parts : l.split(/\s+[Mm]aybe\s+/);   // comma-less pairs ("maybe A maybe B")
+        if (p2.length === 2) {
+          var head = p2[0].replace(/^\s*[Mm]aybe\s+/, "");
+          return head.charAt(0).toUpperCase() + head.slice(1) + " — or " + p2[1];
+        }
+        if (parts.length !== 2) return null;                     // 3+ maybes: leave for the panel
+      }
+      var out = l.replace(/\b[Mm]aybe,?\s+/g, "");
+      out = out.charAt(0).toUpperCase() + out.slice(1);
+      return out !== l ? out : null;
+    }
+    m = l.match(/^(.*?\btoo\s+\w+\s+to\b.*?),\s*too\s+\w+\s+to\s+(.*)$/i);
+    if (m) return r % 2 ? m[1] + ", can't even " + m[2] : m[1] + " — or to " + m[2];
+    m = l.match(/^I (?:don't|won't|never) (.*?), I (?:don't|won't|never) (.*?), I (?:just|only) (.*)$/i);
+    if (m) return "Forget " + m[1] + ", forget " + m[2] + " — I " + m[3];
+    if ((l.match(/\bevery\b/gi) || []).length > 1) return null;      // double-every parallel: a half-fix reads broken
+    m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
+    if (m) return m[1] + "This one " + m[2];
+    m = l.match(/^(\W*)[Ee]very\s+(.*)$/);
+    if (m) {
+      var alts = ["That ", "This ", "Some "];
+      var pickA = alts[r % 3];
+      if (pickA === "That " && /^\w+([^.]*?)\bthat\b/i.test(m[2])) pickA = "This ";   // avoid "That turn that I take"
+      return m[1] + pickA + m[2];
+    }
+    return null;
+  }
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
-  var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up"];
+  var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up",
+    "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
@@ -172,13 +223,27 @@
     var lineWords = words(line), counts = {}, i;
     for (i = 0; i < lineWords.length; i++) counts[lineWords[i]] = (counts[lineWords[i]] || 0) + 1;
     var low = " " + words(line).join(" ") + " ";               // punctuation-free, so "My love," still matches the idiom
-    var changed = 0, prevTok = "";
+    // rhyme map: last words of all lines (a swap may never break the song's rhyme scheme)
+    var allLines = String(songText).split("\n");
+    var lineLast = lastWord(line), rhymesWithNeighbor = false;
+    if (lineLast && VK[lineLast]) {
+      for (var ri = 0; ri < allLines.length; ri++) {
+        var ll = lastWord(allLines[ri]);
+        if (allLines[ri].trim() !== String(line).trim() && ll && ll !== lineLast && VK[ll] === VK[lineLast]) { rhymesWithNeighbor = true; break; }
+      }
+    }
+    var changed = 0, prevTok = "", lastSwapEnd = -1;
     var raw = String(line);
     var out = raw.replace(/[A-Za-z']+/g, function (tok, off) {
       var lw = tok.toLowerCase(), prev = prevTok; prevTok = lw;
       if (!CLICHE.has(lw) || !SW[lw]) return tok;
       if (counts[lw] > 1) return tok;                            // repeated on purpose ("Who your love, Who your love")
+      // clichés joined into ONE phrase ("flame of fire") get a single swap; separate phrases
+      // in the same line ("heartbeat ... echoes") both swap — the user requires the full clean
+      if (lastSwapEnd >= 0 && /^[\s,]*(of|and|or)\s*$/.test(raw.slice(lastSwapEnd, off))) return tok;
       if (raw[off - 1] === "-" || raw[off + tok.length] === "-") return tok;   // hyphen compound ("heart-breaker")
+      // never break the rhyme scheme: the line-final word only swaps to a SAME-VOWEL substitute
+      var mustRhyme = rhymesWithNeighbor && lw === lineLast && off + tok.length >= raw.replace(/\W+$/, "").length;
       for (var x = 0; x < IDIOMS.length; x++) { if (IDIOMS[x].indexOf(lw) >= 0 && low.indexOf(" " + IDIOMS[x] + " ") >= 0) return tok; }
       // verb position? use the verb-form substitutes ("echoes"->"repeats"), never the noun ones
       var subs = SW[lw];
@@ -194,17 +259,24 @@
       // role split: a verb with an object plays a different role than a bare one
       // ("echoes your name" = tells/carries; "footsteps echo" = rings)
       if (subs && !subs.length && (subs.obj || subs.noobj)) {
-        var hasObj = !!NOUN_CTX[nxtL] || /^(me|you|us|it|him|her|them)$/.test(nxtL);
+        // a following PREPOSITION means no object ("whisper IN my ear" is intransitive)
+        var hasObj = (!!NOUN_CTX[nxtL] || /^(me|you|us|it|him|her|them)$/.test(nxtL)) && !/^(in|on|of|with|through|at|to|for|by|into)$/.test(nxtL);
         subs = hasObj ? (subs.obj || subs.noobj) : (subs.noobj || subs.obj);
       }
       if (!subs || !subs.length) return tok;
       // choose by: meter (closest syllables) -> THEME FIT (the song's own embedding picks the
       // "environmental synonym": a percussive song picks "drums", a confession picks "tells")
       // -> curation order as the last tiebreak.
+      // plural slots ("two shadows", "these lights") demand a plural substitute — never a mass noun
+      var needPlural = /^(two|three|four|five|six|seven|many|few|both|these|those|all)$/.test(prev) && lw.charAt(lw.length - 1) === "s";
+      // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps
+      if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street)$/.test(prev)) return tok;
       var best = null, bd = 1e9;
       for (var k = 0; k < subs.length; k++) {
         var s = subs[k];
         if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
+        if (mustRhyme && VK[s] !== VK[lw]) continue;             // keep the song's rhyme vowel
+        if (needPlural && s.charAt(s.length - 1) !== "s") continue;
         var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
         var d = Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4;
         if (d < bd) { bd = d; best = s; }                        // (number agreement is curated INTO the table)
@@ -212,6 +284,8 @@
       if (!best) return tok;
       changed++;
       songWords[best] = 1;
+      lastSwapEnd = off + tok.length;
+      if (tok === tok.toUpperCase() && tok.length > 1) return best.toUpperCase();   // ALL-CAPS lines stay ALL-CAPS
       return tok[0] === tok[0].toUpperCase() ? best.charAt(0).toUpperCase() + best.slice(1) : best;
     });
     if (!changed) return null;
@@ -260,25 +334,24 @@
     // wandering into human-reading lines is not.
     for (var k = 0; k < ranked.length; k++) {
       var idx = ranked[k].i, orig = lines[idx], rw = lastWord(orig); if (!rw) continue;
-      // MOLD REBUILD — the sentence FRAME is the cliché ("Every X is a Y"); no word swap helps.
-      // Runtime leave-one-out confirms it: only rebuild if removing this line alone would drop
-      // the song's score (so "Every breath you take" in a human-reading song is never touched).
+      // MOLD RESTRUCTURE — the sentence FRAME is the cliché ("Every X is a Y"); no word swap
+      // helps, and the n-gram can't be trusted to rewrite it. So a DESIGNED structural transform
+      // rearranges the frame and keeps 100% of the user's words. Runtime leave-one-out confirms
+      // the line is load-bearing first (so "Every breath you take" in a human song stays).
       if (ranked[k].mold) {
         var ablate = lines.slice(0, idx).concat(lines.slice(idx + 1)).join("\n");
         if (songScore - scoreFn(ablate) >= 2) {
-          var msugs = genSuggestions(rw, theme, nsylLine(orig), 10, scoreFn);
-          for (var ms = 0; ms < msugs.length; ms++) {
-            if (moldLine(msugs[ms])) continue;                 // never replace a mold with a mold
-            var mend = lastWord(msugs[ms]), mstart = words(msugs[ms]).slice(0, 3).join(" "), mdup = false;
-            for (var mj = 0; mj < lines.length; mj++) { if (mj !== idx && (lastWord(lines[mj]) === mend || words(lines[mj]).slice(0, 3).join(" ") === mstart)) { mdup = true; break; } }
-            if (mdup) continue;
-            var mtrial = lines.slice(); mtrial[idx] = cap(msugs[ms]);
-            var mns = scoreFn(mtrial.join("\n"));
-            if (mns > songScore + 1) continue;
-            return { text: mtrial.join("\n"), lineIndex: idx, from: orig, to: mtrial[idx], before: Math.round(songScore), after: Math.round(mns), mode: "mold-rebuild" };
+          var rotIdx = (text.match(/^(That|This|Some|Perhaps|Could be) /gmi) || []).length;   // rotate variants
+          var rs = restructure(orig, rotIdx);
+          if (rs && !moldLine(rs)) {
+            var rtrial = lines.slice(); rtrial[idx] = rs;
+            var rns = scoreFn(rtrial.join("\n"));
+            if (rns <= songScore + 1) {
+              return { text: rtrial.join("\n"), lineIndex: idx, from: orig, to: rs, before: Math.round(songScore), after: Math.round(rns), mode: "restructure" };
+            }
           }
         }
-        // mold rebuild impossible — fall through to word swap if it also carries clichés
+        // restructure impossible — fall through to word swap if it also carries clichés
       }
       // TIER 0 — the line carries cliché words: swap the words, keep the user's sentence.
       // Gate on the cliché count itself (the song % is provably blind to word swaps) plus never-worsen.
@@ -292,9 +365,10 @@
           }
         }
       }
-      // TIER 1 — full rebuild, ONLY for deep-mold lines: 2+ cliché words AND the line still reads
-      // hard-AI even after the word swap (the sentence frame itself is the slop, e.g.
-      // "___ dancing in the rain"). Single-cliché lines get word surgery or nothing.
+      // TIER 1 — n-gram full rebuild. OFF with MOLD_AUTOREBUILD: the generator's rolls
+      // ("I know what you anyways") fail the 95% human-review bar. With it off, every press
+      // is DETERMINISTIC: word surgery + designed structural transforms only.
+      if (!MOLD_AUTOREBUILD) continue;
       if (clicheCount(orig) < 2) continue;
       var sw2 = swapCliches(orig, text);
       if (scoreFn(sw2 || orig) < 80) continue;
@@ -335,5 +409,29 @@
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
   }
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec };
+  // diagnoseShape(text): measure the song's STRUCTURAL stamping — the corpus-mined AI
+  // fingerprint is metric stamping (equal lengths + couplet rhyme: AI 26-29% vs human 20%)
+  // WITHOUT verbal anaphora (humans repeat openers 1.4-2x MORE). Names the dominant tell
+  // so the "it's the shape" message can be specific. Pure counting, runs in ~1ms.
+  function diagnoseShape(text) {
+    var rows = [];
+    var ls = String(text).split("\n");
+    for (var i = 0; i < ls.length; i++) {
+      var w = words(ls[i]);
+      if (w.length >= 3 && w.length <= 14 && !/^\s*\[.*\]\s*$/.test(ls[i])) rows.push({ w: w, syl: nsylLine(ls[i]) });
+    }
+    if (rows.length < 6) return null;
+    var sylEq = 0, rhyme = 0, pairs = rows.length - 1;
+    for (var j = 0; j + 1 < rows.length; j++) {
+      if (rows[j].syl === rows[j + 1].syl) sylEq++;
+      var a = rows[j].w[rows[j].w.length - 1], b = rows[j + 1].w[rows[j + 1].w.length - 1];
+      if (a !== b && VK[a] && VK[a] === VK[b]) rhyme++;
+    }
+    var tips = [];
+    if (sylEq / pairs > 0.24) tips.push("your line lengths are stamped (" + Math.round(100 * sylEq / pairs) + "% of neighbors match exactly — humans sit near 20%): stretch one line, cut another short");
+    if (rhyme / pairs > 0.26) tips.push("almost every pair of lines rhymes (" + Math.round(100 * rhyme / pairs) + "% — humans sit near 20%): let a line end without its echo");
+    if (!tips.length) return null;
+    return tips.join("; ");
+  }
+  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape };
 })();

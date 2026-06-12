@@ -78,3 +78,31 @@ silently does nothing).
 A phone-size LLM was cheap-tested for the same job and **lost**: ban the clichés it leans on
 and it collapses (2/3 of lines produced nothing). The n-gram + constraints generator is the
 better on-device writer once slop is forbidden.
+
+
+## 7. v1.0 — the two-tier surgeon (2026-06-12)
+The generator chapter (§6) ended honestly: the n-gram writes grammatically but cannot mean.
+v1.0 retires it from the press path and replaces it with two deterministic tiers, each owning
+the failure mode the other can't fix:
+
+**Tier 0 — word surgery.** The user's sentence is the frame; only the cliché word changes,
+from a hand-curated table where every substitute is corpus-validated against BOTH corpora.
+The validation caught the trap a human curator falls into: modern AI's slop is CONCRETE
+(quiet, salt, porch, kitchen are on AI's own overused list), so "just be more specific" picks
+launder it back in. 20/20 examples accepted in human audit.
+
+**Tier 1 — structure surgery.** Leave-one-out ablation over the full AI corpus (the user's
+design: remove each line, score the fork, the biggest drop is the guilty line) proved the
+molds: "Every X…" opens 48 of the top-100 guilty lines; maybe-pairs, too-too and
+not-not-just follow. Each mold gets a DESIGNED transform that keeps 100% of the user's words
+("Maybe I stay broke, maybe I stay small" → "I stay broke, I stay small"). The frame variants
+are themselves corpus-validated — the first design ("The last X", "One more X") turned out to
+be AI's own favorite openers (4–12× AI-leaning) and was replaced by That/This/Some +
+Perhaps/Could-be, which humans use and AI doesn't. A transform fires only when the song reads
+≥55% AI and removing that exact line provably drops this song's score (the ablation runs
+inside the app, per press).
+
+**When neither applies**, the app measures the song's neighborhood grammar (AI stamps line
+lengths and couplet rhyme, 26–29% of adjacent pairs vs human 20%, while humans repeat openers
+2× more) and tells the user their dominant tell with their own numbers — it never edits an
+innocent line to move a meter that is blind to words anyway.

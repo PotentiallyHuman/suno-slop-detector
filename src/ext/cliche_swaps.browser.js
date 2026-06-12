@@ -93,7 +93,7 @@
     serenade: ["ballad"],
     shadow: ["outline"],
     shadowed: ["shaded", "dimmed"],
-    shadows: ["background", "doorways", "alleys", "corners"],
+    shadows: ["doorways", "alleys", "corners", "background"],
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
     silence: ["vacuum"],

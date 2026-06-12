@@ -13,6 +13,18 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
+## What's new in v1.0.0
+
+The Humanize buttons are now **two kinds of honest surgery**, both keeping the song yours:
+
+- **Word surgery** — cliché words swap to hand-curated substitutes, your sentence untouched: "Every heartbeat echoes your name" → "Every drumbeat repeats your name" in one press. Every substitute is corpus-checked so it can't smuggle AI vocabulary back in (naive picks like *quiet* and *salt* are modern AI words — measured, and rejected).
+- **Structure surgery** — the sentence shapes AI leans on hardest (proven by removing every line of 3,388 AI songs one at a time and measuring: "Every X…" lines carry the most blame) get designed rewrites that keep 100% of your words: "Maybe I stay broke, maybe I stay small" → "I stay broke, I stay small". Applied only when your song reads AI *and* that exact line is provably load-bearing.
+- When nothing can honestly be fixed, the app tells you what it **measured** about your song's shape — AI stamps line lengths and rhyme-locks couplets; humans don't — instead of editing something innocent.
+
+Still 100% on-device: no network, no LLM, no accounts, nothing stored.
+
+---
+
 ## What's new in v0.7.0
 
 The **freestyle humanizer**: the Humanize buttons no longer patch words — they rebuild your most-AI lines as **new** lines, written the way a freestyler writes: end-rhyme locked first, the line built backward to the syllable target, themed to your song.

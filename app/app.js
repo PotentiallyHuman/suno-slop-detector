@@ -216,7 +216,7 @@
     try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
     if (!res) {
       var s0 = aiScore(text);
-      if (s0 >= 55) showToast("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
       else showToast("Every line already reads human — nothing left to rebuild.");
       return;
     }
@@ -255,7 +255,7 @@
     try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
     if (!res) {
       var s0 = aiScore(text);
-      if (s0 >= 55) showToast("Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. Rewriting lines won't help (and would hurt). To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+      if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
       else showToast("Every line already reads human — nothing to rewrite.");
       return;
     }

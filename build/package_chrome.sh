@@ -17,7 +17,7 @@ os.makedirs(stage+"/icons")
 json.dump(m, open(stage+"/manifest.json","w"), indent=2)
 # copy the whole src/ tree, then prune node-only tests + sourcemaps + backups
 shutil.copytree("src", stage+"/src")
-EXCLUDE = ("_test_engine.js", "*.map", "*.prev_v2")
+EXCLUDE = ("_test_engine.js", "*.map", "*.prev_v2", "humanize.js", "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js", "v8-rewrite.browser.js", "human_pool.browser.js")
 for root, _dirs, files in os.walk(stage+"/src"):
     for fn in files:
         if any(fnmatch.fnmatch(fn, pat) for pat in EXCLUDE):
