@@ -146,6 +146,59 @@
     } catch (e) {}
     return j;
   }
+  // ---- TIER 0: word-level surgery. If a line is the user's own (reads human) but carries
+  // cliché words, swap ONLY those words from the hand-curated table (CLICHE_SWAPS) and keep
+  // their sentence. Substitute choice: closest syllable count, not already in the song,
+  // never a blocklist word. This is the edit that can't break meaning — the sentence stays.
+  // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
+  var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up"];
+  // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
+  var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
+  var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
+  function swapCliches(line, songText) {
+    var SW = globalThis.CLICHE_SWAPS; if (!SW) return null;
+    var songWords = {}; words(songText).forEach(function (w) { songWords[w] = 1; });
+    var lineWords = words(line), counts = {}, i;
+    for (i = 0; i < lineWords.length; i++) counts[lineWords[i]] = (counts[lineWords[i]] || 0) + 1;
+    var low = " " + words(line).join(" ") + " ";               // punctuation-free, so "My love," still matches the idiom
+    var changed = 0, prevTok = "";
+    var raw = String(line);
+    var out = raw.replace(/[A-Za-z']+/g, function (tok, off) {
+      var lw = tok.toLowerCase(), prev = prevTok; prevTok = lw;
+      if (!CLICHE.has(lw) || !SW[lw]) return tok;
+      if (counts[lw] > 1) return tok;                            // repeated on purpose ("Who your love, Who your love")
+      if (raw[off - 1] === "-" || raw[off + tok.length] === "-") return tok;   // hyphen compound ("heart-breaker")
+      for (var x = 0; x < IDIOMS.length; x++) { if (IDIOMS[x].indexOf(lw) >= 0 && low.indexOf(" " + IDIOMS[x] + " ") >= 0) return tok; }
+      // verb position? use the verb-form substitutes ("echoes"->"repeats"), never the noun ones
+      var subs = SW[lw];
+      if (VERBY[lw]) {
+        if (NOUN_CTX[prev]) {
+          var rest = raw.slice(off + tok.length).match(/[A-Za-z']+/);     // "your love momma" — dialect verb,
+          if (rest && rest[0].length > 3 && !NOUN_CTX[rest[0].toLowerCase()]) return tok;   // ambiguous: leave it
+        } else {
+          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;           // clear verb position
+        }
+      }
+      var best = null, bd = 1e9;
+      for (var k = 0; k < subs.length; k++) {
+        var s = subs[k];
+        if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
+        var d = Math.abs(nsyl(s) - nsyl(lw)) * 10 + k;           // meter first, curation order breaks ties
+        if (d < bd) { bd = d; best = s; }                        // (number agreement is curated INTO the table)
+      }
+      if (!best) return tok;
+      changed++;
+      songWords[best] = 1;
+      return tok[0] === tok[0].toUpperCase() ? best.charAt(0).toUpperCase() + best.slice(1) : best;
+    });
+    if (!changed) return null;
+    // article agreement: "a affection" -> "an affection", "an furnace" -> "a furnace"
+    out = out.replace(/\b([Aa])n? ([a-z])/g, function (m, a, c) {
+      var an = "aeiou".indexOf(c) >= 0;
+      return (a === "A" ? (an ? "An" : "A") : (an ? "an" : "a")) + " " + c;
+    });
+    return out;
+  }
   function genSuggestions(rhymeWord, theme, targetSyl, want, scoreFn) {
     var seen = {}, out = [], t;
     for (t = 0; t < want * 6 && out.length < want; t++) {
@@ -167,11 +220,14 @@
     // "fixing" that by rewriting innocent lines destroys the song to please the meter (the Hydrogen
     // lesson: clichéd verse lines failed to regenerate, so the walk fell through and ate the hook).
     for (i = 0; i < lines.length; i++) {
-      if (words(lines[i]).length < 3) continue;
+      var wn = words(lines[i]).length;
+      if (wn < 3 || wn > 16) continue;                         // not a lyric line (prose blob / fragment)
       if (freq[lines[i].trim().toLowerCase()] > 1) continue;   // hook immunity
-      var cc = clicheCount(lines[i]), lai = scoreFn(lines[i]);
-      if (cc === 0 && lai < 55) continue;                      // no evidence -> not a candidate
-      ranked.push({ i: i, r: cc * 1000 + lai });
+      // Evidence = cliché words ONLY. The line-level AI score false-flags specific human-style
+      // lines ("Keys in my teeth, engine coughing black") — it may rank candidates, never condemn.
+      var cc = clicheCount(lines[i]);
+      if (cc === 0) continue;
+      ranked.push({ i: i, r: cc * 1000 + scoreFn(lines[i]) });
     }
     if (!ranked.length) return null;
     ranked.sort(function (a, b) { return b.r - a.r; });
@@ -180,6 +236,24 @@
     // wandering into human-reading lines is not.
     for (var k = 0; k < ranked.length; k++) {
       var idx = ranked[k].i, orig = lines[idx], rw = lastWord(orig); if (!rw) continue;
+      // TIER 0 — the line carries cliché words: swap the words, keep the user's sentence.
+      // Gate on the cliché count itself (the song % is provably blind to word swaps) plus never-worsen.
+      if (clicheCount(orig) > 0) {
+        var swapped = swapCliches(orig, text);
+        if (swapped && clicheCount(swapped) < clicheCount(orig)) {
+          var trialS = lines.slice(); trialS[idx] = swapped;
+          var nsS = scoreFn(trialS.join("\n"));
+          if (nsS <= songScore + 1) {
+            return { text: trialS.join("\n"), lineIndex: idx, from: orig, to: swapped, before: Math.round(songScore), after: Math.round(nsS), mode: "swap" };
+          }
+        }
+      }
+      // TIER 1 — full rebuild, ONLY for deep-mold lines: 2+ cliché words AND the line still reads
+      // hard-AI even after the word swap (the sentence frame itself is the slop, e.g.
+      // "___ dancing in the rain"). Single-cliché lines get word surgery or nothing.
+      if (clicheCount(orig) < 2) continue;
+      var sw2 = swapCliches(orig, text);
+      if (scoreFn(sw2 || orig) < 80) continue;
       // 10 distinct suggestions, judged best-first (line AI + clichés + craft lenses) —
       // then the first one that survives the end-word dedup and the song gate wins.
       var sugs = genSuggestions(rw, theme, nsylLine(orig), 10, scoreFn);

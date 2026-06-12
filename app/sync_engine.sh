@@ -28,6 +28,7 @@ cp "$SRC/ext/v8-rewrite.browser.js" "$DST/ext/v8-rewrite.browser.js"
 cp "$SRC/ext/humanizer_model_p1.browser.js" "$DST/ext/humanizer_model_p1.browser.js"
 cp "$SRC/ext/humanizer_model_p2.browser.js" "$DST/ext/humanizer_model_p2.browser.js"
 cp "$SRC/ext/humanizer_model_p3.browser.js" "$DST/ext/humanizer_model_p3.browser.js"
+cp "$SRC/ext/cliche_swaps.browser.js" "$DST/ext/cliche_swaps.browser.js"
 cp "$SRC/ext/humanizer-gen.browser.js" "$DST/ext/humanizer-gen.browser.js"
 
 echo "Engine synced into $DST :"

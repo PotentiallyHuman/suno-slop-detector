@@ -27,7 +27,7 @@ JS_ORDER = [
     # freestyle humanizer (Humanize Line / Humanize Rewrite) — model parts MUST precede gen (p3 merges
     # them into HZ_MODEL); split into <4MB parts for AMO's linter, all surfaces stay in lockstep
     "engine/ext/humanizer_model_p1.browser.js", "engine/ext/humanizer_model_p2.browser.js",
-    "engine/ext/humanizer_model_p3.browser.js", "engine/ext/humanizer-gen.browser.js",
+    "engine/ext/humanizer_model_p3.browser.js", "engine/ext/cliche_swaps.browser.js", "engine/ext/humanizer-gen.browser.js",
     # data-vetted Humanize word/phrase-swap catalogs — MUST precede humanize.js (it reads these globals)
     "rhyme_index.js", "adjstack_swaps.js", "ingverb_swaps.js", "prepphrase_swaps.js",
     "human_pool.browser.js",   # 4005 mined specific/atypical human lines — MUST precede humanize.js (humanizeContent reads G.HUMAN_POOL)
