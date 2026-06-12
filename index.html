@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#131316" />
+  <title>Lyric Humanizer</title>
+  <meta name="description" content="Paste any song lyrics and see how AI they read — plus craft coaching to make them more human. 100% on-device." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lyric Humanizer" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="brand">
+        <img class="brand-icon" src="icons/icon-192.png" alt="" width="34" height="34" />
+        <div class="brand-text">
+          <h1>Lyric Humanizer</h1>
+          <p class="tag">How AI does this read?</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="input-card">
+      <textarea id="lyrics" rows="9" autocomplete="off" autocapitalize="off"
+        spellcheck="false" placeholder="Paste your lyrics here…&#10;&#10;Section tags like [Chorus] are fine — they're stripped before scoring."></textarea>
+      <div class="actions">
+        <button id="howai" class="primary" type="button">How AI?</button>
+        <button id="humanize" class="ghost" type="button" hidden>Humanize Line</button>
+        <button id="rewrite" class="ghost" type="button" hidden>Humanize Rewrite</button>
+        <button id="undo" class="ghost" type="button" hidden>Undo</button>
+        <button id="clear" class="ghost" type="button" hidden>Clear</button>
+        <button id="example" class="link" type="button">Try an example</button>
+        <span id="hint" class="hint"></span>
+      </div>
+    </section>
+
+    <section id="result" class="result" hidden aria-live="polite">
+      <div class="score-block">
+        <div id="score" class="score">–</div>
+        <div class="score-side">
+          <div id="verdict" class="verdict"></div>
+          <div class="meter"><div id="meter-fill" class="meter-fill"></div></div>
+          <div class="meter-scale"><span>human</span><span>AI</span></div>
+        </div>
+      </div>
+      <p id="subnote" class="subnote"></p>
+      <div id="craft" class="craft"></div>
+    </section>
+
+    <footer class="foot">
+      <p>A playful mirror, not a verdict. It rates the <b>texture</b> of the words —
+      not talent, effort, or who wrote them. A high score doesn't mean a song is bad.
+      Please don't use it to shame anyone.</p>
+      <p class="priv">100% on-device · text-only · no network, no accounts, no tracking. Works offline.</p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- trained scoring engine — load order matters (each attaches a global) -->
+  <script src="engine/slop-core.js"></script>
+  <script src="engine/common_words.js"></script>
+  <script src="engine/features.js"></script>
+  <script src="engine/ext/patterns.browser.js"></script>
+  <script src="engine/ext/tier3.browser.js"></script>
+  <script src="engine/ext/perspectives.browser.js"></script>
+  <script src="engine/ext/model.js"></script>
+  <script src="engine/ext/model_v5.browser.js"></script>
+  <script src="engine/ext/model_v8.browser.js"></script>
+  <script src="engine/ext/portability_tells.browser.js"></script>
+  <script src="engine/ext/clean-lyrics.js"></script>
+  <script src="engine/ext/v2-engine.js"></script>
+  <script src="engine/ext/craft_features.browser.js"></script>
+  <script src="engine/ext/v8-score.browser.js"></script>
+  <script src="engine/ext/v2-panel.js"></script>
+  <script src="engine/ext/humanizer_model_p1.browser.js"></script>
+  <script src="engine/ext/humanizer_model_p2.browser.js"></script>
+  <script src="engine/ext/humanizer_model_p3.browser.js"></script>
+  <script src="engine/ext/cliche_swaps.browser.js"></script>
+  <script src="engine/ext/humanizer-gen.browser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
