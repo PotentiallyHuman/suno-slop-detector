@@ -150,6 +150,16 @@
   // cliché words, swap ONLY those words from the hand-curated table (CLICHE_SWAPS) and keep
   // their sentence. Substitute choice: closest syllable count, not already in the song,
   // never a blocklist word. This is the edit that can't break meaning — the sentence stays.
+  // MOLD LINES — sentence frames proven guilty by leave-one-out ablation over 300 AI songs
+  // (48/100 most-implicating lines open with "Every..."; the rest of the top molds below).
+  // The frame itself is the cliché — no word swap can fix "Every X is a Y".
+  var MOLD = [
+    /^\W*every\b/i,                                                            // the universalizing inventory line
+    /\bmaybe\b.*\bmaybe\b/i,                                                   // maybe X, maybe Y
+    /\b(not|nah|never|don't|won't|ain't|isn't|can't)\b.*\b(not|nah|never|don't|won't|ain't|isn't|can't)\b.*\b(just|only|still)\b/i,
+    /\btoo \w+ to \w+.*\btoo \w+ to \w+/i,                                     // too X to A, too Y to B
+  ];
+  function moldLine(l) { for (var i = 0; i < MOLD.length; i++) if (MOLD[i].test(l)) return true; return false; }
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
   var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
@@ -236,11 +246,12 @@
       var wn = words(lines[i]).length;
       if (wn < 3 || wn > 16) continue;                         // not a lyric line (prose blob / fragment)
       if (freq[lines[i].trim().toLowerCase()] > 1) continue;   // hook immunity
-      // Evidence = cliché words ONLY. The line-level AI score false-flags specific human-style
-      // lines ("Keys in my teeth, engine coughing black") — it may rank candidates, never condemn.
-      var cc = clicheCount(lines[i]);
-      if (cc === 0) continue;
-      ranked.push({ i: i, r: cc * 1000 + scoreFn(lines[i]) });
+      // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
+      // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
+      // teeth, engine coughing black") — it may rank candidates, never condemn.
+      var cc = clicheCount(lines[i]), mold = songScore >= 55 && moldLine(lines[i]);
+      if (cc === 0 && !mold) continue;
+      ranked.push({ i: i, mold: mold, r: (mold ? 2000 : 0) + cc * 1000 + scoreFn(lines[i]) });
     }
     if (!ranked.length) return null;
     ranked.sort(function (a, b) { return b.r - a.r; });
@@ -249,6 +260,26 @@
     // wandering into human-reading lines is not.
     for (var k = 0; k < ranked.length; k++) {
       var idx = ranked[k].i, orig = lines[idx], rw = lastWord(orig); if (!rw) continue;
+      // MOLD REBUILD — the sentence FRAME is the cliché ("Every X is a Y"); no word swap helps.
+      // Runtime leave-one-out confirms it: only rebuild if removing this line alone would drop
+      // the song's score (so "Every breath you take" in a human-reading song is never touched).
+      if (ranked[k].mold) {
+        var ablate = lines.slice(0, idx).concat(lines.slice(idx + 1)).join("\n");
+        if (songScore - scoreFn(ablate) >= 2) {
+          var msugs = genSuggestions(rw, theme, nsylLine(orig), 10, scoreFn);
+          for (var ms = 0; ms < msugs.length; ms++) {
+            if (moldLine(msugs[ms])) continue;                 // never replace a mold with a mold
+            var mend = lastWord(msugs[ms]), mstart = words(msugs[ms]).slice(0, 3).join(" "), mdup = false;
+            for (var mj = 0; mj < lines.length; mj++) { if (mj !== idx && (lastWord(lines[mj]) === mend || words(lines[mj]).slice(0, 3).join(" ") === mstart)) { mdup = true; break; } }
+            if (mdup) continue;
+            var mtrial = lines.slice(); mtrial[idx] = cap(msugs[ms]);
+            var mns = scoreFn(mtrial.join("\n"));
+            if (mns > songScore + 1) continue;
+            return { text: mtrial.join("\n"), lineIndex: idx, from: orig, to: mtrial[idx], before: Math.round(songScore), after: Math.round(mns), mode: "mold-rebuild" };
+          }
+        }
+        // mold rebuild impossible — fall through to word swap if it also carries clichés
+      }
       // TIER 0 — the line carries cliché words: swap the words, keep the user's sentence.
       // Gate on the cliché count itself (the song % is provably blind to word swaps) plus never-worsen.
       if (clicheCount(orig) > 0) {

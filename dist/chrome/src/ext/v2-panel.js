@@ -537,6 +537,23 @@
       moves.push({ move: 13, score: (bestScore - 0.5) * 1.4, text: tip + "." });
     })();
 
+    // Move 14 — mold-line callout: sentence frames proven guilty by leave-one-out ablation
+    // (half of the most song-implicating AI lines open with "Every..."). Point at the line.
+    (function () {
+      var MOLD14 = [/^\W*every\b/i, /\bmaybe\b.*\bmaybe\b/i, /\btoo \w+ to \w+.*\btoo \w+ to \w+/i];
+      var ls = String(text).split("\n");
+      for (var i = 0; i < ls.length; i++) {
+        var ln = ls[i].trim();
+        if (ln.split(/\s+/).length < 4) continue;
+        for (var p = 0; p < MOLD14.length; p++) {
+          if (MOLD14[p].test(ln)) {
+            moves.push({ move: 14, score: 0.45, text: "“" + ln.slice(0, 44) + (ln.length > 44 ? "…" : "") + "” is an inventory line — AI's favorite sentence shape. Trade the every/maybe sweep for ONE specific moment you could photograph." });
+            return;
+          }
+        }
+      }
+    })();
+
     moves.sort(function (a, b) { return b.score - a.score; });
 
     var THRESHOLD = 0.02;  // small floor; below it, the track is clean -> Move 12
