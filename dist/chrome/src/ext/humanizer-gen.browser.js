@@ -157,6 +157,7 @@
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
   function swapCliches(line, songText) {
     var SW = globalThis.CLICHE_SWAPS; if (!SW) return null;
+    var swapTheme = null; try { swapTheme = themeVec(songText); } catch (e) {}
     var songWords = {}; words(songText).forEach(function (w) { songWords[w] = 1; });
     var lineWords = words(line), counts = {}, i;
     for (i = 0; i < lineWords.length; i++) counts[lineWords[i]] = (counts[lineWords[i]] || 0) + 1;
@@ -171,19 +172,31 @@
       for (var x = 0; x < IDIOMS.length; x++) { if (IDIOMS[x].indexOf(lw) >= 0 && low.indexOf(" " + IDIOMS[x] + " ") >= 0) return tok; }
       // verb position? use the verb-form substitutes ("echoes"->"repeats"), never the noun ones
       var subs = SW[lw];
+      var nxt = raw.slice(off + tok.length).match(/[A-Za-z']+/);
+      var nxtL = nxt ? nxt[0].toLowerCase() : "";
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
-          var rest = raw.slice(off + tok.length).match(/[A-Za-z']+/);     // "your love momma" — dialect verb,
-          if (rest && rest[0].length > 3 && !NOUN_CTX[rest[0].toLowerCase()]) return tok;   // ambiguous: leave it
+          if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
         } else {
-          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;           // clear verb position
+          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;   // clear verb position
         }
       }
+      // role split: a verb with an object plays a different role than a bare one
+      // ("echoes your name" = tells/carries; "footsteps echo" = rings)
+      if (subs && !subs.length && (subs.obj || subs.noobj)) {
+        var hasObj = !!NOUN_CTX[nxtL] || /^(me|you|us|it|him|her|them)$/.test(nxtL);
+        subs = hasObj ? (subs.obj || subs.noobj) : (subs.noobj || subs.obj);
+      }
+      if (!subs || !subs.length) return tok;
+      // choose by: meter (closest syllables) -> THEME FIT (the song's own embedding picks the
+      // "environmental synonym": a percussive song picks "drums", a confession picks "tells")
+      // -> curation order as the last tiebreak.
       var best = null, bd = 1e9;
       for (var k = 0; k < subs.length; k++) {
         var s = subs[k];
         if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
-        var d = Math.abs(nsyl(s) - nsyl(lw)) * 10 + k;           // meter first, curation order breaks ties
+        var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
+        var d = Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4;
         if (d < bd) { bd = d; best = s; }                        // (number agreement is curated INTO the table)
       }
       if (!best) return tok;
