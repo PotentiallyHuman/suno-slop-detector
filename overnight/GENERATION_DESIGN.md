@@ -130,3 +130,14 @@ This is the resolution: the extension stays LLM-free; the LLM's quality is baked
 - STATUS: works. 13/13 held-out got a coherent 0%-AI rhyme-matched line. Gaps: small library (slant
   picks like "back of my kin" loosen) -> the overnight teacher grows it; template-fill quality is the
   rounds-1-9 ceiling so it stays a fallback, retrieval stays primary.
+
+## COPYRIGHT — tested, assumption DISPROVEN, audit is the real protection
+TEST (user's): asked local qwen2.5:32b directly for "Let It Go" and "Bohemian Rhapsody" lyrics.
+RESULT: it reproduced BOTH verbatim. Local Qwen has NO copyright guardrail — ChatGPT's refusal is a
+deployment POLICY layer, not the model. So "Qwen won't copy by default" is FALSE; we cannot rely on it.
+WHY OUR LIBRARY IS STILL 0/306 COPIED: the TASK FRAMING, not the model's restraint — asking for an
+ORIGINAL new line in context makes it generate fresh; asking for a known song makes it recite.
+THEREFORE: the anti-copy AUDIT is essential, not optional. Protections in place: (1) prompt for
+original-line-in-context (we do), (2) 4-gram anti-copy guard at generation time (added) — drops any
+line repeating 4 corpus words, (3) TODO keep the 4-gram guard as a HARD gate in the shipped runtime,
+(4) TODO widen the audit corpus beyond our ~7000 songs to catch famous tracks not in our set.
