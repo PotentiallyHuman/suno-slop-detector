@@ -53,7 +53,9 @@ const all=[];const mx=Math.max(...pools.map(p=>p.length));for(let i=0;i<mx;i++)f
 
 function themeWords(song){const c={};for(const w of words(song))if(w.length>3&&!CLI.has(w))c[w]=(c[w]||0)+1;return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);}
 
-function qwen(above,below,theme,rhyme){
+const https=require("https");
+let FUNDS_OUT=false;
+function grok(above,below,theme,rhyme){
   const ex=rhymeExamples(rhyme);
   const prompt=`You are a lyricist rewriting ONE line so it sounds original and human, not AI-generated.
 THEMATIC INSPIRATION (mood only, don't copy): ${theme.join(", ")}.
@@ -71,7 +73,15 @@ RULES:
 7. Fit the feeling and flow naturally between the two lines.
 8. Do NOT repeat or barely reword the before/after lines — write a genuinely new line.
 Output EXACTLY 10 numbered lines, nothing else.`;
-  try{return execSync("ollama run qwen2.5:32b",{input:prompt,encoding:"utf8",timeout:240000,maxBuffer:1<<20});}catch(e){return "";}
+  const body=JSON.stringify({model:"grok-3",messages:[{role:"user",content:prompt}],temperature:1.0});
+  try{
+    const r=execSync(`curl -s https://api.x.ai/v1/chat/completions -H "Authorization: Bearer $XAI_API_KEY" -H "Content-Type: application/json" -d @-`,{input:body,encoding:"utf8",timeout:60000,maxBuffer:1<<20});
+    const d=JSON.parse(r);
+    if(d.choices)return d.choices[0].message.content;
+    const msg=JSON.stringify(d).toLowerCase();
+    if(msg.includes("credit")||msg.includes("fund")||msg.includes("quota")||msg.includes("insufficient")||msg.includes("403")||msg.includes("payment")){FUNDS_OUT=true;console.log("FUNDS OUT: "+JSON.stringify(d).slice(0,120));}
+    return "";
+  }catch(e){return "";}
 }
 
 const DS=path.join(__dirname,"dataset.jsonl");
@@ -81,8 +91,9 @@ const DONE=new Set();
 try{fs.readFileSync(DS,"utf8").trim().split("\n").filter(Boolean).forEach(l=>{try{const r=JSON.parse(l);DONE.add(r.above+"|"+r.below);}catch(e){}});}catch(e){}
 let made=0, kept=0, seen=0;
 const stride=Math.max(1,Math.floor(all.length/200));
-for(let si=0; si<all.length && made<N; si+=stride){
+for(let si=Math.floor(all.length/2); si<all.length && made<N && !FUNDS_OUT; si+=stride){
   const lines=all[si].split("\n").map(l=>l.trim()).filter(l=>words(l).length>=4&&words(l).length<=12&&!/^\[/.test(l));
+  if(FUNDS_OUT)break;
   for(let i=1;i+1<lines.length && made<N;i++){
     const mid=lines[i]; if(sc(mid)<70)continue;                 // only replace HIGH-AI middle lines
     const above=lines[i-1], below=lines[i+1], rhyme=words(mid).slice(-1)[0]; if(!rk(rhyme))continue;
@@ -94,7 +105,7 @@ for(let si=0; si<all.length && made<N; si+=stride){
     if(DONE.has(above+"|"+below))continue;   // resume: already generated for this context
     seen++;
     const theme=themeWords(all[si]);
-    const raw=qwen(above,below,theme,rhyme);
+    const raw=grok(above,below,theme,rhyme);if(FUNDS_OUT)break;
     const cands=raw.split("\n").map(l=>l.replace(/^\s*\d+[.)]\s*/,"").replace(/^["']|["',]+$/g,"").trim()).filter(l=>words(l).length>=4);
     // DIVERSITY GATE: a memorized/famous line makes Qwen CONVERGE (few distinct candidates). Genuine
     // generation BRANCHES. If <5 of the candidates are distinct, the context is likely reconstructing
