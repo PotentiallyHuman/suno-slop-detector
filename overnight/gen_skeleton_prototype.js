@@ -29,12 +29,17 @@ const hT=(Array.isArray(human)?human:Object.values(human)).map(x=>typeof x==="st
 // corpus bigrams (slot-fit) — does the candidate actually occur after prev / before next in human text?
 const BIG=new Map(),UNI=new Map();
 for(const t of hT){const w=words(t);for(let i=0;i<w.length;i++){UNI.set(w[i],(UNI.get(w[i])||0)+1);if(i+1<w.length){const k=w[i]+" "+w[i+1];BIG.set(k,(BIG.get(k)||0)+1);}}}
-const bg=(a,b)=>BIG.get(a+" "+b)||0;
-// concrete = NOT an abstract-suffix word and reasonably common (imageable nouns sing better)
 const ABSTRACT=/(ness|tion|sion|ment|ity|ance|ence|ism|ship|hood|dom|ude|acy)$/;
+const bg=(a,b)=>BIG.get(a+" "+b)||0;
+// COMMON-WORD lexicon: frequent, concrete, known words only (no abstract/rare/cliche) — fill from these
+const COMMON=new Set();
+{const freq=[...UNI.entries()].sort((a,b)=>b[1]-a[1]);let n=0;for(const [w,c] of freq){if(c<25)break;if(w.length<3||w.length>9)continue;if(ABSTRACT.test(w))continue;if(CLI.has(w))continue;if(!emb(w))continue;COMMON.add(w);if(++n>=3500)break;}}
+
+// concrete = NOT an abstract-suffix word and reasonably common (imageable nouns sing better)
+
 const concrete=w=>!ABSTRACT.test(w)&&(UNI.get(w)||0)>=8;
 const donors=[];
-for(const t of hT){for(const l of String(t).split("\n")){const w=words(l);if(w.length<4||w.length>9)continue;if(/[^a-z' ]/i.test(l.trim()))continue;const last=w[w.length-1];if(!VK[last])continue;let syl=0;for(const x of w)syl+=nsyl(x);donors.push({w,syl,lastPOS:pos(last)});}if(donors.length>40000)break;}
+for(const t of hT){for(const l of String(t).split("\n")){const w=words(l);if(w.length<4||w.length>9)continue;if(/[^a-z' ]/i.test(l.trim()))continue;const last=w[w.length-1];if(!VK[last])continue;let syl=0;for(const x of w)syl+=nsyl(x);donors.push({w,syl,lastPOS:pos(last)});}}
 
 // generic high-frequency words that win theme-nearest but read as filler — never substitute IN as content
 const GENERIC=new Set("own thing things way ways make made makes get gets got let lets keep keeps take takes put go goes one ones some any all more most much many lot kind sort part bit something nothing anything everything someone".split(" "));
@@ -51,7 +56,7 @@ function sub(origPos,theme,used,targetSyl,origWord,prev,next){
   for(let i=0;i<M.embWords.length;i++){const w=M.embWords[i];
     if(used.has(w)||CLI.has(w)||GENERIC.has(w))continue;
     if(POS[w]!==origPos)continue;
-    if(w.length<4||!concrete(w))continue;
+    if(!COMMON.has(w))continue;
     const v=emb(w);if(!v)continue;
     const typeSim=cos(v,ov);                           // SAME TYPE as the word it replaces
     if(typeSim<0.30)continue;                           // hard: must be in the donor word's family
@@ -60,25 +65,31 @@ function sub(origPos,theme,used,targetSyl,origWord,prev,next){
     if(s>bs){bs=s;best=w;}}
   return (best&&bs>0.5)?best:origWord;                  // else keep the donor's real word
 }
-// SEMANTIC N+7 (refined): refill only the CONFIDENT content slots, keep donor's other real words, end on rhyme
+// real-ending check: produced last TWO words must be a real human bigram (kills "to tonight")
+function realEnding(out){return bg(out[out.length-2],out[out.length-1])>=1;}
+function allFilled(out,donor){for(let i=0;i<out.length-1;i++){if(swappable(donor.w[i])&&!COMMON.has(out[i]))return false;}return true;}
+function fillDonor(donor,theme,rhyme){
+  const out=donor.w.slice(),used=new Set([rhyme]);let changed=0;
+  for(let i=0;i<out.length-1;i++){if(swappable(out[i])){const prev=i>0?out[i-1]:"",next=i+1<out.length?out[i+1]:"";const sw=sub(POS[out[i]],theme,used,nsyl(out[i]),out[i],prev,next);if(sw!==out[i]){used.add(sw);out[i]=sw;changed++;}}}
+  out[out.length-1]=rhyme;
+  return changed>=1?out:null;
+}
+// GENERATE MANY templates; keep only ones passing HARD filters; pick best by theme fit
 function generate(clicheLine,songText){
   const theme=themeVec(songText);if(!theme)return null;
   const cw=words(clicheLine),rhyme=cw[cw.length-1];let tSyl=0;for(const x of cw)tSyl+=nsyl(x);
   const rPOS=pos(rhyme);
-  let cand=donors.filter(d=>Math.abs(d.syl-tSyl)<=2&&d.lastPOS===rPOS&&d.w.filter(swappable).length>=2
-    && bg(d.w[d.w.length-2], rhyme) >= 1);   // the rhyme word must REALLY follow the donor's penultimate word
+  const cand=donors.filter(d=>Math.abs(d.syl-tSyl)<=2&&d.lastPOS===rPOS&&d.w.filter(swappable).length>=1
+    && bg(d.w[d.w.length-2], rhyme) >= 3);
   if(!cand.length)return null;
-  let seed=0;for(const c of songText)seed=(seed*31+c.charCodeAt(0))%100003;
-  const donor=cand[seed%cand.length];
-  const out=donor.w.slice(),used=new Set([rhyme]);
-  let changed=0;
-  for(let i=0;i<out.length-1;i++){if(swappable(out[i])){const prev=i>0?out[i-1]:"",next=i+1<out.length?out[i+1]:"";const s=sub(POS[out[i]],theme,used,nsyl(out[i]),out[i],prev,next);if(s!==out[i]){used.add(s);out[i]=s;changed++;}}}
-  out[out.length-1]=rhyme;
-  // need at least 1 real change (originality) — else it's just the donor
-  if(changed<1)return null;
-  return {line:out.join(" "),donor:donor.w.join(" "),changed};
+  const survivors=[];
+  for(const d of cand.slice(0,400)){const out=fillDonor(d,theme,rhyme);if(!out)continue;
+    if(!realEnding(out)||!allFilled(out,d))continue;
+    const tv=themeVec(out.join(" "));survivors.push({line:out.join(" "),donor:d.w.join(" "),q:tv?dot(tv,theme):0});}
+  if(!survivors.length)return null;
+  survivors.sort((a,b)=>b.q-a.q);
+  return survivors[0];
 }
-
 const song="I floated through the silence without a spark or flame, a neutron in the shadows without a face or name, you are a force of nature pulling atoms in your wake, gravity was singing when you stepped into my light";
 const TESTS=["Neon shadows fill the endless sky","my heart will break tonight","dancing in the pouring rain","lost inside a broken dream","the fire burns within my soul","you are my shining star"];
 console.log("donor bank:",donors.length,"human lines\n");

@@ -85,3 +85,19 @@ touch of sky", "lost in a ride on the star". Refusing-when-no-fit is the desired
 TRADE-OFF: strict rhyme-fit -> many refusals on the 40k bank (no fitting template for many rhymes).
 NEXT ENGINEERING: a bigger template bank INDEXED by ending-context (rhyme-word -> templates that
 accept it), so more rhymes find a fitting template without lowering quality.
+
+## Rounds 8-9 + THE RESOLUTION (LLM curates the library offline)
+- Round 8 (full 111k-line bank + common-word-only fill): fixed vocabulary (common words, no abstract),
+  but weak endings leaked ("set bound to tonight" — function-word penults accept any rhyme).
+- Round 9 (generate-MANY + HARD filters: real-ending bigram>=3, all-slots-common-filled, theme-rank):
+  good coverage + REAL hits ("I feel life through rain", "to feel the warm touch of sky", "from the
+  hand of dream") but still ~half odd. The device CAN'T pick its good outputs from its odd ones — the
+  coherence-judging wall (cycle 8) again.
+- RESOLUTION (the user's "keep only good examples / how an LLM would do it"): the on-device engine
+  can't BE an LLM, but its LIBRARY can be curated BY one OFFLINE. Claude generates + judges a library
+  of vivid, common-word templates with TYPED slots, keeps only coherent ones, ships it as static data.
+  Device replays mechanically at runtime (rhyme-first fill). No net/API/LLM on device; the LLM's
+  JUDGMENT is baked into the shipped examples. Quality ceiling = curated library quality (high).
+- NEXT BUILD: (1) Claude curates ~150-300 common-word skeletons w/ typed slots + validated fills,
+  indexed by ending. (2) runtime fill from that curated set only. (3) gate each produced line:
+  professor + real-ending + anti-copy + v8-less-AI; keep best. (4) wire as Chaos-rebuild, A/B + eye.
