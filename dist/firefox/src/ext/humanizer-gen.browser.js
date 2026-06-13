@@ -14,6 +14,16 @@
   var rev2 = M.rev2, rev3 = M.rev3, slant = M.slant, VK = M.vkey, HUM = M.humanness;
   var WPOS = M.wordPOS || {}, VALIDBG = new Set(M.validBG || []), CLICHE = new Set(M.cliche || []);
   var STARTBG = new Set(M.startBG || []), ENDBG = new Set(M.endBG || []), TEMPLATES = new Set(M.templates || []);
+  // Words the v8 detector reads as clearly HUMAN (its own learned word-weight is strongly
+  // negative). Built once from the loaded v8 model so the swap layer never replaces a word the
+  // model already likes — that only launders human vocab out and risks splitting a fixed
+  // compound. Threshold -0.5 keeps genuine clichés (whose AI-signal is structural, near-zero
+  // word weight) swappable while catching diamond/-1.32, thunder/-1.78, fire/-0.69, etc.
+  var HUMAN_WORD = {};
+  try {
+    var VM = globalThis.SLOP_MODEL_V8;
+    if (VM && VM.vocab && VM.wBow) for (var hi = 0; hi < VM.vocab.length; hi++) if (VM.wBow[hi] < -0.5) HUMAN_WORD[VM.vocab[hi]] = 1;
+  } catch (e) { /* model optional — guard simply off if absent */ }
   function fnv(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; } return h >>> 0; }
   function emb(w) { var r = EW[w]; if (r === undefined) return null; var v = new Float32Array(DIM); for (var k = 0; k < DIM; k++) v[k] = EMB[r * DIM + k] / 127; return v; }
   function dot(a, b) { var s = 0; for (var k = 0; k < a.length; k++) s += a[k] * b[k]; return s; }
@@ -272,6 +282,11 @@
       var lw = tok.toLowerCase(), prev = prevTok; prevTok = lw;
       if (!CLICHE.has(lw) || !SW[lw]) return tok;
       if (counts[lw] > 1) return tok;                            // repeated on purpose ("Who your love, Who your love")
+      // NEVER swap a word the detector itself reads as HUMAN. Its cliché-ness lives in the
+      // structural features, so the word-level signal is human — swapping it launders a human
+      // word out AND risks a broken compound ("diamond ring" -> "jewel ring"). The score can be
+      // fooled here (cliché-density drops) but coherence is the hard constraint. (test song 9)
+      if (HUMAN_WORD[lw]) return tok;
       // clichés joined into ONE phrase ("flame of fire") get a single swap; separate phrases
       // in the same line ("heartbeat ... echoes") both swap — the user requires the full clean
       if (lastSwapEnd >= 0 && /^[\s,]*(of|and|or)\s*$/.test(raw.slice(lastSwapEnd, off))) return tok;
