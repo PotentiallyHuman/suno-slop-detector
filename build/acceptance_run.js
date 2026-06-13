@@ -29,7 +29,7 @@ vm.createContext(sb);
 for (const f of FILES) vm.runInContext(fs.readFileSync(path.join(ROOT, f), "utf8"), sb, { filename: f });
 
 const score = (t) => sb.SlopV8.scoreV8(t).score;
-const logit = (t) => { let p = sb.SlopV8.scoreV8(t).pAI; p = Math.min(Math.max(p, 1e-9), 1 - 1e-9); return Math.log(p / (1 - p)); };
+const logit = (t) => { const r = sb.SlopV8.scoreV8(t); if (typeof r.z === "number") return r.z; let p = Math.min(Math.max(r.pAI, 1e-9), 1 - 1e-9); return Math.log(p / (1 - p)); };
 
 const file = process.argv[2];
 if (!file) { console.error("usage: node build/acceptance_run.js <song.txt>"); process.exit(1); }

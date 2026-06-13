@@ -37,7 +37,9 @@
     for (var jj = 0; jj < DN; jj++) z += M.wDense[jj] * dnz[jj];
     for (var bk in bow) z += (M.wBow[bk] || 0) * (bow[bk] / nTok);
     var pAI = 1 / (1 + Math.exp(-z));
-    return { pAI: pAI, score: Math.round(pAI * 100), verdict: pAI >= (M.threshold || 0.5) ? "AI" : "human" };
+    // z (raw log-odds) ships too: past ~z=36 the sigmoid underflows to exactly 1.0 in
+    // floats, so a pAI-derived logit FREEZES and every editing gate reads "no change".
+    return { pAI: pAI, score: Math.round(pAI * 100), verdict: pAI >= (M.threshold || 0.5) ? "AI" : "human", z: z };
   }
   var api = { scoreV8: scoreV8 };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

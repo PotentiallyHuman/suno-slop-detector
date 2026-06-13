@@ -231,8 +231,9 @@
   // "drop 2 points" no matter how good an edit is), log-odds keep resolution everywhere.
   function aiLogit(t) {
     try {
-      var p = SlopV8.scoreV8(t).pAI;
-      p = Math.min(Math.max(p, 1e-9), 1 - 1e-9);
+      var r = SlopV8.scoreV8(t);
+      if (r && typeof r.z === "number") return r.z;   // raw log-odds: exact at any depth
+      var p = Math.min(Math.max(r.pAI, 1e-9), 1 - 1e-9);
       return Math.log(p / (1 - p));
     } catch (e) { return 0; }
   }
