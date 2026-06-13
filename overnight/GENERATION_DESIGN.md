@@ -54,3 +54,20 @@ SELECTIONAL CONSTRAINTS (what words actually occur there). FIX (the next build):
 Direction VALIDATED (skeleton solves grammar — the thing that made all prior attempts soup). The
 slot-filler is a real but TRACTABLE build (selectional constraints, not open-ended generation). This
 is an architectural addition the user should greenlight; then it becomes the overnight loop's focus.
+
+## Rounds 4-5 result + the QUALITY ceiling (honest)
+- Round 4 (selectional-constraint single-donor) = high-water mark: grammatical, on-theme, original,
+  rhyme-locked, NO soup ("words don't hear a name", "the world of time will not be flame") — but VAGUE.
+- Round 5 (best-of-N) REGRESSED: picking "the best generated line" needs to SCORE coherence, which is
+  the SAME wall as the A/B metric (cycle 8: coherence isn't capturable by corpus statistics). So
+  best-of-N confidently picked broken lines ("some time me name").
+- CEILING (clean disproof): on-device, no-LLM, statistical generation can FIX grammar-soup but cannot
+  reliably produce GOOD (coherent + meaningful + fitting) original lines, NOR judge which generated
+  line is good. Both need language understanding the on-device/no-net constraint forbids.
+- What IS achievable: grammatical-but-vague original lines (round 4). Useful only if "less-AI +
+  coherent" is enough; falls short of "genius originality".
+- OPTIONS for the user: (A) ship round-4 as a gated Chaos-rebuild (grammatical-but-vague, fires only
+  when it beats the cliché's AI score + passes the grammar professor + anti-copy); (B) accept the
+  boundary — swap/restructure stays the QUALITY tier, true original generation needs an LLM; (C)
+  human-in-the-loop: show the user 3 candidate rewrites and let THEM pick (the human is the coherence
+  judge the on-device system lacks).
