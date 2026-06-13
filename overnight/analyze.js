@@ -56,7 +56,8 @@ const songs = [];
 for (let i = 0; i < all.length && songs.length < K; i += stride) songs.push(all[i]);
 
 // human bigrams for collocation-break detection (BADPAIRS lens)
-const human = JSON.parse(fs.readFileSync("/tmp/human_lyrics_cache.json", "utf8"));
+const HUMAN_CACHE = fs.existsSync("/tmp/human_lyrics_cache.json") ? "/tmp/human_lyrics_cache.json" : path.join(__dirname, "..", "corpus", "human_lyrics_cache2.json");
+const human = JSON.parse(fs.readFileSync(HUMAN_CACHE, "utf8"));
 const hTexts = (Array.isArray(human) ? human : Object.values(human)).map((x) => typeof x === "string" ? x : (x.lyrics || x.text || ""));
 const big = new Map(), hWord = new Map();
 for (const t of hTexts) { const w = (t.toLowerCase().match(/[a-z']+/g) || []); for (let i = 0; i < w.length; i++) { hWord.set(w[i], (hWord.get(w[i]) || 0) + 1); if (i + 1 < w.length) { const k = w[i] + " " + w[i + 1]; big.set(k, (big.get(k) || 0) + 1); } } }
