@@ -44,26 +44,29 @@ const tagged=w=>POS[w]!==undefined;
 // This mirrors the proven humanizer, which only swaps concrete nouns.
 const swappable=w=>tagged(w)&&!FUNC.has(w)&&w.length>3&&/^(NN|NNS)$/.test(POS[w])&&!GENERIC.has(w);
 // substitute: theme-nearest CONCRETE noun (high humanness = a real imageable word), strong theme floor
+function cos(a,b){if(!a||!b)return -1;let s=0;for(let k=0;k<a.length;k++)s+=a[k]*b[k];return s;}
 function sub(origPos,theme,used,targetSyl,origWord,prev,next){
+  const ov=emb(origWord);if(!ov)return origWord;      // need the donor word's TYPE vector
   let best=null,bs=-1e9;
   for(let i=0;i<M.embWords.length;i++){const w=M.embWords[i];
     if(used.has(w)||CLI.has(w)||GENERIC.has(w))continue;
     if(POS[w]!==origPos)continue;
-    if(w.length<4||!concrete(w))continue;        // concrete imageable nouns only
+    if(w.length<4||!concrete(w))continue;
     const v=emb(w);if(!v)continue;
-    // SELECTIONAL CONSTRAINT: must plausibly fit THIS slot (prev __ next), not just the theme
+    const typeSim=cos(v,ov);                           // SAME TYPE as the word it replaces
+    if(typeSim<0.30)continue;                           // hard: must be in the donor word's family
     const slot=Math.log(1+bg(prev,w))+Math.log(1+bg(w,next));
-    const s=dot(v,theme)+0.30*slot-Math.abs(nsyl(w)-targetSyl)*0.2;
+    const s=0.6*typeSim+0.5*dot(v,theme)+0.25*slot-Math.abs(nsyl(w)-targetSyl)*0.2;
     if(s>bs){bs=s;best=w;}}
-  // require BOTH theme fit and a real slot fit, else keep the donor's own word (coherence first)
-  return (best&&bs>0.6&&(bg(prev,best)>0||bg(best,next)>0))?best:origWord;
+  return (best&&bs>0.5)?best:origWord;                  // else keep the donor's real word
 }
 // SEMANTIC N+7 (refined): refill only the CONFIDENT content slots, keep donor's other real words, end on rhyme
 function generate(clicheLine,songText){
   const theme=themeVec(songText);if(!theme)return null;
   const cw=words(clicheLine),rhyme=cw[cw.length-1];let tSyl=0;for(const x of cw)tSyl+=nsyl(x);
   const rPOS=pos(rhyme);
-  const cand=donors.filter(d=>Math.abs(d.syl-tSyl)<=2&&d.lastPOS===rPOS&&d.w.filter(swappable).length>=2);
+  let cand=donors.filter(d=>Math.abs(d.syl-tSyl)<=2&&d.lastPOS===rPOS&&d.w.filter(swappable).length>=2
+    && bg(d.w[d.w.length-2], rhyme) >= 1);   // the rhyme word must REALLY follow the donor's penultimate word
   if(!cand.length)return null;
   let seed=0;for(const c of songText)seed=(seed*31+c.charCodeAt(0))%100003;
   const donor=cand[seed%cand.length];
@@ -77,6 +80,6 @@ function generate(clicheLine,songText){
 }
 
 const song="I floated through the silence without a spark or flame, a neutron in the shadows without a face or name, you are a force of nature pulling atoms in your wake, gravity was singing when you stepped into my light";
-const TESTS=["Neon shadows fill the endless sky","Whispers calling out my name","a neutron in the shadows without a name","I floated through the silence and the flame"];
+const TESTS=["Neon shadows fill the endless sky","my heart will break tonight","dancing in the pouring rain","lost inside a broken dream","the fire burns within my soul","you are my shining star"];
 console.log("donor bank:",donors.length,"human lines\n");
 for(const t of TESTS){const r=generate(t,song);console.log("CLICHE : "+t);if(r){console.log("DONOR  : "+r.donor);console.log("GENNED : "+r.line);}else console.log("(no donor)");console.log("");}

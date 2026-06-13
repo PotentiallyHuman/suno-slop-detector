@@ -71,3 +71,17 @@ is an architectural addition the user should greenlight; then it becomes the ove
   boundary — swap/restructure stays the QUALITY tier, true original generation needs an LLM; (C)
   human-in-the-loop: show the user 3 candidate rewrites and let THEM pick (the human is the coherence
   judge the on-device system lacks).
+
+## Rounds 6-7: RHYME-FIRST template selection (the user's key fix)
+The "will not be flame" bug was an ORDERING bug: the old code chose the donor/template FIRST (blind
+to the rhyme), then jammed the rhyme word in -> a state-ending template ("will not be ___") got
+"flame" forced into it. CORRECT order (user's insight, matches freestyle's backward construction):
+the rhyme word is fixed FIRST, and ONLY templates whose final slot genuinely ACCEPTS that rhyme word
+are eligible. Implemented as: a donor is eligible only if bigram(donor.penultimate, rhymeWord) >= 1
+in the human corpus (the rhyme word really occurs in that ending position). Plus inner slots are
+TYPE-PRESERVED (substitute must be in the donor word's embedding-neighborhood, not just theme-near).
+RESULT: "will not be flame" now REFUSES (no fitting template) instead of jamming -> "to feel the warm
+touch of sky", "lost in a ride on the star". Refusing-when-no-fit is the desired behavior.
+TRADE-OFF: strict rhyme-fit -> many refusals on the 40k bank (no fitting template for many rhymes).
+NEXT ENGINEERING: a bigger template bank INDEXED by ending-context (rhyme-word -> templates that
+accept it), so more rhymes find a fitting template without lowering quality.
