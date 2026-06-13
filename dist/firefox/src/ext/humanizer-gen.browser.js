@@ -138,6 +138,11 @@
   // clean up worst-line-first. Already-fixed lines are cliché-free, so they fall to the bottom of the
   // ranking and aren't touched again. Returns null when no line still reads AI.
   function clicheCount(line) { var ws = words(line), c = 0, i; for (i = 0; i < ws.length; i++) if (CLICHE.has(ws[i])) c++; return c; }
+  // CLAUSE GUARD (no-soup): only edit lines that are real clauses (>=4 words WITH a finite verb).
+  // Gerund-fragment list lines ("Every shadow dancin'", "biscuits light as air") have no finite verb;
+  // editing them produces fragments the eye reads as soup. Leave fragments alone.
+  var FINITE_POS = { VB: 1, VBP: 1, VBZ: 1, VBD: 1, MD: 1 };
+  function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (p && FINITE_POS[p]) return true; } return false; }
   // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
   // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----
@@ -477,7 +482,7 @@
         if (loaded) {
           var rotIdx = (text.match(/^(That|This|Some|Perhaps|Could be) /gmi) || []).length;   // rotate variants
           var rs = restructure(orig, rotIdx);
-          if (rs && !moldLine(rs)) {
+          if (rs && !moldLine(rs) && isFullClause(orig) && grammatical(words(rs)) && completeLine(words(rs))) {
             var rtrial = lines.slice(); rtrial[idx] = rs;
             var rnew = rtrial.join("\n"), rns = scoreFn(rnew);
             var rok = logitFn ? (logitFn(rnew) <= fineBase + 0.05) : (rns <= songScore + 1);
@@ -490,9 +495,12 @@
       }
       // TIER 0 — the line carries cliché words: swap the words, keep the user's sentence.
       // Gate on the cliché count itself (the song % is provably blind to word swaps) plus never-worsen.
-      if (clicheCount(orig) > 0) {
+      // SONG-LEVEL AI GUARD (red-team fix): never mutate a clean song's words — a 0%-AI line like
+      // "Whispers in the wind" must be left alone. Only swap when the song actually reads AI (>=50),
+      // matching the dup/mold gates (55). Saturated AI songs still pass, so good swaps are unaffected.
+      if (clicheCount(orig) > 0 && songScore >= 50) {
         var swapped = swapCliches(orig, text);
-        if (swapped && clicheCount(swapped) < clicheCount(orig)) {
+        if (swapped && clicheCount(swapped) < clicheCount(orig) && isFullClause(orig) && grammatical(words(swapped))) {
           var trialS = lines.slice(); trialS[idx] = swapped;
           var snew = trialS.join("\n"), nsS = scoreFn(snew);
           var sok = logitFn ? (logitFn(snew) <= fineBase + 0.05) : (nsS <= songScore + 1);
