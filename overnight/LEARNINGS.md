@@ -95,12 +95,7 @@ For each lyric line, worst-AI first, only touching lines that carry their own ev
 
 ## OPEN BUGS / TODO (highest value first)
 
-- **love→choose/longing/adore in NOUN position** ("I call it love" → "I call it choose"): the verb-
-  swap fires when "love" is a noun without a possessive. Need a noun-vs-verb check that handles
-  "call it love", "it's love", "a love".  ← do this first
-- **idiom "hands up" → "palms up"**: add fixed phrases (hands up, heads up) to the idiom guard.
-- **obscure substitutes** that read worse than the slop: pewter, lampposts, porchlights, snapshot —
-  prune any substitute with ~0 real-lyric frequency unless it's a common natural word.
+- **PER-WORD frozen-phrase guard (cycle-3 refinement, top value):** protect frozen phrases ONLY for collocation-anchor source words (love, hands — test heart/eyes/soul too). Blocks hands→palms & love→longing (the top bad pairs) WITHOUT blocking fine swaps like lost→stranded. The blanket >=90 guard A/B-won aggregate but tripwire-reverted; the per-word version should win both. ← do this first
 - **dupVariant has no handle on gerund/noun-opener choruses** — find a validated variation op.
 - **hands→palms over-reused (44×)** and mildly stilts collocations — demote palms / expand pool.
 
@@ -114,3 +109,4 @@ POOLS · BADPAIRS · RESIDUAL(new molds) · NOOP · VOWEL · SYLLABLE · WIT/REG
   substitute bugs — queued above.
 - cycle 1 (BADPAIRS): added idiom guards (hands up/down, heads up, hand in hand, see the light, play with fire, in the shadow) — ACCEPTED (bad edits 221→217). Taught: fixed multi-word phrases are a priority-rule (idiom > swap); "hands"/"fire"/"light"/"shadow" sit in many frozen phrases that a noun-swap wrecks.
 - cycle 2 (POOLS): pruned obscure-to-sing substitutes (pewter, voltaic, lampposts, porchlights, halogen, brassy, russet, padlocks, soot, fidgety, flimsy, snowbound, shatterproof, infinitude) — ACCEPTED (quality/song -0.419→-0.355). Taught: corpus-frequency=0 does NOT mean obscure — mutter/drumbeat/thinning/keepsake are freq0 yet fine. The distinguishing trait is "would a person SING this word," which is JUDGMENT, not frequency. METRIC FLAW noted: the gate's freq0 penalty is blunt (treats "thinning" like "pewter") so the loop could over-prune good freq0 words — keep an eye; consider a general-English-frequency or embedding-coverage signal instead of lyric-frequency.
+- cycle 3 (RESIDUAL→pivoted BADPAIRS): RESIDUAL was a dead lens (surviving AI lines are common-word openers and/the/but/i — no safe transform), so pivoted to the top bad-pairs. Tried a NARROW frozen-phrase guard (>=90x) to stop hands→palms/love→longing. A/B AGGREGATE WIN (fitness -0.234→+0.033!) but the catastrophe tripwire REVERTED it: it regressed Hydrogen 15→27% by also blocking a FINE swap ("lost in"→"stranded in", since "lost in"/123 is frozen). KEY INSIGHT (data-confirmed): the bad/fine split is NOT phrase frequency (lost-in/123 fine > love-can/93 bad) — it's the SOURCE WORD. love & hands are collocation-anchors whose swaps reliably read wrong; lost/silence/shadows swap fine. The frozen guard has real value (big aggregate win) but must be PER-WORD, not blanket.

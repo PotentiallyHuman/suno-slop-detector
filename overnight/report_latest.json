@@ -11,59 +11,79 @@
   ]
  },
  "summary": {
-  "improved": "228/300",
-  "noop_ai_songs": 53,
-  "mean_dz": "-2.03"
+  "improved": "233/300",
+  "noop_ai_songs": 49,
+  "mean_dz": "-2.08"
  },
  "POOLS": {
-  "distinct_subs": 125,
+  "distinct_subs": 120,
   "top_reused_subs": [
-   [
-    "palms",
-    44
-   ],
    [
     "that",
     42
+   ],
+   [
+    "palms",
+    41
    ],
    [
     "this",
     27
    ],
    [
+    "beam",
+    21
+   ],
+   [
+    "stillness",
+    20
+   ],
+   [
+    "nickel",
+    20
+   ],
+   [
     "lane",
     19
+   ],
+   [
+    "sand",
+    18
    ],
    [
     "each",
     18
    ],
    [
+    "daylight",
+    17
+   ],
+   [
     "clouds",
     15
-   ],
-   [
-    "choose",
-    15
-   ],
-   [
-    "stillness",
-    14
    ],
    [
     "trace",
     13
    ],
    [
-    "vacant",
+    "stranded",
     12
    ],
    [
-    "nickel",
-    12
+    "vacant",
+    11
    ],
    [
     "some",
+    10
+   ],
+   [
+    "wrecked",
+    10
+   ],
+   [
+    "longing",
     10
    ],
    [
@@ -75,11 +95,7 @@
     9
    ],
    [
-    "pewter",
-    9
-   ],
-   [
-    "under",
+    "busted",
     9
    ],
    [
@@ -87,36 +103,20 @@
     9
    ],
    [
-    "stratosphere",
+    "keepsake",
     8
    ],
    [
-    "busted",
+    "craving",
     8
    ],
    [
-    "snapped",
-    8
-   ],
-   [
-    "adrift",
+    "headlights",
     8
    ],
    [
     "below",
     8
-   ],
-   [
-    "outline",
-    7
-   ],
-   [
-    "squall",
-    7
-   ],
-   [
-    "snapshot",
-    7
    ]
   ],
   "top_sources": [
@@ -126,23 +126,19 @@
    ],
    [
     "hands",
-    52
+    48
+   ],
+   [
+    "light",
+    46
    ],
    [
     "love",
-    25
-   ],
-   [
-    "sky",
-    23
+    26
    ],
    [
     "road",
-    22
-   ],
-   [
-    "broken",
-    21
+    23
    ],
    [
     "silence",
@@ -153,20 +149,32 @@
     21
    ],
    [
-    "beneath",
-    17
+    "dust",
+    20
+   ],
+   [
+    "broken",
+    19
    ],
    [
     "lost",
+    19
+   ],
+   [
+    "sky",
     15
    ],
    [
-    "ghost",
-    14
+    "beneath",
+    15
    ],
    [
     "shadows",
     14
+   ],
+   [
+    "ghost",
+    13
    ],
    [
     "midnight",
@@ -177,11 +185,11 @@
     13
    ],
    [
-    "soul",
-    11
+    "empty",
+    10
    ],
    [
-    "empty",
+    "soul",
     10
    ],
    [
@@ -189,15 +197,7 @@
     9
    ],
    [
-    "burning",
-    9
-   ],
-   [
     "heartbeat",
-    9
-   ],
-   [
-    "light",
     9
    ]
   ]
@@ -205,18 +205,14 @@
  "BADPAIRS": [
   [
    "hands->palms",
-   13
+   11
   ],
   [
-   "silence->vacuum",
-   6
+   "love->longing",
+   8
   ],
   [
-   "dust->grit",
-   4
-  ],
-  [
-   "broken->snapped",
+   "love->craving",
    4
   ],
   [
@@ -224,19 +220,7 @@
    4
   ],
   [
-   "lost->adrift",
-   4
-  ],
-  [
-   "storm->squall",
-   4
-  ],
-  [
-   "memory->snapshot",
-   3
-  ],
-  [
-   "love->adore",
+   "memory->keepsake",
    3
   ],
   [
@@ -244,27 +228,15 @@
    3
   ],
   [
-   "love->longing",
+   "light->beam",
    3
   ],
   [
-   "sky->stratosphere",
-   2
-  ],
-  [
-   "light->beam",
-   2
-  ],
-  [
-   "love->choose",
-   2
-  ],
-  [
-   "hands->grip",
-   2
-  ],
-  [
    "hands->fists",
+   3
+  ],
+  [
+   "broken->wrecked",
    2
   ],
   [
@@ -280,15 +252,11 @@
    2
   ],
   [
-   "broken->wrecked",
-   1
+   "lost->adrift",
+   2
   ],
   [
-   "love->craving",
-   1
-  ],
-  [
-   "lost->mislaid",
+   "broken->busted",
    1
   ],
   [
@@ -296,15 +264,11 @@
    1
   ],
   [
-   "memory->keepsake",
+   "love->choose",
    1
   ],
   [
-   "love->cherish",
-   1
-  ],
-  [
-   "silver->pewter",
+   "hands->grip",
    1
   ],
   [
@@ -327,23 +291,23 @@
  "RESIDUAL": [
   [
    "and …(mid)",
-   111
+   112
   ],
   [
    "the …(mid)",
-   79
+   81
   ],
   [
    "and …(short)",
    71
   ],
   [
-   "but …(mid)",
+   "i …(short)",
    68
   ],
   [
-   "i …(short)",
-   68
+   "but …(mid)",
+   67
   ],
   [
    "the …(short)",
@@ -363,7 +327,7 @@
   ],
   [
    "we …(mid)",
-   40
+   41
   ],
   [
    "i …(mid)",
@@ -458,7 +422,7 @@
   "With the first snow of the year / She wrote a letter to her mother / Said / \"I've never been so sure",
   "He ties his boots by the chair / Slow like the rain at dawn / The same blue shirt, frayed at the cuff / The years have worn him down",
   "The screen door slammed in June / Your name on a folded note / Mud on my thrift-store boots / And a bruise on my throat",
-  "There’s one tree left / By the bus depot curb / Roots in a crack / Where the rain used to work"
+  "Under one umbrella / We fit, we fit / Under one umbrella / You and I like this"
  ],
  "VOWEL": {
   "perfect_rhyme_rate": "0.102",
