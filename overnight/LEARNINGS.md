@@ -112,3 +112,4 @@ POOLS · BADPAIRS · RESIDUAL(new molds) · NOOP · VOWEL · SYLLABLE · WIT/REG
 - cycle 0 (seed): built A/B-quality gate + 300-song miner. Pruned 11 bad pools (A/B win:
   bad swaps 56→43). Added syllable hard-reject. Found the love-noun-position + hands-up + obscure-
   substitute bugs — queued above.
+- cycle 1 (BADPAIRS): added idiom guards (hands up/down, heads up, hand in hand, see the light, play with fire, in the shadow) — ACCEPTED (bad edits 221→217). Taught: fixed multi-word phrases are a priority-rule (idiom > swap); "hands"/"fire"/"light"/"shadow" sit in many frozen phrases that a noun-swap wrecks.
