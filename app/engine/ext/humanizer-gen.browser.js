@@ -19,6 +19,11 @@
   // model already likes — that only launders human vocab out and risks splitting a fixed
   // compound. Threshold -0.5 keeps genuine clichés (whose AI-signal is structural, near-zero
   // word weight) swappable while catching diamond/-1.32, thunder/-1.78, fire/-0.69, etc.
+  // Words the v8 detector reads as STRONGLY human (weight < -0.5) are never a swap source —
+  // those weights are extreme enough to trust (diamond -1.32, thunder -1.78). We deliberately do
+  // NOT gate substitutes on the finer word weights: collinearity makes mid-range weights noisy
+  // (the model scores "lane"/+0.34 like "record"/+0.37 yet "lane" reads more human), so a per-word
+  // substitute gate over-blocks good swaps. Substitute quality is curated in the table instead.
   var HUMAN_WORD = {};
   try {
     var VM = globalThis.SLOP_MODEL_V8;

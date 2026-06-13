@@ -106,7 +106,6 @@
     silver: ["pewter"],
     sky: ["clouds", "stratosphere"],
     skyline: ["rooftops", "treeline"],
-    song: ["record", "refrain"],
     soul: ["core", "marrow", "gut", "spine"],
     souls: ["spirits", "bodies"],
     stardust: ["glitter", "confetti"],
