@@ -199,12 +199,18 @@
     }, 0);
   }
   function renderJoker(panel) {
-    if (!hzNext.res) return; // keep the craft joker
     const p = panel || {};
-    renderCraft(pasteCraft, {
-      good: p.good, bad: p.bad,
-      joker: { text: "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line." },
-    });
+    let joker = null;
+    if (hzNext.res) {
+      joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line.";
+    } else if (aiScore(pasteEl.value || "") >= 55) {
+      // engine exhausted but the song still reads AI: say what only the writer can fix
+      let dg = null;
+      try { dg = HumanizeFreestyle.diagnoseShape(pasteEl.value || ""); } catch (e) {}
+      if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
+    }
+    if (!joker) return; // keep the craft joker
+    renderCraft(pasteCraft, { good: p.good, bad: p.bad, joker: { text: joker } });
   }
 
   function showMsg(txt) { pasteMsg.textContent = txt; pasteMsg.hidden = !txt; }

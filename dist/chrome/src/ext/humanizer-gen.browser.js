@@ -506,6 +506,18 @@
     var tips = [];
     if (sylEq / pairs > 0.24) tips.push("your line lengths are stamped (" + Math.round(100 * sylEq / pairs) + "% of neighbors match exactly — humans sit near 20%): stretch one line, cut another short");
     if (rhyme / pairs > 0.26) tips.push("almost every pair of lines rhymes (" + Math.round(100 * rhyme / pairs) + "% — humans sit near 20%): let a line end without its echo");
+    // SPECIFICITY (mirrors the model's cf_spec): digits + time/number words + mid-line
+    // proper nouns. Zero anchors anywhere is itself an AI tell the model weighs — and
+    // it's the one fix only the writer can make (we never invent content for them).
+    var specRe = /\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|thousand|o'?clock|a\.?m|p\.?m|monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)\b/i;
+    var hasSpec = specRe.test(text);
+    if (!hasSpec) {
+      for (var si = 0; si < ls.length && !hasSpec; si++) {
+        var st = ls[si].trim().split(/\s+/);
+        for (var sj = 1; sj < st.length; sj++) if (/^[A-Z][a-z]{2,}/.test(st[sj]) && !/^(I|God|Lord|Oh|Hey|Yeah|Baby)$/.test(st[sj])) { hasSpec = true; break; }
+      }
+    }
+    if (!hasSpec) tips.push("nothing in the song is SPECIFIC — no place, time, or name anywhere (the model reads zero real anchors as AI): plant one detail only you would know, like a street ('on 5th Avenue'), a time ('4 a.m.'), or a month");
     if (!tips.length) return null;
     return tips.join("; ");
   }

@@ -338,11 +338,19 @@
         refs.craft.appendChild(craftRow("good", "✅", g.label, g.quote || "", "")));
     }
     // 🃏 joker — do this. On /create, when the next-press preview is current, the
-    // joker names the exact line the next "Humanize Line" press will rebuild.
+    // joker names the exact line the next "Humanize Line" press will rebuild; when
+    // the engine has nothing safe left and the song still reads AI, it says what
+    // only the writer can fix (shape + a real-world anchor).
     let joker = p.joker ? p.joker.text : null;
-    if (isCreatePage() && hzNext.res && lastResult && hzNext.key === lastResult._text) {
-      joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from +
-        "” — press Humanize Line above to rebuild exactly that line.";
+    if (isCreatePage() && lastResult && hzNext.key === lastResult._text) {
+      if (hzNext.res) {
+        joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from +
+          "” — press Humanize Line above to rebuild exactly that line.";
+      } else if (lastResult.score >= 55) {
+        let dg = null;
+        try { dg = HumanizeFreestyle.diagnoseShape(lastResult._text); } catch (e) {}
+        if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
+      }
     }
     if (joker) {
       refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "🃏 Try this" }));

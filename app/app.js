@@ -200,12 +200,18 @@
     }, 0);
   }
   function renderJokerPreview(panel) {
-    if (!hzNext.res) return; // keep the craft joker
     var p = panel || {};
-    renderCraft({
-      good: p.good, bad: p.bad,
-      joker: { text: "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line." },
-    });
+    var joker = null;
+    if (hzNext.res) {
+      joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line.";
+    } else if (aiScore(lyricsEl.value || "") >= 55) {
+      // engine exhausted but the song still reads AI: say what only the writer can fix
+      var dg = null;
+      try { dg = HumanizeFreestyle.diagnoseShape(lyricsEl.value || ""); } catch (e) {}
+      if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
+    }
+    if (!joker) return; // keep the craft joker
+    renderCraft({ good: p.good, bad: p.bad, joker: { text: joker } });
   }
 
   howaiBtn.addEventListener("click", analyse);
