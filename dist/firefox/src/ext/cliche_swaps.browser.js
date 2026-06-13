@@ -68,7 +68,7 @@
     kaleidoscope: ["pinwheel", "mosaic"],
     kiss: ["peck", "smooch"],
     labyrinth: ["maze", "warren"],
-    light: ["headlights", "daylight"],
+    light: [],
     lightning: ["voltage", "flash"],
     lights: ["lamps"],
     lonely: ["solo", "friendless"],

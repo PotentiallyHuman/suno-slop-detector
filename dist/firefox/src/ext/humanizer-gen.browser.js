@@ -143,6 +143,32 @@
   // editing them produces fragments the eye reads as soup. Leave fragments alone.
   var FINITE_POS = { VB: 1, VBP: 1, VBZ: 1, VBD: 1, MD: 1 };
   function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (!p || !FINITE_POS[p]) continue; var pp = WPOS[w[i - 1]] || ""; if (pp === "DT" || pp === "VBG" || pp === "TO") continue; /* "the RAIN" / "a setting SAIL" = object noun; "to TRY" = infinitive — none is the clause's finite verb (cycle 19+21 fragment guard) */ return true; } return false; }
+  // ---- SENTENCE-REPLACER (decision-tree branch 4 — the coverage path). When no swap/mold/dup fits a
+  // line that reads AI (often pure typicality, no cliché to swap), replace the WHOLE line with a clean
+  // library line: same rhyme-key (the song's scheme holds), syllable-matched (±1), best theme fit, with
+  // a theme-fit FLOOR + anti-dup. The library (globalThis.REPLACE_LIB) is BUILD-TIME judge-cleaned, so
+  // every candidate is coherent by construction. Refuse if nothing fits (REFUSE > SOUP). Indexed once.
+  var REPLIDX = null;
+  function buildReplaceIndex() {
+    REPLIDX = [];
+    var L = globalThis.REPLACE_LIB || [];
+    for (var i = 0; i < L.length; i++) { var lw = lastWord(L[i]), rk = VK[lw]; if (!rk) continue; REPLIDX.push({ line: L[i], rk: rk, syl: nsylLine(L[i]), tv: themeVec(L[i]) }); }
+  }
+  function sentenceReplace(aiLine, theme, songLines) {
+    if (!REPLIDX) buildReplaceIndex();
+    if (!REPLIDX.length) return null;
+    var rk = VK[lastWord(aiLine)]; if (!rk) return null;
+    var syl = nsylLine(aiLine), used = {};
+    for (var s = 0; s < songLines.length; s++) used[String(songLines[s]).toLowerCase()] = 1;   // never reuse a line already in the song
+    var best = null, bs = 0.08;                                                                 // theme-fit FLOOR -> refuse a poor match (lines stay coherent; this only governs topical fit)
+    for (var i = 0; i < REPLIDX.length; i++) {
+      var c = REPLIDX[i];
+      if (c.rk !== rk || Math.abs(c.syl - syl) > 1 || used[c.line.toLowerCase()]) continue;
+      var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
+      if (fit > bs) { bs = fit; best = c.line; }
+    }
+    return best;
+  }
   // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
   // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----
@@ -533,6 +559,22 @@
         var newSong = scoreFn(trial.join("\n"));
         if (newSong > songScore + 1) continue;                // would worsen the song — try next suggestion
         return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
+      }
+    }
+    // BRANCH 4 — SENTENCE-REPLACER: no swap/mold/dup fired. Replace the most-AI full-clause line with a
+    // whole clean-library line (rhyme-key + syllable + theme matched). Must measurably LOWER the song's
+    // log-odds (a clean line reads human), else refuse. This is the coverage path for typicality lines.
+    var repCand = [];
+    for (var ri2 = 0; ri2 < lines.length; ri2++) { if (!isFullClause(lines[ri2])) continue; if (scoreFn(lines[ri2]) < 55) continue; repCand.push({ i: ri2, ai: scoreFn(lines[ri2]) }); }
+    repCand.sort(function (a, b) { return b.ai - a.ai; });
+    for (var rc = 0; rc < repCand.length; rc++) {
+      var ridx = repCand[rc].i, rorig2 = lines[ridx];
+      var rep = sentenceReplace(rorig2, theme, lines);
+      if (!rep) continue;
+      var rtrial2 = lines.slice(); rtrial2[ridx] = cap(rep);
+      var rnew3 = rtrial2.join("\n"), rns3 = scoreFn(rnew3);
+      if (logitFn ? (logitFn(rnew3) <= fineBase - 0.02) : (rns3 <= songScore)) {
+        return { text: rnew3, lineIndex: ridx, from: rorig2, to: cap(rep), before: Math.round(songScore), after: Math.round(rns3), mode: "replace" };
       }
     }
     return null;

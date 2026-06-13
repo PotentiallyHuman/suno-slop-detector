@@ -56,6 +56,7 @@
         "src/ext/humanizer_model_p2.browser.js",
         "src/ext/humanizer_model_p3.browser.js",
         "src/ext/cliche_swaps.browser.js",
+        "src/ext/replace_lib.browser.js",
         "src/ext/humanizer-gen.browser.js"
       ],
       "run_at": "document_idle"
