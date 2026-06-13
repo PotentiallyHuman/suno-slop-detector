@@ -214,7 +214,7 @@
     setTimeout(() => { // off the render path: never delay the pill
       if (hzNext.key === text) return;
       let res = null;
-      try { res = HumanizeFreestyle.humanizeOne(text, hzScore); } catch (e) { res = null; }
+      try { res = HumanizeFreestyle.humanizeOne(text, hzScore, hzLogit); } catch (e) { res = null; }
       hzNext = { key: text, res: res };
       // repaint the joker if the page text hasn't moved on meanwhile
       if (lastResult && lastResult._text === text && lastResult.panel) renderCraft(lastResult.panel);
@@ -223,6 +223,16 @@
 
   function hzScore(t) {
     try { const r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; }
+  }
+
+  // Log-odds scorer for the engine's gates: the rounded % saturates (a 100% song can't
+  // "drop 2 points" no matter how good an edit is), log-odds keep resolution everywhere.
+  function hzLogit(t) {
+    try {
+      let p = SlopV8.scoreV8(t).pAI;
+      p = Math.min(Math.max(p, 1e-9), 1 - 1e-9);
+      return Math.log(p / (1 - p));
+    } catch (e) { return 0; }
   }
 
   function hzBusyRun(btn, work) {
@@ -259,8 +269,8 @@
     else {
       try {
         res = kind === "half"
-          ? HumanizeFreestyle.humanizeHalf(text, hzScore)
-          : HumanizeFreestyle.humanizeOne(text, hzScore);
+          ? HumanizeFreestyle.humanizeHalf(text, hzScore, hzLogit)
+          : HumanizeFreestyle.humanizeOne(text, hzScore, hzLogit);
       } catch (e) { res = null; }
     }
     if (!res) { hzMsg(hzShapeMsg(text)); return; }

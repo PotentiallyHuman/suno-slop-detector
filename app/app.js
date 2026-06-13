@@ -193,7 +193,7 @@
     setTimeout(function () {
       if (hzNext.key !== text) {
         var res = null;
-        try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
+        try { res = HumanizeFreestyle.humanizeOne(text, aiScore, aiLogit); } catch (e) { res = null; }
         hzNext = { key: text, res: res };
       }
       if ((lyricsEl.value || "") === text) renderJokerPreview(panel);
@@ -239,6 +239,16 @@
   // v8 line-level AI score (0..100) — ranks lines and gates the freestyle rebuilds
   function aiScore(t) { try { var r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; } }
 
+  // Log-odds scorer for the engine's gates: the rounded % saturates (a 100% song can't
+  // "drop 2 points" no matter how good an edit is), log-odds keep resolution everywhere.
+  function aiLogit(t) {
+    try {
+      var p = SlopV8.scoreV8(t).pAI;
+      p = Math.min(Math.max(p, 1e-9), 1 - 1e-9);
+      return Math.log(p / (1 - p));
+    } catch (e) { return 0; }
+  }
+
   // Press feedback: heavy work runs after one paint so the button visibly enters "Working…",
   // and the button is disabled meanwhile (double-presses queue nothing).
 
@@ -282,7 +292,7 @@
     // "Humanize Line": rebuild the single most-AI line with the on-device freestyle generator. One per click.
     var res = null;
     if (hzNext.key === text) res = hzNext.res; // the previewed press, precomputed
-    else { try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; } }
+    else { try { res = HumanizeFreestyle.humanizeOne(text, aiScore, aiLogit); } catch (e) { res = null; } }
     if (!res) {
       var s0 = aiScore(text);
       if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
@@ -321,7 +331,7 @@
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
     // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the better half the user's.
     var res = null;
-    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore); } catch (e) { res = null; }
+    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
     if (!res) {
       var s0 = aiScore(text);
       if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());

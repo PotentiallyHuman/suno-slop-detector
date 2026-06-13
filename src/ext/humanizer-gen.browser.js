@@ -21,7 +21,7 @@
   function onTheme(w, th) { var v = emb(w); return v ? dot(v, th) : 0; }
   function humanness(w) { return HUM[w] || 0; }
   function allowed(w) { return true; }   // vocabulary is cliché-free by construction (blocklist at build time)
-  function words(l) { return (String(l).toLowerCase().match(/[a-z']+/g)) || []; }
+  function words(l) { return (String(l).toLowerCase().replace(/[’‘ʼ]/g, "'").match(/[a-z']+/g)) || []; }   // curly apostrophes = ASCII (pasted lyrics use ’)
   function nsyl(w) { w = w.toLowerCase().replace(/[^a-z]/g, ""); if (!w) return 1; var m = w.match(/[aeiouy]+/g), n = m ? m.length : 1; if (/e$/.test(w) && n > 1) n--; return Math.max(1, n); }
   function nsylLine(l) { var ws = words(l), s = 0, x; for (x = 0; x < ws.length; x++) s += nsyl(ws[x]); return s; }
   function lastWord(l) { var w = words(l); return w.length ? w[w.length - 1] : ""; }
@@ -156,10 +156,36 @@
   var MOLD = [
     /^\W*every\b/i,                                                            // the universalizing inventory line
     /\bmaybe\b.*\bmaybe\b/i,                                                   // maybe X, maybe Y
-    /\b(not|nah|never|don't|won't|ain't|isn't|can't)\b.*\b(not|nah|never|don't|won't|ain't|isn't|can't)\b.*\b(just|only|still)\b/i,
+    /\b(not|nah|never|don['’]t|won['’]t|ain['’]t|isn['’]t|can['’]t)\b.*\b(not|nah|never|don['’]t|won['’]t|ain['’]t|isn['’]t|can['’]t)\b.*\b(just|only|still)\b/i,
     /\btoo \w+ to \w+.*\btoo \w+ to \w+/i,                                     // too X to A, too Y to B
+    /^They (say|call) .+, but they (don['’]t|never|won['’]t)/i,                // the strawman-they couplet -> question frame
   ];
   function moldLine(l) { for (var i = 0; i < MOLD.length; i++) if (MOLD[i].test(l)) return true; return false; }
+
+  // ---- REPEAT VARIATION: a verbatim-repeated line is a hook — the FIRST occurrence is
+  // sacred, but humans vary the repeat (the model reads verbatim repetition as its single
+  // strongest AI tell: ~5 logits on a typical chorus song). Deterministic, corpus-validated
+  // ops, only ever applied to the 2nd+ occurrence:
+  //   "we're burning bright, we're hydrogen." -> "Burning bright, still hydrogen."
+  // (gerund opener = 0.83x human-leaning; mid-line ", still" appears ONLY in human lyrics)
+  function dupVariant(line) {
+    var l = String(line), out = l;
+    var pm = l.match(/^\s*(we|i|you|they)(['’])(re|m)\b/i);
+    if (pm) {
+      // the SAME pronoun re-stated after a comma is the redundant copy: ", we're X" -> ", still X"
+      var pronRe = pm[1] + "['’]" + pm[3];
+      out = out.replace(new RegExp(",\\s*" + pronRe + "\\s+", "gi"), ", still ");
+      // leading "We're Xing" -> gerund opener "Xing"; "We're the X" -> "Still the X"
+      var m = out.match(/^(\s*)(we|i|you|they)['’](re|m)\s+(\w+ing\b.*)$/i);
+      if (m) out = m[1] + m[4].charAt(0).toUpperCase() + m[4].slice(1);
+      else { m = out.match(/^(\s*)(we|i|you|they)['’](re|m) (the\b.*)$/i); if (m) out = m[1] + "Still " + m[4]; }
+    }
+    // mid-line "every" in a repeat -> "each" (0.62x human-leaning, model weight negative)
+    if (/\bevery\b/i.test(out) && !/^\s*every/i.test(out))
+      out = out.replace(/\bevery\b/gi, function (w) { return w.charAt(0) === "E" ? "Each" : "each"; });
+    if (out === l) return null;  // no validated op applies — leave the repeat verbatim (honest)
+    return out;
+  }
   // Auto-rebuild of mold lines is OFF until the generator writes well enough for the 95% bar
   // (rolls like "Every shaky start" -> "When you thought it was bronze" fail human review).
   // Molds still surface via the craft panel (move 14) and the honest stop message.
@@ -186,7 +212,7 @@
         var p2 = parts.length === 2 ? parts : l.split(/\s+[Mm]aybe\s+/);   // comma-less pairs ("maybe A maybe B")
         if (p2.length === 2) {
           var head = p2[0].replace(/^\s*[Mm]aybe\s+/, "").replace(/[\s,]+(and|but|or)\s*$/, "");   // "A and maybe B" -> "A — or B"
-          return head.charAt(0).toUpperCase() + head.slice(1) + " — or " + p2[1];
+          return head.charAt(0).toUpperCase() + head.slice(1) + ", or " + p2[1];   // comma, not em-dash: "—" is 127x AI-leaning in lyric lines
         }
         if (parts.length !== 2) return null;                     // 3+ maybes: leave for the panel
       }
@@ -194,10 +220,15 @@
       out = out.charAt(0).toUpperCase() + out.slice(1);
       return out !== l ? out : null;
     }
+    // "They say X, but they don't Y" -> a question. AI never asks; "Why do" is a
+    // human-only line opener (0.25/1000 human lines, 0 in the AI corpus), and the
+    // model reads zero rhetorical questions as an AI tell.
+    m = l.match(/^They (say|call) (.+?), but they (don['’]t|never|won['’]t) (.+?)[,.!]?$/i);
+    if (m) return "Why do they " + m[1].toLowerCase() + " " + m[2] + " when they " + m[3].toLowerCase() + " " + m[4] + "?";
     m = l.match(/^(.*?\btoo\s+\w+\s+to\b.*?),\s*too\s+\w+\s+to\s+(.*)$/i);
-    if (m) return r % 2 ? m[1] + ", can't even " + m[2] : m[1] + " — or to " + m[2];
+    if (m) return r % 2 ? m[1] + ", can't even " + m[2] : m[1] + ", or to " + m[2];
     m = l.match(/^I (?:don't|won't|never) (.*?), I (?:don't|won't|never) (.*?), I (?:just|only) (.*)$/i);
-    if (m) return "Forget " + m[1] + ", forget " + m[2] + " — I " + m[3];
+    if (m) return "Forget " + m[1] + ", forget " + m[2] + ", I " + m[3];
     if ((l.match(/\bevery\b/gi) || []).length > 1) return null;      // double-every parallel: a half-fix reads broken
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
@@ -309,13 +340,27 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn) {
+  function humanizeOne(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
-    // Hooks/choruses are STRUCTURE: a line repeated verbatim is there on purpose — never rebuild it.
-    var freq = {};
-    for (i = 0; i < lines.length; i++) { var fk = words(lines[i]).join(" "); if (fk) freq[fk] = (freq[fk] || 0) + 1; }
+    // logitFn (optional): log-odds scorer for the gates. The rounded % saturates — on a
+    // 100% song NOTHING can "drop 2 points", so every %-gated structural edit was blocked
+    // exactly where it mattered. Log-odds keep full resolution at both ends.
+    var fineBase = logitFn ? logitFn(text) : null;
+    // Hooks/choruses are STRUCTURE: a line repeated verbatim is there on purpose — the FIRST
+    // occurrence is never touched. The REPEATS may be varied (dupVariant) when the song reads AI:
+    // verbatim repetition is the model's strongest single AI tell, and varying the repeat is a
+    // real songwriting move, not vandalism. NEAR-duplicate matching (word-set overlap), not
+    // exact: once a repeat is varied, its root must STAY immune across the next presses —
+    // exact matching let the root lose protection the moment its twin diverged.
+    var sets = [];
+    for (i = 0; i < lines.length; i++) sets.push(new Set(words(lines[i])));
+    function jacc(a, b) {
+      if (a.size < 3 || b.size < 3) return 0;
+      var n = 0; a.forEach(function (w) { if (b.has(w)) n++; });
+      return n / (a.size + b.size - n);
+    }
     // Candidates = ONLY lines carrying their own AI evidence: blocklist clichés, or a high line-level
     // AI score. A line that reads human is never touched, no matter how AI the whole song scores —
     // on a good song the song-level % is the STRUCTURE (repeated chorus, uniform stanzas), and
@@ -324,7 +369,16 @@
     for (i = 0; i < lines.length; i++) {
       var wn = words(lines[i]).length;
       if (wn < 3 || wn > 16) continue;                         // not a lyric line (prose blob / fragment)
-      if (freq[words(lines[i]).join(" ")] > 1) continue;   // hook immunity (punctuation-blind)
+      var earlierDup = -1, laterDup = false;
+      for (var j2 = 0; j2 < lines.length; j2++) {
+        if (j2 === i) continue;
+        if (jacc(sets[i], sets[j2]) >= 0.6) { if (j2 < i) { earlierDup = j2; break; } laterDup = true; }
+      }
+      if (earlierDup >= 0) {                                   // a REPEAT of an earlier line
+        if (songScore >= 55) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
+        continue;
+      }
+      if (laterDup) continue;                                  // the hook's root occurrence: sacred
       // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
       // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
       // teeth, engine coughing black") — it may rank candidates, never condemn.
@@ -340,20 +394,35 @@
     // wandering into human-reading lines is not.
     for (var k = 0; k < ranked.length; k++) {
       var idx = ranked[k].i, orig = lines[idx], rw = lastWord(orig); if (!rw) continue;
+      // REPEAT VARIATION — vary the 2nd+ occurrence of a verbatim-repeated line. Accept only
+      // if the log-odds actually drop (or, without a logitFn, the % doesn't rise).
+      if (ranked[k].dup) {
+        var dv = dupVariant(orig);
+        if (dv) {
+          var dtrial = lines.slice(); dtrial[idx] = dv;
+          var dnew = dtrial.join("\n"), dns = scoreFn(dnew);
+          var dok = logitFn ? (logitFn(dnew) <= fineBase - 0.15) : (dns <= songScore);
+          if (dok) return { text: dnew, lineIndex: idx, from: orig, to: dv, before: Math.round(songScore), after: Math.round(dns), mode: "vary" };
+        }
+        continue;
+      }
       // MOLD RESTRUCTURE — the sentence FRAME is the cliché ("Every X is a Y"); no word swap
       // helps, and the n-gram can't be trusted to rewrite it. So a DESIGNED structural transform
       // rearranges the frame and keeps 100% of the user's words. Runtime leave-one-out confirms
       // the line is load-bearing first (so "Every breath you take" in a human song stays).
       if (ranked[k].mold) {
         var ablate = lines.slice(0, idx).concat(lines.slice(idx + 1)).join("\n");
-        if (songScore - scoreFn(ablate) >= 2) {
+        var loaded = logitFn ? (fineBase - logitFn(ablate) >= 0.25)        // log-odds LOO: works at 100% too
+                             : (songScore - scoreFn(ablate) >= 2);
+        if (loaded) {
           var rotIdx = (text.match(/^(That|This|Some|Perhaps|Could be) /gmi) || []).length;   // rotate variants
           var rs = restructure(orig, rotIdx);
           if (rs && !moldLine(rs)) {
             var rtrial = lines.slice(); rtrial[idx] = rs;
-            var rns = scoreFn(rtrial.join("\n"));
-            if (rns <= songScore + 1) {
-              return { text: rtrial.join("\n"), lineIndex: idx, from: orig, to: rs, before: Math.round(songScore), after: Math.round(rns), mode: "restructure" };
+            var rnew = rtrial.join("\n"), rns = scoreFn(rnew);
+            var rok = logitFn ? (logitFn(rnew) <= fineBase + 0.05) : (rns <= songScore + 1);
+            if (rok) {
+              return { text: rnew, lineIndex: idx, from: orig, to: rs, before: Math.round(songScore), after: Math.round(rns), mode: "restructure" };
             }
           }
         }
@@ -365,9 +434,10 @@
         var swapped = swapCliches(orig, text);
         if (swapped && clicheCount(swapped) < clicheCount(orig)) {
           var trialS = lines.slice(); trialS[idx] = swapped;
-          var nsS = scoreFn(trialS.join("\n"));
-          if (nsS <= songScore + 1) {
-            return { text: trialS.join("\n"), lineIndex: idx, from: orig, to: swapped, before: Math.round(songScore), after: Math.round(nsS), mode: "swap" };
+          var snew = trialS.join("\n"), nsS = scoreFn(snew);
+          var sok = logitFn ? (logitFn(snew) <= fineBase + 0.05) : (nsS <= songScore + 1);
+          if (sok) {
+            return { text: snew, lineIndex: idx, from: orig, to: swapped, before: Math.round(songScore), after: Math.round(nsS), mode: "swap" };
           }
         }
       }
@@ -402,13 +472,13 @@
   // ---- "Humanize Rewrite": one press rebuilds the worst HALF of the song (ranked by cliché then AI),
   // leaving the better half the user's own words. Press again to rewrite the worst half of what now
   // remains — it converges, always sparing the cleaner half. Returns null when no line still reads AI. ----
-  function humanizeHalf(text, scoreFn) {
+  function humanizeHalf(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), nb = 0, i;
     for (i = 0; i < lines.length; i++) if (words(lines[i]).length >= 3) nb++;
     var half = Math.ceil(nb / 2), cur = text, before = Math.round(scoreFn(text)), steps = [], k;
     for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
-      var res = humanizeOne(cur, scoreFn);
+      var res = humanizeOne(cur, scoreFn, logitFn);
       if (!res) break;
       cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to });
     }
@@ -452,6 +522,10 @@
     for (i = 0; i < A.length; i++) if (!inB[A[i]]) out.push(A[i]);
     for (i = 0; i < B.length; i++) if (!inA[B[i]]) add.push(B[i]);
     if (!out.length || out.length > 3 || add.length > 3) return null; // a reshape, not a swap
+    if (!add.length) {                                                // pure deletion ("maybe X, maybe Y" -> "X, Y")
+      var uniq = []; for (i = 0; i < out.length; i++) if (uniq.indexOf(out[i]) < 0) uniq.push(out[i]);
+      return "dropped '" + uniq.join(" ") + "'";
+    }
     return "'" + out.join(" ") + "' → '" + add.join(" ") + "'";
   }
   function pressSummary(res) {
@@ -464,7 +538,12 @@
     }
     var more = steps.length - parts.length;
     if (!parts.length) return "reshaped " + steps.length + (steps.length === 1 ? " line" : " lines");
-    return "swapped " + parts.join(", ") + (more > 0 ? " (+" + more + " more)" : "");
+    var arrows = [], drops = [];
+    for (i = 0; i < parts.length; i++) (parts[i].indexOf("dropped") === 0 ? drops : arrows).push(parts[i]);
+    var bits = [];
+    if (arrows.length) bits.push("swapped " + arrows.join(", "));
+    if (drops.length) bits.push(drops.join(", "));
+    return bits.join("; ") + (more > 0 ? " (+" + more + " more)" : "");
   }
 
   globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary };
