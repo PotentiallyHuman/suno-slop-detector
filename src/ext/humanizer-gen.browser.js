@@ -699,5 +699,7 @@
     return bits.join("; ") + (more > 0 ? " (+" + more + " more)" : "");
   }
 
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanizeChaos: humanizeChaos, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary };
+  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanizeChaos: humanizeChaos, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary,
+    // exposed for the sentence-replacer build + soup tests: the real shipped coherence gates
+    _gates: { words: words, nsylLine: nsylLine, lastWord: lastWord, grammatical: grammatical, completeLine: completeLine, isFullClause: isFullClause, rhymeKey: function (l) { return VK[lastWord(l)] || null; } } };
 })();
