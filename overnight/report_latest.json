@@ -11,36 +11,36 @@
   ]
  },
  "summary": {
-  "improved": "233/300",
-  "noop_ai_songs": 49,
-  "mean_dz": "-2.08"
+  "improved": "224/300",
+  "noop_ai_songs": 56,
+  "mean_dz": "-2.01"
  },
  "POOLS": {
-  "distinct_subs": 120,
+  "distinct_subs": 116,
   "top_reused_subs": [
    [
     "that",
     42
    ],
    [
-    "palms",
-    41
-   ],
-   [
     "this",
     27
-   ],
-   [
-    "beam",
-    21
    ],
    [
     "stillness",
     20
    ],
    [
+    "beam",
+    20
+   ],
+   [
     "nickel",
     20
+   ],
+   [
+    "palms",
+    19
    ],
    [
     "lane",
@@ -56,7 +56,7 @@
    ],
    [
     "daylight",
-    17
+    16
    ],
    [
     "clouds",
@@ -75,6 +75,10 @@
     11
    ],
    [
+    "lamps",
+    11
+   ],
+   [
     "some",
     10
    ],
@@ -83,11 +87,7 @@
     10
    ],
    [
-    "longing",
-    10
-   ],
-   [
-    "lamps",
+    "headlights",
     10
    ],
    [
@@ -103,20 +103,20 @@
     9
    ],
    [
+    "below",
+    9
+   ],
+   [
     "keepsake",
     8
    ],
    [
-    "craving",
+    "under",
     8
    ],
    [
-    "headlights",
-    8
-   ],
-   [
-    "below",
-    8
+    "cleared",
+    7
    ]
   ],
   "top_sources": [
@@ -125,20 +125,16 @@
     97
    ],
    [
-    "hands",
-    48
-   ],
-   [
     "light",
     46
    ],
    [
-    "love",
-    26
+    "road",
+    22
    ],
    [
-    "road",
-    23
+    "hands",
+    21
    ],
    [
     "silence",
@@ -161,11 +157,11 @@
     19
    ],
    [
-    "sky",
-    15
+    "beneath",
+    17
    ],
    [
-    "beneath",
+    "sky",
     15
    ],
    [
@@ -197,24 +193,16 @@
     9
    ],
    [
+    "burning",
+    9
+   ],
+   [
     "heartbeat",
     9
    ]
   ]
  },
  "BADPAIRS": [
-  [
-   "hands->palms",
-   11
-  ],
-  [
-   "love->longing",
-   8
-  ],
-  [
-   "love->craving",
-   4
-  ],
   [
    "lights->lamps",
    4
@@ -229,10 +217,6 @@
   ],
   [
    "light->beam",
-   3
-  ],
-  [
-   "hands->fists",
    3
   ],
   [
@@ -264,11 +248,11 @@
    1
   ],
   [
-   "love->choose",
+   "hands->grip",
    1
   ],
   [
-   "hands->grip",
+   "burning->scalding",
    1
   ],
   [
@@ -299,7 +283,7 @@
   ],
   [
    "and …(short)",
-   71
+   72
   ],
   [
    "i …(short)",
@@ -386,12 +370,12 @@
    20
   ],
   [
-   "i'm …(short)",
+   "with …(mid)",
    20
   ],
   [
-   "with …(mid)",
-   19
+   "i'm …(short)",
+   20
   ],
   [
    "like …(mid)",
@@ -421,8 +405,8 @@
   "Hyperdrive / Coding through the night / Coding through the night / Coding through the night",
   "With the first snow of the year / She wrote a letter to her mother / Said / \"I've never been so sure",
   "He ties his boots by the chair / Slow like the rain at dawn / The same blue shirt, frayed at the cuff / The years have worn him down",
-  "The screen door slammed in June / Your name on a folded note / Mud on my thrift-store boots / And a bruise on my throat",
-  "Under one umbrella / We fit, we fit / Under one umbrella / You and I like this"
+  "Your name lit up my screen / Like a match in the dark / Three little bubbles / Then a knife in my heart",
+  "The screen door slammed in June / Your name on a folded note / Mud on my thrift-store boots / And a bruise on my throat"
  ],
  "VOWEL": {
   "perfect_rhyme_rate": "0.102",
