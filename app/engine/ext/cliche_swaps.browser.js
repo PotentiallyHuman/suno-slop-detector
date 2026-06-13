@@ -99,7 +99,7 @@
     shadows: ["doorways", "alleys", "corners", "background"],
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
-    silence: ["vacuum"],
+    silence: ["stillness", "calm", "vacuum"],
     silent: ["hushed", "soundless"],
     silhouette: ["outline", "profile"],
     silhouettes: ["outlines", "profiles"],
