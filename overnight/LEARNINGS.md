@@ -6,6 +6,32 @@ EDIT QUALITY — cliché removed, in-rhythm, grammatical, coherent — not by AI
 auto-revert on a loss. Append what was learned. Goal by morning: a sharp true/false decision flow
 for "what replaces what, and when."
 
+## DESIGN PHILOSOPHY (how to build the tree — read this BEFORE editing the tree)
+
+The tree is not rigid true/false. When two rules collide, resolve it like a real system, not by
+jamming one rule on top of another. Don't get stuck on the current shape — redesign the fork if a
+better one fits the evidence.
+
+- **PRIORITY (if/else):** order branches by confidence and by cost-of-being-wrong. The safest,
+  highest-certainty rule fires first and the rest are `else`. Established order:
+  hook-is-sacred > idiom/collocation protection > human-word guard > mold-restructure >
+  word-swap > hand-to-writer. A higher rule that fires STOPS the lower ones.
+- **WEIGHTED FORK:** when several transforms are each valid and none clearly dominates, don't pick
+  blindly — score each by (confidence it's right) × (expected quality gain) and take the best; on a
+  near-tie, let the A/B gate settle it by **trial and error** (try the change, keep it only if it
+  wins on random songs). Uncertainty is a reason to measure, not to guess.
+- **CONSEQUENCES + MITIGATIONS:** every rule must own what it can break and carry the guard that
+  prevents it. swap → can break rhyme/rhythm/collocation → guards: rhyme-vowel, syllable±1,
+  protected-phrase. restructure → can break grammar → guard: the professor. This pairing IS the
+  design — a rule without its mitigation is a bug waiting to ship.
+- **ADAPTATION:** prefer data-driven thresholds (corpus frequency, model weight, A/B fitness) over
+  hardcoded constants, so the tree tunes itself as more songs are seen. A constant that the data
+  later contradicts should become a measured value.
+- **HUMILITY:** the v8 score, the bigram table, my own taste — all are fallible. Cross-check
+  (model says X, corpus says Y, reads-wrong-to-the-eye says Z); when they conflict, COHERENCE wins
+  over score, and trial-and-error breaks remaining ties. A clean disproof (a change that loses the
+  A/B) is a real result — log it and move on; don't force a pet idea through.
+
 ## THE DECISION TREE (current state — refine every cycle)
 
 For each lyric line, worst-AI first, only touching lines that carry their own evidence:
