@@ -171,3 +171,21 @@ FOUR-LAYER DEFENSE: (1) shipped student trained ONLY on AI-slop = independent-cr
 DIVERSITY GATE — Qwen's 10 candidates per context; if <5 distinct, it's converging on a memorized line
 -> discard the context (free, intrinsic, no reference); (4) 4-gram audit vs our corpus as the cheap
 third net. Caveat: not legal advice; get a real opinion at commercial scale.
+
+## COPYRIGHT — the FINAL alibi (user's, confirmed + strengthened)
+ARGUMENT: a famous line can't enter the library by COPYING, because the library is generated only
+from NON-famous (AI-slop) contexts — reconstruction is cued by famous neighbors, which we never feed.
+So any coincidental famous-line match was INDEPENDENTLY CREATED (from matching the 2-line environment),
+not copied. Independent creation = complete copyright defense. User-pasted copyrighted lyrics are the
+USER's responsibility (general editing tool).
+STRONGER STILL: the shipped extension RETRIEVES a pre-built audited library line; it does NOT
+live-generate. So even given famous INPUT it cannot output a famous line (not in library, no live
+model). Pillar 3 (user responsibility) is just the backup.
+EVIDENCE that makes it airtight (both already in place):
+  - PROVENANCE: dataset.jsonl records the (above,below) context that generated each line -> proof
+    each was created from non-famous lines, never a famous song.
+  - PURPOSE: the tool HUMANIZES (makes lyrics LESS like existing content) -> opposite of a copying
+    tool -> substantial non-infringing use, no inducement.
+RESIDUAL (tiny): an AI-slop context could coincidentally mirror a famous song's context and pull the
+generator toward the famous line -> diversity gate catches converged/memorized, 4-gram audit catches
+verbatim. Not mathematically zero. NOT legal advice; get a real opinion at commercial scale.
