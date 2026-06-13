@@ -1,0 +1,56 @@
+# Original-line generation — design (on-device, no net, no API, low memory)
+
+## The problem
+Replace a cliché line with an ORIGINAL, COHERENT line that keeps the song's rhyme + syllables +
+theme. Prior on-device attempts all made SOUP because they generate word-by-word:
+- n-gram free-walk: locally fluent, globally nonsense.
+- strict-POS-template walk: grammatical skeleton, but words don't cohere.
+
+## The design: "Semantic N+7" (skeleton-donor substitution)
+Research (Oulipo N+7; PoeTryMe, Gonçalo Oliveira) points to one synthesis:
+- **Oulipo N+7** keeps a real text's GRAMMAR and swaps content words — proving the skeleton idea —
+  but substitutes RANDOMLY (7 nouns down the dictionary) → incoherent meaning.
+- **PoeTryMe** shows grammar-template + seed-word generation makes coherent lines with no neural net.
+
+So: **borrow a real human line's grammatical skeleton (function words + POS slots), and refill only
+its content slots with theme-targeted words, ending on the song's rhyme word.** Coherent because the
+syntax is a real human sentence (not a Markov walk); original because the content is new; not
+copyright because only the (uncopyrightable) syntactic skeleton is reused + the existing anti-copy
+4-gram guard forbids any 4 consecutive corpus words. It is literally the proven word-swap humanizer,
+applied to a clean DONOR line instead of the cliché line.
+
+## Cheap-test evidence (prototype: /tmp/gen_skeleton.js, 40k-line human donor bank)
+GRAMMAR IS SOLVED — donor skeletons stay intact, unlike soup:
+- "coming over the hill"        -> "turning over the sky"      ✓ coherent + original
+- "ears don't hear a sound"     -> "knees don't hear a [name]" ✓ structure intact
+- "she's gonna be my midnight queen" -> "she's gonna be my midnight [name]" (nouns-only) ✓
+Round results: round 1 (swap all content) = soupy; round 2 (confident POS) = better; round 3
+(NOUNS ONLY, like the real humanizer) = grammar reliably intact.
+
+## The remaining hard problem: the SLOT-FILLER
+Theme-nearest picks ABSTRACT/CENTRAL words ("rest", "return", "things", "own") and breaks idiom
+donors ("in spite of" -> "in rest of"). Embedding theme-similarity doesn't know a slot's
+SELECTIONAL CONSTRAINTS (what words actually occur there). FIX (the next build):
+1. **Slot plausibility:** score a candidate by how often humans put it in THIS slot context
+   (prev-word / next-word bigram from the corpus), not just theme similarity. Combine:
+   fit = theme·cand + α·log(bigram(prev,cand)+1) + β·log(bigram(cand,next)+1).
+2. **Concreteness/imageability bias:** prefer concrete nouns (proxy: high humanness + appears as a
+   content word + not in a generic/abstract stoplist). Abstract central words ("rest","return") out.
+3. **Idiom-safe donors:** skip donors whose content word sits in a frozen phrase (reuse FROZEN_PHRASE
+   / IDIOMS — the swap layer already has this).
+4. **Nouns (+ careful adjectives) only;** never verbs/proper-nouns (agreement/argument structure).
+5. **Quality gate (per the proven pattern):** keep a generated line ONLY if it (a) passes the strict
+   POS professor, (b) passes anti-copy 4-gram, (c) the v8 line-score drops vs the cliché line, and
+   (d) wins the EDIT-QUALITY A/B vs leaving the line. Trial-and-error settles the rest.
+
+## Build plan (multi-cycle, A/B-gated like everything else)
+1. Build the donor bank as a shipped artifact: ~5-10k clean human lines indexed by (rhyme-key,
+   syllable-count, last-word-POS); store compact (a few hundred KB). [done in prototype, needs curation]
+2. Implement the slot-filler with selectional constraints (#1-#4 above) in humanizer-gen.
+3. Wire it as the CHAOS-tier rebuild option (replacing the disproven n-gram rebuild), gated by #5.
+4. A/B it on random AI songs (edit-quality metric) + the benchmark tripwire. Keep only if it wins.
+
+## Honest status
+Direction VALIDATED (skeleton solves grammar — the thing that made all prior attempts soup). The
+slot-filler is a real but TRACTABLE build (selectional constraints, not open-ended generation). This
+is an architectural addition the user should greenlight; then it becomes the overnight loop's focus.
