@@ -116,3 +116,17 @@ SHIP MODEL: Qwen is the OFFLINE library-builder. For each common cliché MOLD ×
 generate + filter good replacements -> a static library indexed by (rhyme-key, syllable, theme,
 mold). Ship the library (no Qwen on device). Device looks it up + lightly adapts to the song's words.
 This is the resolution: the extension stays LLM-free; the LLM's quality is baked into shipped data.
+
+## v2: RHYME GRADIENT + TEMPLATE LAYER (overnight build)
+- RHYME GRADIENT (user's idea): rhymeStrength(song) in [0,1] = fraction of adjacent line-pairs that
+  FULL-rhyme. A candidate's rhymeQuality = 1.0 (full) / 0.55 (slant) / 0. The student requires
+  candidate rhymeQuality >= rhymeStrength(song): a rap/loose song (0.2) accepts slant, a ballad (0.8)
+  demands a full rhyme. Continuous, per-song. (NOTE: measure on the FULL song at runtime — the
+  held-out test only had 3 lines so strength reads 0.0/0.5; production has the whole song.)
+- TEMPLATE LAYER: each good Qwen line abstracted to a mold (function words + typed NN/JJ slots).
+  Student is HYBRID: verbatim-retrieve first (best quality, covered 13/13 here), template-fill as the
+  coverage fallback when no verbatim line fits the rhyme/theme — fills slots with common theme words,
+  type-preserved. overnight/distill/student2.js. Library grows as the teacher runs overnight.
+- STATUS: works. 13/13 held-out got a coherent 0%-AI rhyme-matched line. Gaps: small library (slant
+  picks like "back of my kin" loosen) -> the overnight teacher grows it; template-fill quality is the
+  rounds-1-9 ceiling so it stays a fallback, retrieval stays primary.
