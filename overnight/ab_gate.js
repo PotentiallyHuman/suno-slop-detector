@@ -86,12 +86,15 @@ function editQuality(e, CLICHE) {
   if (CLICHE.has(a)) q -= 1.0;                               // replaced slop with slop
   const ds = Math.abs(nsyl(a) - nsyl(r));
   if (ds === 0) q += 0.3; else if (ds >= 2) q -= 1.5;        // rhythm: same syllables good, off-by-2+ wrecks the beat
-  // broken natural phrase ("the night"->"the dusk", "diamond ring"->"jewel ring")
+  // broken natural phrase — SOFT hint only (cycle-8 synthesis proof: corpus n-gram stats CANNOT
+  // separate a fine swap from a bad one — "the lights"/157 ≈ "my hands"/150, opposite verdicts; the
+  // good/bad split is idiomatic, not statistical). So this penalty has irreducible false positives
+  // (lights->lamps, you whisper->mutter read fine). The TRUE bad cases (hands/love/night) are caught
+  // in the ENGINE by per-word guards (FROZEN_ANCHOR/idioms/source-removal); here it's just a nudge.
   const fi = fw.indexOf(r), L = fi > 0 ? fw[fi - 1] : null, R = fi + 1 < fw.length ? fw[fi + 1] : null;
-  if ((R && bf(r, R) >= 40 && bf(a, R) === 0) || (L && bf(L, r) >= 40 && bf(L, a) === 0)) q -= 1.5;
-  // singability: penalize substitutes that almost never appear in real sung lyrics (graded, so a
-  // merely-uncommon-but-natural word like "thinning" isn't treated like an obscure "porchlights").
-  if (hf(a) === 0) q -= 0.7; else if (hf(a) < 3) q -= 0.25;
+  if ((R && bf(r, R) >= 40 && bf(a, R) === 0) || (L && bf(L, r) >= 40 && bf(L, a) === 0)) q -= 0.6;
+  // singability nudge: also a soft corpus-stat hint (can't tell "thinning"/fine from "pewter"/obscure).
+  if (hf(a) === 0) q -= 0.4; else if (hf(a) < 3) q -= 0.15;
   return q;
 }
 
