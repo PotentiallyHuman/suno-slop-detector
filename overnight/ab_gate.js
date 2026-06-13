@@ -24,13 +24,21 @@ const BASE = [
   "src/ext/humanizer_model_p3.browser.js",
 ];
 
-// human bigrams for the bad-swap (broken collocation) penalty
+// human corpus: word frequency (is the substitute a real word?) + bigrams (collocation breaks)
 const human = JSON.parse(fs.readFileSync("/tmp/human_lyrics_cache.json", "utf8"));
 const hTexts = (Array.isArray(human) ? human : Object.values(human)).map((x) => typeof x === "string" ? x : (x.lyrics || x.text || ""));
-const big = new Map();
-for (const t of hTexts) { const w = (t.toLowerCase().match(/[a-z']+/g) || []); for (let i = 0; i + 1 < w.length; i++) { const k = w[i] + " " + w[i + 1]; big.set(k, (big.get(k) || 0) + 1); } }
+const big = new Map(), hWord = new Map();
+for (const t of hTexts) { const w = (t.toLowerCase().match(/[a-z']+/g) || []); for (let i = 0; i < w.length; i++) { hWord.set(w[i], (hWord.get(w[i]) || 0) + 1); if (i + 1 < w.length) { const k = w[i] + " " + w[i + 1]; big.set(k, (big.get(k) || 0) + 1); } } }
 const bf = (a, b) => big.get(a + " " + b) || 0;
+const hf = (w) => hWord.get(w) || 0;
 const words = (l) => (String(l).toLowerCase().replace(/[’‘]/g, "'").match(/[a-z']+/g)) || [];
+const nsyl = (w) => { w = w.toLowerCase().replace(/[^a-z]/g, ""); if (!w) return 1; const m = w.match(/[aeiouy]+/g); let n = m ? m.length : 1; if (/e$/.test(w) && n > 1) n--; return Math.max(1, n); };
+function grammarErr(line) {
+  if (/\ba\s+[aeiou]/i.test(line)) return true;          // "a apple"
+  if (/\ban\s+[^aeiou\s]/i.test(line)) return true;       // "an cat"
+  const w = words(line); for (let i = 0; i + 1 < w.length; i++) if (w[i] === w[i + 1]) return true;  // doubled word
+  return false;
+}
 
 function makeEngine(genFile, swapFile) {
   const sb = { console, setTimeout, clearTimeout, atob: (s) => Buffer.from(s, "base64").toString("binary"), Uint8Array, Int8Array, Float32Array };
@@ -56,39 +64,63 @@ const stride = Math.max(1, Math.floor(all.length / N));
 const songs = [];
 for (let i = OFFSET % stride; i < all.length && songs.length < N; i += stride) songs.push(all[i]);
 
+// EDIT QUALITY (the real objective, per the user): does each replacement read BETTER than the
+// original — less cliché, in-rhythm, grammatical, coherent — not merely "lower AI %"? We score the
+// deterministic proxies of that: cliché removed, syllable (rhythm) kept, no broken human phrase,
+// substitute is a real human word, no grammar error. AI% (Δz) is only a faint tiebreaker.
+function editQuality(e, CLICHE) {
+  if (grammarErr(e.to)) return -2;
+  // route by the TRANSFORM TYPE (the decision-tree branch that fired), not word count:
+  // restructure/vary are designed frame transforms (Every->That, hook variation) — good if clean;
+  // rebuild is generated (risky); swap is a word substitution — judged on cliché/rhythm/phrase below.
+  if (e.mode === "restructure" || e.mode === "vary") return 0.6;
+  if (e.mode === "rebuild") return 0.2;
+  const fw = words(e.from), tw = words(e.to);
+  const rem = fw.filter((w) => !tw.includes(w)), add = tw.filter((w) => !fw.includes(w));
+  if (rem.length !== 1 || add.length !== 1) return 0.3;     // multi-word swap (rare) — neutral-good
+  const r = rem[0], a = add[0];
+  let q = 0;
+  if (CLICHE.has(r) && !CLICHE.has(a)) q += 1.0;            // the core goal: a cliché became a non-cliché
+  else if (!CLICHE.has(r)) q -= 0.3;                         // swapped a word that wasn't even slop
+  if (CLICHE.has(a)) q -= 1.0;                               // replaced slop with slop
+  const ds = Math.abs(nsyl(a) - nsyl(r));
+  if (ds === 0) q += 0.3; else if (ds >= 2) q -= 1.5;        // rhythm: same syllables good, off-by-2+ wrecks the beat
+  // broken natural phrase ("the night"->"the dusk", "diamond ring"->"jewel ring")
+  const fi = fw.indexOf(r), L = fi > 0 ? fw[fi - 1] : null, R = fi + 1 < fw.length ? fw[fi + 1] : null;
+  if ((R && bf(r, R) >= 40 && bf(a, R) === 0) || (L && bf(L, r) >= 40 && bf(L, a) === 0)) q -= 1.5;
+  // singability: penalize substitutes that almost never appear in real sung lyrics (graded, so a
+  // merely-uncommon-but-natural word like "thinning" isn't treated like an obscure "porchlights").
+  if (hf(a) === 0) q -= 0.7; else if (hf(a) < 3) q -= 0.25;
+  return q;
+}
+
 function evalEngine(eng) {
-  let totDz = 0, improved = 0, badPairs = 0, edits = 0;
+  const CLICHE = new Set((eng.sb.SLOP_MODEL_V8 && eng.sb.SLOP_MODEL_V8.cliche) || []);
+  let totDz = 0, improved = 0, edits = 0, totQ = 0, goodEdits = 0, badEdits = 0;
   for (const orig of songs) {
     let cur = orig; const steps = [];
     for (let p = 0; p < 6; p++) { const r = eng.sb.HumanizeFreestyle.humanizeHalf(cur, eng.score, eng.logit); if (!r) break; for (const s of r.steps) steps.push(s); cur = r.text; }
     if (eng.score(cur) >= 20) { const ch = eng.sb.HumanizeFreestyle.humanizeChaos(cur, eng.score, eng.logit); if (ch) { for (const s of ch.steps) steps.push(s); cur = ch.text; } }
-    const dz = eng.logit(cur) - eng.logit(orig); totDz += dz; if (dz < -0.05) improved++;
-    for (const e of steps) {
-      edits++;
-      const fw = words(e.from), tw = words(e.to);
-      const rem = fw.filter((w) => !tw.includes(w)), add = tw.filter((w) => !fw.includes(w));
-      if (rem.length === 1 && add.length === 1) {
-        const fi = fw.indexOf(rem[0]), L = fi > 0 ? fw[fi - 1] : null, R = fi + 1 < fw.length ? fw[fi + 1] : null;
-        if ((R && bf(rem[0], R) >= 40 && bf(add[0], R) === 0) || (L && bf(L, rem[0]) >= 40 && bf(L, add[0]) === 0)) badPairs++;
-      }
-    }
+    totDz += eng.logit(cur) - eng.logit(orig); if (eng.logit(cur) < eng.logit(orig) - 0.05) improved++;
+    for (const e of steps) { edits++; const q = editQuality(e, CLICHE); totQ += q; if (q > 0.3) goodEdits++; if (q < 0) badEdits++; }
   }
-  const meanDz = totDz / songs.length, badRate = badPairs / songs.length;
-  // fitness: reward humanization (-meanDz), penalize bad swaps heavily (quality > reach).
-  const fitness = (-meanDz) - 1.5 * badRate;
-  return { meanDz: +meanDz.toFixed(3), improved, badPairs, edits, badRate: +badRate.toFixed(3), fitness: +fitness.toFixed(3) };
+  const meanDz = totDz / songs.length;
+  // FITNESS = total edit quality per song (the real objective), with AI% only as a faint tiebreaker.
+  const fitness = (totQ / songs.length) + 0.05 * (-meanDz);
+  return { meanDz: +meanDz.toFixed(3), improved, edits, goodEdits, badEdits, qPerSong: +(totQ / songs.length).toFixed(3), fitness: +fitness.toFixed(3) };
 }
 
 const champ = evalEngine(makeEngine(path.join(__dirname, "champion", "humanizer-gen.browser.js"), path.join(__dirname, "champion", "cliche_swaps.browser.js")));
 const chall = evalEngine(makeEngine(path.join(ROOT, "src/ext/humanizer-gen.browser.js"), path.join(ROOT, "src/ext/cliche_swaps.browser.js")));
 
-console.log("AB GATE on " + songs.length + " random AI songs (offset " + OFFSET + ")");
-console.log("metric          CHAMPION   CHALLENGER");
-console.log("mean Δz        " + String(champ.meanDz).padStart(8) + "   " + String(chall.meanDz).padStart(8) + "   (more negative = more humanized)");
-console.log("improved        " + String(champ.improved).padStart(8) + "   " + String(chall.improved).padStart(8));
-console.log("bad swaps       " + String(champ.badPairs).padStart(8) + "   " + String(chall.badPairs).padStart(8) + "   (lower = better)");
-console.log("total edits     " + String(champ.edits).padStart(8) + "   " + String(chall.edits).padStart(8));
-console.log("FITNESS         " + String(champ.fitness).padStart(8) + "   " + String(chall.fitness).padStart(8));
+console.log("AB GATE on " + songs.length + " random AI songs (offset " + OFFSET + ")  — judging EDIT QUALITY, not AI%");
+console.log("metric            CHAMPION   CHALLENGER");
+console.log("good edits        " + String(champ.goodEdits).padStart(8) + "   " + String(chall.goodEdits).padStart(8) + "   (clean cliché removals)");
+console.log("bad edits         " + String(champ.badEdits).padStart(8) + "   " + String(chall.badEdits).padStart(8) + "   (slop/rhythm/grammar/collocation — lower better)");
+console.log("total edits       " + String(champ.edits).padStart(8) + "   " + String(chall.edits).padStart(8));
+console.log("quality / song    " + String(champ.qPerSong).padStart(8) + "   " + String(chall.qPerSong).padStart(8) + "   (THE objective)");
+console.log("mean Δz (AI%)     " + String(champ.meanDz).padStart(8) + "   " + String(chall.meanDz).padStart(8) + "   (faint tiebreaker only)");
+console.log("FITNESS           " + String(champ.fitness).padStart(8) + "   " + String(chall.fitness).padStart(8));
 const win = chall.fitness > champ.fitness + 0.002;
-console.log("\nVERDICT: " + (win ? "CHALLENGER WINS -> ACCEPT the change (promote champion)" : "champion wins/tie -> REVERT the change"));
+console.log("\nVERDICT: " + (win ? "CHALLENGER WINS -> ACCEPT (better edits)" : "champion wins/tie -> REVERT"));
 process.exit(win ? 0 : 1);

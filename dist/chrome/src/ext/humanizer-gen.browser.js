@@ -526,7 +526,7 @@
     for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
       var res = humanizeOne(cur, scoreFn, logitFn);
       if (!res) break;
-      cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to });
+      cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
