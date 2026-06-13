@@ -26,6 +26,13 @@ function themeVec(text){const ws=words(text),acc=new Float32Array(DIM);let n=0;f
 // donor bank: clean human lines, 4-9 content-bearing words
 const human=JSON.parse(fs.readFileSync(fs.existsSync("/tmp/human_lyrics_cache.json")?"/tmp/human_lyrics_cache.json":R+"/corpus/human_lyrics_cache2.json","utf8"));
 const hT=(Array.isArray(human)?human:Object.values(human)).map(x=>typeof x==="string"?x:(x.lyrics||x.text||""));
+// corpus bigrams (slot-fit) — does the candidate actually occur after prev / before next in human text?
+const BIG=new Map(),UNI=new Map();
+for(const t of hT){const w=words(t);for(let i=0;i<w.length;i++){UNI.set(w[i],(UNI.get(w[i])||0)+1);if(i+1<w.length){const k=w[i]+" "+w[i+1];BIG.set(k,(BIG.get(k)||0)+1);}}}
+const bg=(a,b)=>BIG.get(a+" "+b)||0;
+// concrete = NOT an abstract-suffix word and reasonably common (imageable nouns sing better)
+const ABSTRACT=/(ness|tion|sion|ment|ity|ance|ence|ism|ship|hood|dom|ude|acy)$/;
+const concrete=w=>!ABSTRACT.test(w)&&(UNI.get(w)||0)>=8;
 const donors=[];
 for(const t of hT){for(const l of String(t).split("\n")){const w=words(l);if(w.length<4||w.length>9)continue;if(/[^a-z' ]/i.test(l.trim()))continue;const last=w[w.length-1];if(!VK[last])continue;let syl=0;for(const x of w)syl+=nsyl(x);donors.push({w,syl,lastPOS:pos(last)});}if(donors.length>40000)break;}
 
@@ -37,10 +44,19 @@ const tagged=w=>POS[w]!==undefined;
 // This mirrors the proven humanizer, which only swaps concrete nouns.
 const swappable=w=>tagged(w)&&!FUNC.has(w)&&w.length>3&&/^(NN|NNS)$/.test(POS[w])&&!GENERIC.has(w);
 // substitute: theme-nearest CONCRETE noun (high humanness = a real imageable word), strong theme floor
-function sub(origPos,theme,used,targetSyl,origWord){
+function sub(origPos,theme,used,targetSyl,origWord,prev,next){
   let best=null,bs=-1e9;
-  for(let i=0;i<M.embWords.length;i++){const w=M.embWords[i];if(used.has(w)||CLI.has(w)||GENERIC.has(w))continue;if(POS[w]!==origPos)continue;if(w.length<4)continue;const h=HUM[w]||0;if(h<0)continue;const v=emb(w);if(!v)continue;const s=dot(v,theme)+0.05*h-Math.abs(nsyl(w)-targetSyl)*0.2;if(s>bs){bs=s;best=w;}}
-  return (best&&bs>0.22)?best:origWord;
+  for(let i=0;i<M.embWords.length;i++){const w=M.embWords[i];
+    if(used.has(w)||CLI.has(w)||GENERIC.has(w))continue;
+    if(POS[w]!==origPos)continue;
+    if(w.length<4||!concrete(w))continue;        // concrete imageable nouns only
+    const v=emb(w);if(!v)continue;
+    // SELECTIONAL CONSTRAINT: must plausibly fit THIS slot (prev __ next), not just the theme
+    const slot=Math.log(1+bg(prev,w))+Math.log(1+bg(w,next));
+    const s=dot(v,theme)+0.30*slot-Math.abs(nsyl(w)-targetSyl)*0.2;
+    if(s>bs){bs=s;best=w;}}
+  // require BOTH theme fit and a real slot fit, else keep the donor's own word (coherence first)
+  return (best&&bs>0.6&&(bg(prev,best)>0||bg(best,next)>0))?best:origWord;
 }
 // SEMANTIC N+7 (refined): refill only the CONFIDENT content slots, keep donor's other real words, end on rhyme
 function generate(clicheLine,songText){
@@ -53,7 +69,7 @@ function generate(clicheLine,songText){
   const donor=cand[seed%cand.length];
   const out=donor.w.slice(),used=new Set([rhyme]);
   let changed=0;
-  for(let i=0;i<out.length-1;i++){if(swappable(out[i])){const s=sub(POS[out[i]],theme,used,nsyl(out[i]),out[i]);if(s!==out[i]){used.add(s);out[i]=s;changed++;}}}
+  for(let i=0;i<out.length-1;i++){if(swappable(out[i])){const prev=i>0?out[i-1]:"",next=i+1<out.length?out[i+1]:"";const s=sub(POS[out[i]],theme,used,nsyl(out[i]),out[i],prev,next);if(s!==out[i]){used.add(s);out[i]=s;changed++;}}}
   out[out.length-1]=rhyme;
   // need at least 1 real change (originality) — else it's just the donor
   if(changed<1)return null;
