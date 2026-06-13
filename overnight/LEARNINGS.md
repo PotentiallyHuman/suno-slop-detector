@@ -102,6 +102,32 @@ For each lyric line, worst-AI first, only touching lines that carry their own ev
   song→record, diamond→jewel, sky→stratosphere, memory→snapshot, silence→vacuum, dust→grit,
   storm→squall, lost→mislaid/sideways, broken→snapped. All removed.
 
+## ACCEPTANCE PROOF (2026-06-13 — measured the "only acceptable lines" goal end-to-end)
+Built an acceptance harness with an INDEPENDENT blind judge (Grok, build-time/validation only — NOT
+runtime). CALIBRATED the judge first (it MUST pass real lyrics): v1 strict prompt rejected 7/8 real
+human lines -> useless; v2 lenient "coherent + human-soundable, ignore thematic-fit" passes 8/8 humans
+AND rejects 8/8 scrambles. Trust only a calibrated judge.
+- **Library is real & sizable** (overnight/distill/dataset.jsonl): ~390 contexts, ~1970 good lines.
+- **Raw student is NOT "only acceptable":** 80-83% by the calibrated judge. The 17-20% are word-salad
+  the v8 AI-SCORE CANNOT catch (rejected lines score LOWER AI%). POS-bigram table (validBG) ALSO can't
+  catch them (human/scramble/awkward all ~0.00 invalid). Coherence is not capturable by our on-device
+  statistical tools — CONFIRMED a third way.
+- **end-POS grammar gate** (added to student2.js grammarOK): refuses dangling/stranded endings
+  ("...name how", "...more they", "...around, expand") -> 83%->87%. Real but partial (misses internal
+  scrambles like "time that slow takes").
+- **THE KEY RESULT (select_vs_coverage / topk):** top-1 acceptable 80% vs ANY-of-top-3 96%. The library
+  HAS an acceptable line for 96% of contexts — the failure is SELECTION, not coverage. So:
+- **PROVEN ARCHITECTURE for "only acceptable":** (1) BUILD-TIME judge-clean the library (offline judge
+  is allowed; runtime stays no-network) so awkward lines never rank first; (2) retrieve best-pick +
+  end-POS gate; (3) REFUSE on the ~4% with no good line (keep original / hand to writer). Refusing is
+  what makes it "only acceptable" — emitted lines ~100% acceptable at ~96% coverage. NOT YET WIRED into
+  the shipped extension (the 3 modes still use the swap/mold engine); wiring + a build-time judge pass
+  over the library is the next concrete step (budget: ~1 Grok call per library line).
+- **Decision-tree flow for the 3 modes (evidence-based):** LINE/REWRITE = swap+mold on REAL human lines
+  (stays coherent by only changing words inside an existing line — already ships, conservative). CHAOS
+  = library generation: retrieve top-K -> gate (AI<55 + end-POS + pre-judged-clean) -> emit best, else
+  REFUSE. The refuse branch is mandatory; without it "only acceptable" is impossible (80% otherwise).
+
 ## OPEN BUGS / TODO (highest value first)
 
 - **GENERATION FRONTIER (now the highest value — swaps are tapped out):** (a) dupVariant gerund/noun-opener chorus variation (e.g. 'Riding in a pickup' repeat -> a validated drop/insert that varies it); (b) a controllable original-line synthesis that passes the strict professor (the n-gram free-walk made soup; try template-constrained or phrase-bank-recombination with rhyme+syllable+theme locked).

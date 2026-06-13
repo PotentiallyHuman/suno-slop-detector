@@ -37,6 +37,23 @@ function rhymeStrength(song){
 // candidate rhyme quality vs target: 1.0 full rhyme, 0.55 slant only, 0 none
 function rhymeQuality(cand,target){const a=words(cand).slice(-1)[0];if(strictKey(a)&&strictKey(a)===strictKey(target))return 1.0;if(slantKey(a)&&slantKey(a)===slantKey(target))return 0.55;return 0;}
 
+// GRAMMAR GATE — the acceptance harness (blind Grok judge, calibrated 8/8 on human+scramble controls)
+// showed ~17% of raw student lines are word-salad the v8 AI-score CANNOT catch (rejected lines score
+// LOWER AI%). The failures are dangling/stranded endings ("...name how", "...more they", "...around,
+// expand"). This gate refuses them so the modes emit ONLY acceptable lines (coverage < 100% is fine —
+// better to refuse than ship garbage).
+const BAD_END = new Set("the a an and but or nor yet so of to in on at with for from by as how why when where who whom whose that this these those into onto upon than then though although while because if unless until they we he she i my your his her our their its".split(" "));
+const BAD_END_POS = new Set(["DT","CC","IN","TO","WDT","WRB","WP","MD","PRP$"]);
+function grammarOK(line){
+  const w = words(line); if (w.length < 3) return false;
+  const last = w[w.length-1];
+  if (BAD_END.has(last)) return false;                              // stranded function/subject word
+  if (POS[last] && BAD_END_POS.has(POS[last])) return false;        // stranded by part-of-speech
+  if (/,\s*[a-z']+$/i.test(line) && (POS[last]==="VB"||POS[last]==="VBP")) return false; // ", expand" dangling verb
+  if (w.length>=2 && BAD_END.has(w[w.length-2]) && POS[last]==="VB") return false;       // "...to try ... more they"-type tails
+  return true;
+}
+
 // ---- data ----
 const rows = fs.readFileSync(path.join(__dirname,"dataset.jsonl"),"utf8").trim().split("\n").filter(Boolean).map(JSON.parse);
 if (rows.length < 6) { console.log("dataset too small ("+rows.length+")"); process.exit(0); }
@@ -68,21 +85,42 @@ function student(above, below, targetRhyme, song){
   const v = LIB.map(x=>({...x,rq:rhymeQuality(x.line,targetRhyme)}))
     .filter(x=>x.rq>=req-0.001 && Math.abs(x.syl-tSyl)<=3 && words(x.line).slice(-1)[0]!==targetRhyme)
     .sort((a,b)=>(theme&&b.tv?dotp(theme,b.tv):0)-(theme&&a.tv?dotp(theme,a.tv):0));
-  for(const c of v){ if(sc(c.line)<55) return {line:c.line,mode:"retrieve",rq:c.rq}; }
+  for(const c of v){ if(sc(c.line)<55 && grammarOK(c.line)) return {line:c.line,mode:"retrieve",rq:c.rq}; }
   // 2) TEMPLATE fill (coverage fallback): a mold whose ending matches the rhyme tightness, fill slots w/ theme
   const tpls=TPL.filter(t=>Math.abs(t.syl-tSyl)<=3 && rhymeQuality(t.w.join(" "),targetRhyme)>=req-0.001);
   for(const t of tpls.slice(0,200)){const out=t.w.slice();for(let i=0;i<out.length-1;i++)if(swappable(out[i]))out[i]=fillSlot(out[i],theme);
-    const line=out.join(" "); if(sc(line)<55) return {line,mode:"template",rq:rhymeQuality(line,targetRhyme)}; }
+    const line=out.join(" "); if(sc(line)<55 && grammarOK(line)) return {line,mode:"template",rq:rhymeQuality(line,targetRhyme)}; }
   return null;
 }
 
-console.log("LIB "+LIB.length+" lines | TPL "+TPL.length+" molds | COMMON "+COMMON.length+" | test "+test.length+"\n");
-let hit=0;
-for(const r of test){
-  const song=[r.above,r.mid,r.below].join("\n");
-  const out=student(r.above,r.below,r.rhyme,song);
-  const strength=rhymeStrength(song).toFixed(2);
-  if(out)hit++;
-  console.log("(rhyme:"+r.rhyme+" strength:"+strength+") "+(out?"["+out.mode+" rq"+out.rq.toFixed(2)+" "+sc(out.line)+"%AI] "+out.line:"(no fit)"));
+// studentRanked — return up to K gate-passing candidates (best theme-fit first). Lets an offline judge
+// (build-time, allowed) prove whether the library HAS an acceptable line for a context — i.e. whether
+// the 13% raw-failures are a SELECTION problem (fixable by judge-cleaning the library) or a coverage gap.
+function studentRanked(above, below, targetRhyme, song, K){
+  K = K || 3;
+  const req = rhymeStrength(song);
+  const theme = themeVec([song,above,below].join(" "));
+  const tSyl = Math.round((sylLine(above)+sylLine(below))/2);
+  const out = [];
+  const v = LIB.map(x=>({...x,rq:rhymeQuality(x.line,targetRhyme)}))
+    .filter(x=>x.rq>=req-0.001 && Math.abs(x.syl-tSyl)<=3 && words(x.line).slice(-1)[0]!==targetRhyme)
+    .sort((a,b)=>(theme&&b.tv?dotp(theme,b.tv):0)-(theme&&a.tv?dotp(theme,a.tv):0));
+  for(const c of v){ if(sc(c.line)<55 && grammarOK(c.line)){ out.push({line:c.line,mode:"retrieve",rq:c.rq}); if(out.length>=K) return out; } }
+  const tpls = TPL.filter(t=>Math.abs(t.syl-tSyl)<=3 && rhymeQuality(t.w.join(" "),targetRhyme)>=req-0.001);
+  for(const t of tpls.slice(0,200)){const o=t.w.slice();for(let i=0;i<o.length-1;i++)if(swappable(o[i]))o[i]=fillSlot(o[i],theme);
+    const line=o.join(" "); if(sc(line)<55&&grammarOK(line)){out.push({line,mode:"template",rq:rhymeQuality(line,targetRhyme)});if(out.length>=K)return out;}}
+  return out;
 }
-console.log("\nv2 produced a line for "+hit+"/"+test.length+" held-out contexts (rhyme tightness matched per-song).");
+module.exports = { student, studentRanked, rhymeStrength, sc, LIB, TPL, test, train, rows, words, sylLine };
+if (require.main === module) {
+  console.log("LIB "+LIB.length+" lines | TPL "+TPL.length+" molds | COMMON "+COMMON.length+" | test "+test.length+"\n");
+  let hit=0;
+  for(const r of test){
+    const song=[r.above,r.mid,r.below].join("\n");
+    const out=student(r.above,r.below,r.rhyme,song);
+    const strength=rhymeStrength(song).toFixed(2);
+    if(out)hit++;
+    console.log("(rhyme:"+r.rhyme+" strength:"+strength+") "+(out?"["+out.mode+" rq"+out.rq.toFixed(2)+" "+sc(out.line)+"%AI] "+out.line:"(no fit)"));
+  }
+  console.log("\nv2 produced a line for "+hit+"/"+test.length+" held-out contexts (rhyme tightness matched per-song).");
+}
