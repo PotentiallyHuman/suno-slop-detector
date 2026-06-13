@@ -229,7 +229,10 @@
     if (m) return r % 2 ? m[1] + ", can't even " + m[2] : m[1] + ", or to " + m[2];
     m = l.match(/^I (?:don't|won't|never) (.*?), I (?:don't|won't|never) (.*?), I (?:just|only) (.*)$/i);
     if (m) return "Forget " + m[1] + ", forget " + m[2] + ", I " + m[3];
-    if ((l.match(/\bevery\b/gi) || []).length > 1) return null;      // double-every parallel: a half-fix reads broken
+    if ((l.match(/\bevery\b/gi) || []).length > 1)                   // double-every parallel ("Every pose, every pause"):
+      return l.replace(/\bevery\b/gi, function (w) {                 // replacing ONE reads broken — replace BOTH with "each",
+        return w.charAt(0) === "E" ? "Each" : "each";                // which keeps the parallelism (0.62x human-leaning)
+      });
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
     m = l.match(/^(\W*)[Ee]very\s+(.*)$/);

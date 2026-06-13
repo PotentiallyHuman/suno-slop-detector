@@ -51,6 +51,8 @@ if (score(cur) >= 20) {
   if (ch) {
     trace.presses.push({ button: "Chaos", before: ch.before, after: ch.after, steps: ch.steps });
     cur = ch.text;
+  } else {
+    trace.presses.push({ button: "Chaos", refused: true, steps: [] });
   }
 }
 trace.final = score(cur);
@@ -61,6 +63,7 @@ if (process.argv.includes("--json")) { console.log(JSON.stringify(trace, null, 1
 console.log("==== " + path.basename(file) + " ====");
 console.log("START: " + trace.start + "% AI");
 for (const pr of trace.presses) {
+  if (pr.refused) { console.log("\n[" + pr.button + "] refused — nothing safe left to change"); continue; }
   console.log("\n[" + pr.button + "] " + pr.before + "% -> " + pr.after + "%  (" + pr.steps.length + " edits)");
   for (const s of pr.steps) {
     console.log("   L" + (s.lineIndex + 1) + (s.mode ? " [" + s.mode + "]" : "") + ":");
@@ -68,7 +71,8 @@ for (const pr of trace.presses) {
     console.log("     + " + s.to);
   }
 }
-console.log("\nFINAL: " + trace.final + "% AI  (z " + logit(original).toFixed(2) + " -> " + logit(cur).toFixed(2) + ")");
+const z0 = logit(original), z1 = logit(cur);
+console.log("\nFINAL: " + trace.final + "% AI  (z " + z0.toFixed(2) + " -> " + z1.toFixed(2) + " — the model is " + Math.round(Math.exp(z0 - z1)) + "x less sure it's AI)");
 const out = file.replace(/(\.txt)?$/, ".humanized.txt");
 fs.writeFileSync(out, cur);
 console.log("humanized text written to: " + out);

@@ -229,7 +229,10 @@
     if (m) return r % 2 ? m[1] + ", can't even " + m[2] : m[1] + ", or to " + m[2];
     m = l.match(/^I (?:don't|won't|never) (.*?), I (?:don't|won't|never) (.*?), I (?:just|only) (.*)$/i);
     if (m) return "Forget " + m[1] + ", forget " + m[2] + ", I " + m[3];
-    if ((l.match(/\bevery\b/gi) || []).length > 1) return null;      // double-every parallel: a half-fix reads broken
+    if ((l.match(/\bevery\b/gi) || []).length > 1)                   // double-every parallel ("Every pose, every pause"):
+      return l.replace(/\bevery\b/gi, function (w) {                 // replacing ONE reads broken — replace BOTH with "each",
+        return w.charAt(0) === "E" ? "Each" : "each";                // which keeps the parallelism (0.62x human-leaning)
+      });
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
     m = l.match(/^(\W*)[Ee]very\s+(.*)$/);
@@ -494,15 +497,10 @@
   // dropped (any AI-leaning line is fair game) but hook ROOTS stay sacred and every edit
   // must measurably lower the log-odds. Stops under CHAOS_TARGET or when nothing helps.
   var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 30;
-  // Chaos-only coherence bar: the rebuilt line's WHOLE part-of-speech skeleton must match a
-  // real human line's template (the strict professor). The loosened open/close/bigram dial is
-  // fine for ranking, but chaos rebuilds replace meaning — soup is unacceptable there.
-  function strictTemplate(line) {
-    var arr = words(line);
-    if (arr.length < 3) return false;
-    var pos = []; for (var i = 0; i < arr.length; i++) pos.push(WPOS[arr[i]] || "NN");
-    return TEMPLATES.has(pos.join("|"));
-  }
+  // NOTE: chaos has NO n-gram rebuild path. It was built and disproven (2026-06-13): across
+  // 8 corpus songs + Hydrogen, ZERO generator rebuilds passed the strict whole-line POS
+  // template — under a real coherence bar the walk produces soup or nothing. The chaos gain
+  // is entirely the designed ops with the evidence/score gates dropped.
   function humanizeChaos(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
     var before = Math.round(scoreFn(text));
@@ -534,7 +532,7 @@
         cands.push({ i: i, dup: earlier >= 0, ai: scoreFn(cur[i]) });
       }
       cands.sort(function (a, b) { return b.ai - a.ai; });
-      var improved = false, rebuildsTried = 0;
+      var improved = false;
       for (var c = 0; c < cands.length && steps.length < CHAOS_MAX_EDITS; c++) {
         var idx = cands[c].i, orig = cur[idx], tries = [];
         if (cands[c].dup) {
@@ -543,20 +541,6 @@
           var rot = (songNow().match(/^(That|This|Some|Perhaps|Could be|Why do) /gmi) || []).length;
           var rs = restructure(orig, rot); if (rs && !moldLine(rs)) tries.push({ to: rs, mode: "restructure" });
           var sw = swapCliches(orig, songNow()); if (sw && sw !== orig) tries.push({ to: sw, mode: "swap" });
-          var rw = lastWord(orig);
-          if (rw && words(orig).length >= 5 && rebuildsTried < 8) {   // full rebuild, rhyme seeded from the original end word
-            // (short fragments carry too little structure to rebuild coherently — leave them;
-            // generation is the expensive step, so only the 8 worst lines per pass get walks)
-            rebuildsTried++;
-            var sugs = genSuggestions(rw, theme, nsylLine(orig), 16, scoreFn);
-            for (var s = 0; s < sugs.length; s++) {
-              if (!strictTemplate(sugs[s])) continue;           // whole-line human POS template or nothing
-              var repl = cap(sugs[s]);
-              var rend = lastWord(repl), rstart = words(repl).slice(0, 3).join(" "), dupL = false;
-              for (var j3 = 0; j3 < cur.length; j3++) { if (j3 === idx) continue; if (lastWord(cur[j3]) === rend || words(cur[j3]).slice(0, 3).join(" ") === rstart) { dupL = true; break; } }
-              if (!dupL) { tries.push({ to: repl, mode: "rebuild" }); break; }   // best surviving strict suggestion
-            }
-          }
         }
         for (var t = 0; t < tries.length; t++) {
           var trial = cur.slice(); trial[idx] = tries[t].to;
