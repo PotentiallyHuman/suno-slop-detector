@@ -261,7 +261,8 @@
   }
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
   var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up",
-    "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night", "holding hands", "hold hands", "held hands", "lot of soul", "heart and soul", "body and soul", "good night", "goodnight", "out of your hands", "out of my hands", "in your hands", "in my hands", "love you so", "love me so", "love her so", "love him so"];
+    "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night", "holding hands", "hold hands", "held hands", "lot of soul", "heart and soul", "body and soul", "good night", "goodnight", "out of your hands", "out of my hands", "in your hands", "in my hands", "love you so", "love me so", "love her so", "love him so",
+    "hands up", "hands down", "heads up", "heads down", "hand in hand", "hands in the air", "raise your hands", "shadow of", "shadow of a", "in the shadow", "fire away", "play with fire", "light of day", "see the light", "guiding light"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };

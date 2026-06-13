@@ -1,5 +1,20 @@
 # Overnight humanizer learnings — the decision tree for turning AI slop into original lines
 
+## NORTH STAR
+Replace ANY AI-cliché line with something **original AND fitting** — fitting the song's theme, meter,
+rhyme, and register. Word-swaps and frame-restructures are the proven-safe near term; the open
+frontier is generating a genuinely new line that's still coherent (the n-gram rebuild was disproven —
+it makes soup — so the path to "original" is unsolved and worth real creativity). Every cycle, hold
+TWO perspectives at once: CLOSE-UP (this exact line: what's wrong, what fits) and OVERVIEW (what does
+the pattern across 100s of songs say to change in the system). Alternate or fuse them — both must agree
+before a rule ships.
+
+## EVERY ~100 SONGS: STOP AND THINK
+After each analyze run, write 2-3 sentences: what did these songs TEACH? Then choose — push further
+in that direction, OR pivot to a direction not yet tried (a new lens, a new transform class, a new way
+to measure "fitting"). Don't grind one idea; the goal is coverage of the whole problem. Creativity is
+expected; thoroughness is required. A disproof is progress (it crosses a path off the map).
+
 This file is the running brain of the overnight loop. Each cycle: mine random AI songs, pick ONE
 validated improvement through a rotating lens, A/B-test it on ~200 random songs (keep the best by
 EDIT QUALITY — cliché removed, in-rhythm, grammatical, coherent — not by AI%), commit on a win,
