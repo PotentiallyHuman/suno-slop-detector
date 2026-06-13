@@ -20,6 +20,12 @@ const words = (l)=>(String(l).toLowerCase().match(/[a-z']+/g))||[];
 const nsyl=(w)=>{w=w.toLowerCase().replace(/[^a-z]/g,"");if(!w)return 1;const m=w.match(/[aeiouy]+/g);let n=m?m.length:1;if(/e$/.test(w)&&n>1)n--;return Math.max(1,n);};
 const sylLine=(l)=>words(l).reduce((s,w)=>s+nsyl(w),0);
 const rk=(w)=>VK[w]||null;
+// ANTI-COPY: the corpus 4-gram set (same guard the engine ships). Drop any generated line that
+// repeats 4 consecutive words found in real lyrics — so the library is copyright-clean BY CONSTRUCTION.
+const FG=new Set(new Uint32Array(Uint8Array.from(Buffer.from(sb.HZ_MODEL.fourgB64,"base64")).buffer));
+function fnv(x){let h=2166136261;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=(h*16777619)>>>0;}return h>>>0;}
+function copies(line){const w=words(line);for(let i=0;i+3<w.length;i++){if(FG.has(fnv(w[i]+" "+w[i+1]+" "+w[i+2]+" "+w[i+3])))return true;}return false;}
+
 
 // AI songs
 const pools = ["suno","grok","claude","chatgpt"].map((m)=>{try{const j=JSON.parse(fs.readFileSync(path.join(__dirname,"..","..","corpus","models",m+".json"),"utf8"));const a=Array.isArray(j)?j:(j.songs||[]);return a.map((x)=>typeof x==="string"?x:(x.lyrics_en||x.lyrics||x.text||"")).filter((t)=>t&&t.length>150);}catch(e){return[];}});
@@ -62,7 +68,7 @@ for(let si=0; si<all.length && made<N; si+=stride){
     const theme=themeWords(all[si]);
     const raw=qwen(above,below,theme,rhyme);
     const cands=raw.split("\n").map(l=>l.replace(/^\s*\d+[.)]\s*/,"").replace(/^["']|["',]+$/g,"").trim()).filter(l=>words(l).length>=4);
-    const good=cands.filter(l=>{const w=words(l),last=w[w.length-1];return rk(last)===rk(rhyme)&&last!==rhyme&&sc(l)<55&&Math.abs(sylLine(l)-sylLine(mid))<=3;});
+    const good=cands.filter(l=>{const w=words(l),last=w[w.length-1];return rk(last)===rk(rhyme)&&last!==rhyme&&sc(l)<55&&Math.abs(sylLine(l)-sylLine(mid))<=3&&!copies(l);});
     made++;
     if(good.length){kept+=good.length;fs.appendFileSync(DS, JSON.stringify({above,below,theme,rhyme,rhymeWith,syl:sylLine(mid),mid,good})+"\n");}
     console.log("["+made+"/"+N+"] mid("+sc(mid)+"%): "+mid.slice(0,40)+" -> "+good.length+" kept");
