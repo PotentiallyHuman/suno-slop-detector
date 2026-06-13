@@ -141,3 +141,20 @@ THEREFORE: the anti-copy AUDIT is essential, not optional. Protections in place:
 original-line-in-context (we do), (2) 4-gram anti-copy guard at generation time (added) — drops any
 line repeating 4 corpus words, (3) TODO keep the 4-gram guard as a HARD gate in the shipped runtime,
 (4) TODO widen the audit corpus beyond our ~7000 songs to catch famous tracks not in our set.
+
+## GAP-FILL RECONSTRUCTION TEST (user's) — the decisive copyright finding
+TEST: gave both models 2 real adjacent lines of a famous song, middle removed, asked for the missing
+line (no song name — exactly our pipeline's framing).
+RESULT: BOTH reconstructed the real copyrighted line. Grok -> "Not a footprint to be seen" AND "Is
+this just fantasy?" VERBATIM — its copyright layer is BYPASSED by the gap-fill framing (refuses "give
+me lyrics" but rebuilds the same line as a completion). Qwen reconstructed the Bohemian line too.
+=> The model's copyright behaviour is USELESS for our attack pattern. The AUDIT is the sole protection.
+HOLE FOUND: our current 4-gram audit MISSES these (Frozen/Queen not in our ~7000-song corpus) — it
+"missed" all 5 famous test lines.
+WHY THE SHIPPED PRODUCT IS STILL SAFE IN PRACTICE: (1) the library is built from AI-SLOP contexts, not
+famous songs, so reconstruction isn't cued (0/306 copied confirms it); (2) the shipped extension never
+calls an LLM — it replays PRE-AUDITED library lines only, so it cannot emit a famous line absent from
+the library.
+ESSENTIAL FIX (was TODO, now required): widen the audit corpus to include famous/popular songs. Ship
+the 4-gram HASHES (not lyrics — hashes aren't copyrightable), tiny + legal. Build a big famous-lyrics
+4-gram hash set offline, add to the generation-time audit AND keep it as a hard gate in the runtime.
