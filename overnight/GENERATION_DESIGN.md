@@ -158,3 +158,16 @@ the library.
 ESSENTIAL FIX (was TODO, now required): widen the audit corpus to include famous/popular songs. Ship
 the 4-gram HASHES (not lyrics — hashes aren't copyrightable), tiny + legal. Build a big famous-lyrics
 4-gram hash set offline, add to the generation-time audit AND keep it as a hard gate in the runtime.
+
+## COPYRIGHT — the real solution: MEMORIZATION GATE, not a famous-songs blacklist
+Reframe: copyright = COPYING, not coincidence; independent creation is a complete defense. So the
+question isn't "does it resemble a famous line" (a blacklist you can't fairly build) but "was it
+CREATED or RECALLED". Memorization has a SIGNATURE: PROVEN (Grok, temp 1.0, 4 samples) — famous gap
+("Is this the real life?" / "Caught in a landslide") -> "Is this just fantasy?" x4 (1/4 distinct =
+recalled); original made-up gap -> 3/4 distinct (created). So detect reconstruction by the model's OWN
+uncertainty, with ZERO famous-songs reference.
+FOUR-LAYER DEFENSE: (1) shipped student trained ONLY on AI-slop = independent-creation foundation;
+(2) contexts are AI-slop, never famous-song gaps (reconstruction rarely triggered, 0/306); (3)
+DIVERSITY GATE — Qwen's 10 candidates per context; if <5 distinct, it's converging on a memorized line
+-> discard the context (free, intrinsic, no reference); (4) 4-gram audit vs our corpus as the cheap
+third net. Caveat: not legal advice; get a real opinion at commercial scale.

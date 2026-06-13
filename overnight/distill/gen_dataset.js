@@ -68,6 +68,11 @@ for(let si=0; si<all.length && made<N; si+=stride){
     const theme=themeWords(all[si]);
     const raw=qwen(above,below,theme,rhyme);
     const cands=raw.split("\n").map(l=>l.replace(/^\s*\d+[.)]\s*/,"").replace(/^["']|["',]+$/g,"").trim()).filter(l=>words(l).length>=4);
+    // DIVERSITY GATE: a memorized/famous line makes Qwen CONVERGE (few distinct candidates). Genuine
+    // generation BRANCHES. If <5 of the candidates are distinct, the context is likely reconstructing
+    // a known line -> skip it entirely. Detects memorization with NO famous-songs reference.
+    const distinct=new Set(cands.map(l=>words(l).join(" "))).size;
+    if(distinct<5){console.log("["+(made+1)+"] DIVERSITY-GATE skip (only "+distinct+" distinct cands — possible reconstruction)");made++;continue;}
     const good=cands.filter(l=>{const w=words(l),last=w[w.length-1];return rk(last)===rk(rhyme)&&last!==rhyme&&sc(l)<55&&Math.abs(sylLine(l)-sylLine(mid))<=3&&!copies(l);});
     made++;
     if(good.length){kept+=good.length;fs.appendFileSync(DS, JSON.stringify({above,below,theme,rhyme,rhymeWith,syl:sylLine(mid),mid,good})+"\n");}
