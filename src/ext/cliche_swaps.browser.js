@@ -104,7 +104,7 @@
     silhouettes: ["outlines", "profiles"],
     silver: ["ash", "slate"],
     sky: ["clouds"],
-    skyline: ["rooftops", "treeline"],
+    skyline: ["treeline"],
     soul: ["core", "marrow", "gut", "spine"],
     souls: ["spirits"],
     stardust: ["glitter", "confetti"],

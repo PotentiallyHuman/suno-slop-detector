@@ -2,7 +2,7 @@
  "hydrogen": {
   "startZ": 11.006,
   "finalScore": 15,
-  "finalZ": -1.725
+  "finalZ": -1.71
  },
  "song01": {
   "startZ": 6.705,
@@ -11,13 +11,13 @@
  },
  "song02": {
   "startZ": 1.667,
-  "finalScore": 75,
-  "finalZ": 1.099
+  "finalScore": 76,
+  "finalZ": 1.151
  },
  "song03": {
   "startZ": 59.664,
   "finalScore": 100,
-  "finalZ": 55.966
+  "finalZ": 55.986
  },
  "song04": {
   "startZ": -0.586,
@@ -26,8 +26,8 @@
  },
  "song05": {
   "startZ": 0.376,
-  "finalScore": 14,
-  "finalZ": -1.8
+  "finalScore": 16,
+  "finalZ": -1.648
  },
  "song06": {
   "startZ": 0.415,
@@ -37,12 +37,12 @@
  "song07": {
   "startZ": 6.132,
   "finalScore": 99,
-  "finalZ": 4.468
+  "finalZ": 4.467
  },
  "song08": {
   "startZ": 4.242,
   "finalScore": 92,
-  "finalZ": 2.45
+  "finalZ": 2.46
  },
  "song09": {
   "startZ": 7.915,
