@@ -265,9 +265,16 @@
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
+  // prepositions: a prep->prep swap (beneath->under) never stilts a phrase, so it's exempt from the
+  // collocation guard (which protects content-word phrases like "the night" / "my hands").
+  var PREP = { beneath: 1, under: 1, below: 1, above: 1, beyond: 1, within: 1, without: 1, upon: 1, across: 1, against: 1, beside: 1, amid: 1, atop: 1 };
   function swapCliches(line, songText) {
     var SW = globalThis.CLICHE_SWAPS; if (!SW) return null;
     var swapTheme = null; try { swapTheme = themeVec(songText); } catch (e) {}
+    // deterministic per-song seed (stable for a given song, varies across songs) so substitute
+    // selection is song-tailored, not globally fixed — two different songs humanize differently.
+    var songSeed = 0, sgt = String(songText);
+    for (var ss = 0; ss < sgt.length; ss++) songSeed = (songSeed * 31 + sgt.charCodeAt(ss)) % 100003;
     var songWords = {}; words(songText).forEach(function (w) { songWords[w] = 1; });
     var lineWords = words(line), counts = {}, i;
     for (i = 0; i < lineWords.length; i++) counts[lineWords[i]] = (counts[lineWords[i]] || 0) + 1;
@@ -283,8 +290,11 @@
     }
     var changed = 0, prevTok = "", lastSwapEnd = -1;
     var raw = String(line);
-    var out = raw.replace(/[A-Za-z']+/g, function (tok, off) {
-      var lw = tok.toLowerCase(), prev = prevTok; prevTok = lw;
+    // include the curly apostrophe in the token so "love’s" stays ONE token (not "love"+"s"):
+    // the split made "love’s a route" swap the bare "love" in verb position -> "choose’s a route".
+    var out = raw.replace(/[A-Za-z'’‘]+/g, function (tok, off) {
+      var lw = tok.toLowerCase().replace(/[’‘]/g, "'"), prev = prevTok; prevTok = lw;
+      if (/'s?$/.test(lw) && lw.length > 2) return tok;          // possessive/contraction ("love's", "don't"): noun-ish, leave it
       if (!CLICHE.has(lw) || !SW[lw]) return tok;
       if (counts[lw] > 1) return tok;                            // repeated on purpose ("Who your love, Who your love")
       // NEVER swap a word the detector itself reads as HUMAN. Its cliché-ness lives in the
@@ -292,6 +302,10 @@
       // word out AND risks a broken compound ("diamond ring" -> "jewel ring"). The score can be
       // fooled here (cliché-density drops) but coherence is the hard constraint. (test song 9)
       if (HUMAN_WORD[lw]) return tok;
+      // (A blunt collocation guard was tried here and REVERTED: phrase-frequency can't tell a GOOD
+      // swap from a bad one — "the silence"(58)->"the stillness" is fine yet "my voice"(41)->"my tone"
+      // is bad, and silence's phrase is MORE frequent. Substitute quality is the real signal, so bad
+      // cases are fixed by pruning the POOL, not by blocking every swap in a common phrase. 50-song fleet.)
       // clichés joined into ONE phrase ("flame of fire") get a single swap; separate phrases
       // in the same line ("heartbeat ... echoes") both swap — the user requires the full clean
       if (lastSwapEnd >= 0 && /^[\s,]*(of|and|or)\s*$/.test(raw.slice(lastSwapEnd, off))) return tok;
@@ -328,17 +342,25 @@
       var needPlural = /^(two|three|four|five|six|seven|many|few|both|these|those|all)$/.test(prev) && lw.charAt(lw.length - 1) === "s";
       // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps
       if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street)$/.test(prev)) return tok;
-      var best = null, bd = 1e9;
+      // Collect the acceptable substitutes ranked by QUALITY (meter match + theme fit; curation
+      // order breaks ties — earlier = better). Curation order is a real quality signal, so we never
+      // reach into the low-quality tail ("dimming" is a better "fading" than "bleaching").
+      var cands = [];
       for (var k = 0; k < subs.length; k++) {
         var s = subs[k];
         if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
         if (mustRhyme && VK[s] !== VK[lw]) continue;             // keep the song's rhyme vowel
         if (needPlural && s.charAt(s.length - 1) !== "s") continue;
         var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
-        var d = Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4;
-        if (d < bd) { bd = d; best = s; }                        // (number agreement is curated INTO the table)
+        cands.push({ s: s, q: Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4 });
       }
-      if (!best) return tok;
+      if (!cands.length) return tok;
+      cands.sort(function (a, b) { return a.q - b.q; });
+      // SONG-TAILORED variety WITHOUT quality loss: pick among only the TOP candidates (within 1.5
+      // of the best), seeded by the song — so two songs vary their swap, but neither dips into the
+      // weak tail. Expansive where safe (several good options), strict where risky (one good option).
+      var topN = 1; while (topN < cands.length && cands[topN].q <= cands[0].q + 1.5) topN++;
+      var best = cands[songSeed % topN].s;
       changed++;
       songWords[best] = 1;
       lastSwapEnd = off + tok.length;
