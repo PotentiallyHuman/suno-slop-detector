@@ -1,0 +1,506 @@
+{
+ "cycle_meta": {
+  "songs": 300,
+  "K": 300,
+  "models": [
+   "suno:1104",
+   "grok:395",
+   "claude:338",
+   "chatgpt:161",
+   "gemini:58"
+  ]
+ },
+ "summary": {
+  "improved": "228/300",
+  "noop_ai_songs": 53,
+  "mean_dz": "-2.03"
+ },
+ "POOLS": {
+  "distinct_subs": 125,
+  "top_reused_subs": [
+   [
+    "palms",
+    44
+   ],
+   [
+    "that",
+    42
+   ],
+   [
+    "this",
+    27
+   ],
+   [
+    "lane",
+    19
+   ],
+   [
+    "each",
+    18
+   ],
+   [
+    "clouds",
+    15
+   ],
+   [
+    "choose",
+    15
+   ],
+   [
+    "stillness",
+    14
+   ],
+   [
+    "trace",
+    13
+   ],
+   [
+    "vacant",
+    12
+   ],
+   [
+    "nickel",
+    12
+   ],
+   [
+    "some",
+    10
+   ],
+   [
+    "lamps",
+    10
+   ],
+   [
+    "drumbeat",
+    9
+   ],
+   [
+    "pewter",
+    9
+   ],
+   [
+    "under",
+    9
+   ],
+   [
+    "plans",
+    9
+   ],
+   [
+    "stratosphere",
+    8
+   ],
+   [
+    "busted",
+    8
+   ],
+   [
+    "snapped",
+    8
+   ],
+   [
+    "adrift",
+    8
+   ],
+   [
+    "below",
+    8
+   ],
+   [
+    "outline",
+    7
+   ],
+   [
+    "squall",
+    7
+   ],
+   [
+    "snapshot",
+    7
+   ]
+  ],
+  "top_sources": [
+   [
+    "every",
+    97
+   ],
+   [
+    "hands",
+    52
+   ],
+   [
+    "love",
+    25
+   ],
+   [
+    "sky",
+    23
+   ],
+   [
+    "road",
+    22
+   ],
+   [
+    "broken",
+    21
+   ],
+   [
+    "silence",
+    21
+   ],
+   [
+    "silver",
+    21
+   ],
+   [
+    "beneath",
+    17
+   ],
+   [
+    "lost",
+    15
+   ],
+   [
+    "ghost",
+    14
+   ],
+   [
+    "shadows",
+    14
+   ],
+   [
+    "midnight",
+    13
+   ],
+   [
+    "lights",
+    13
+   ],
+   [
+    "soul",
+    11
+   ],
+   [
+    "empty",
+    10
+   ],
+   [
+    "rising",
+    9
+   ],
+   [
+    "burning",
+    9
+   ],
+   [
+    "heartbeat",
+    9
+   ],
+   [
+    "light",
+    9
+   ]
+  ]
+ },
+ "BADPAIRS": [
+  [
+   "hands->palms",
+   13
+  ],
+  [
+   "silence->vacuum",
+   6
+  ],
+  [
+   "dust->grit",
+   4
+  ],
+  [
+   "broken->snapped",
+   4
+  ],
+  [
+   "lights->lamps",
+   4
+  ],
+  [
+   "lost->adrift",
+   4
+  ],
+  [
+   "storm->squall",
+   4
+  ],
+  [
+   "memory->snapshot",
+   3
+  ],
+  [
+   "love->adore",
+   3
+  ],
+  [
+   "every->this",
+   3
+  ],
+  [
+   "love->longing",
+   3
+  ],
+  [
+   "sky->stratosphere",
+   2
+  ],
+  [
+   "light->beam",
+   2
+  ],
+  [
+   "love->choose",
+   2
+  ],
+  [
+   "hands->grip",
+   2
+  ],
+  [
+   "hands->fists",
+   2
+  ],
+  [
+   "every->that",
+   2
+  ],
+  [
+   "dreams->plans",
+   2
+  ],
+  [
+   "soul->gut",
+   2
+  ],
+  [
+   "broken->wrecked",
+   1
+  ],
+  [
+   "love->craving",
+   1
+  ],
+  [
+   "lost->mislaid",
+   1
+  ],
+  [
+   "shadows->doorways",
+   1
+  ],
+  [
+   "memory->keepsake",
+   1
+  ],
+  [
+   "love->cherish",
+   1
+  ],
+  [
+   "silver->pewter",
+   1
+  ],
+  [
+   "lonely->solo",
+   1
+  ],
+  [
+   "tears->sobs",
+   1
+  ],
+  [
+   "sky->clouds",
+   1
+  ],
+  [
+   "road->lane",
+   1
+  ]
+ ],
+ "RESIDUAL": [
+  [
+   "and …(mid)",
+   111
+  ],
+  [
+   "the …(mid)",
+   79
+  ],
+  [
+   "and …(short)",
+   71
+  ],
+  [
+   "but …(mid)",
+   68
+  ],
+  [
+   "i …(short)",
+   68
+  ],
+  [
+   "the …(short)",
+   56
+  ],
+  [
+   "teach …(short)",
+   54
+  ],
+  [
+   "two …(short)",
+   46
+  ],
+  [
+   "one …(short)",
+   42
+  ],
+  [
+   "we …(mid)",
+   40
+  ],
+  [
+   "i …(mid)",
+   38
+  ],
+  [
+   "and …(long)",
+   31
+  ],
+  [
+   "you …(mid)",
+   29
+  ],
+  [
+   "in …(short)",
+   27
+  ],
+  [
+   "now …(mid)",
+   27
+  ],
+  [
+   "can't …(short)",
+   27
+  ],
+  [
+   "like …(short)",
+   26
+  ],
+  [
+   "every …(mid)",
+   26
+  ],
+  [
+   "salt …(short)",
+   26
+  ],
+  [
+   "but …(long)",
+   25
+  ],
+  [
+   "hold …(short)",
+   25
+  ],
+  [
+   "just …(mid)",
+   23
+  ],
+  [
+   "in …(mid)",
+   22
+  ],
+  [
+   "a …(mid)",
+   20
+  ],
+  [
+   "i'm …(short)",
+   20
+  ],
+  [
+   "with …(mid)",
+   19
+  ],
+  [
+   "like …(mid)",
+   19
+  ],
+  [
+   "i'm …(mid)",
+   19
+  ],
+  [
+   "your …(short)",
+   19
+  ],
+  [
+   "dance …(short)",
+   19
+  ]
+ ],
+ "NOOP_samples": [
+  "At night in the bed I hear the creaks / Wooden floorboards echo / Weak / Like I heard someone else walk down the hall",
+  "Phone line crackles across the miles tonight / Your voice comes through but it fades out of sight / Been counting the years since we said our goodbyes / Still holding on tight with these old weathered eyes",
+  "We should take the edge off / I like my revenge raw / Painted face / Painted smile",
+  "Mama's crying in the kitchen again / Daddy's got his good boots on / My sister's twisting flowers in her hair / In the mirror where she's been since dawn",
+  "Come in / Step inside / Look down / There it is",
+  "Sunday night, church let out, parked by the water tower / Mason and Nick got them matching tattoos / All my friends in the parking lot of the Super Walmart / Tell me I should stay, I've got nothing to lose",
+  "Where am I now / Maybe outer space / And I don't know how / I've gotten to this place",
+  "Hyperdrive / Coding through the night / Coding through the night / Coding through the night",
+  "With the first snow of the year / She wrote a letter to her mother / Said / \"I've never been so sure",
+  "He ties his boots by the chair / Slow like the rain at dawn / The same blue shirt, frayed at the cuff / The years have worn him down",
+  "The screen door slammed in June / Your name on a folded note / Mud on my thrift-store boots / And a bruise on my throat",
+  "There’s one tree left / By the bus depot curb / Roots in a crack / Where the rain used to work"
+ ],
+ "VOWEL": {
+  "perfect_rhyme_rate": "0.102",
+  "top_end_vowels": [
+   [
+    "e",
+    3950
+   ],
+   [
+    "o",
+    1803
+   ],
+   [
+    "i",
+    1755
+   ],
+   [
+    "a",
+    1483
+   ],
+   [
+    "ea",
+    532
+   ],
+   [
+    "ai",
+    474
+   ],
+   [
+    "ou",
+    465
+   ],
+   [
+    "ee",
+    460
+   ]
+  ]
+ },
+ "SYLLABLE": {
+  "adjacent_equal_length_rate": "0.306"
+ },
+ "WIT": {
+  "songs_with_any_specificity": "0.573"
+ }
+}

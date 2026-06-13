@@ -1,0 +1,62 @@
+{
+ "hydrogen": {
+  "startZ": 11.006,
+  "finalScore": 15,
+  "finalZ": -1.725
+ },
+ "song01": {
+  "startZ": 6.705,
+  "finalScore": 98,
+  "finalZ": 3.747
+ },
+ "song02": {
+  "startZ": 1.667,
+  "finalScore": 76,
+  "finalZ": 1.151
+ },
+ "song03": {
+  "startZ": 59.664,
+  "finalScore": 100,
+  "finalZ": 55.966
+ },
+ "song04": {
+  "startZ": -0.586,
+  "finalScore": 11,
+  "finalZ": -2.108
+ },
+ "song05": {
+  "startZ": 0.376,
+  "finalScore": 21,
+  "finalZ": -1.296
+ },
+ "song06": {
+  "startZ": 0.415,
+  "finalScore": 60,
+  "finalZ": 0.416
+ },
+ "song07": {
+  "startZ": 6.132,
+  "finalScore": 99,
+  "finalZ": 4.468
+ },
+ "song08": {
+  "startZ": 4.242,
+  "finalScore": 92,
+  "finalZ": 2.45
+ },
+ "song09": {
+  "startZ": 7.915,
+  "finalScore": 100,
+  "finalZ": 6.518
+ },
+ "song10": {
+  "startZ": 5.949,
+  "finalScore": 42,
+  "finalZ": -0.322
+ },
+ "song11": {
+  "startZ": 7.511,
+  "finalScore": 100,
+  "finalZ": 7.243
+ }
+}
