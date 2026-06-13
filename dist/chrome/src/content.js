@@ -207,17 +207,26 @@
   // this cached result (instant), the box change re-analyses, and the joker
   // rotates to the new most-AI line.
   let hzNext = { key: null, res: null };
+  let hzChaosArmed = false; // Rewrite would refuse but the song still reads AI -> the button becomes Chaos
+
+  function updateHalfBtn() {
+    if (!refs.hzHalf) return;
+    hzChaosArmed = !!(lastResult && hzNext.key === lastResult._text && !hzNext.res && lastResult.score >= 20);
+    refs.hzHalf.textContent = hzChaosArmed ? "🌀 Humanize Chaos" : "🪄 Humanize Rewrite";
+  }
 
   function computeHzNext(text) {
     if (!isCreatePage() || !globalThis.HumanizeFreestyle) return;
-    if (hzNext.key === text) return; // cache hit — joker already current
+    if (hzNext.key === text) { updateHalfBtn(); return; } // cache hit — joker already current
     setTimeout(() => { // off the render path: never delay the pill
-      if (hzNext.key === text) return;
-      let res = null;
-      try { res = HumanizeFreestyle.humanizeOne(text, hzScore, hzLogit); } catch (e) { res = null; }
-      hzNext = { key: text, res: res };
-      // repaint the joker if the page text hasn't moved on meanwhile
+      if (hzNext.key !== text) {
+        let res = null;
+        try { res = HumanizeFreestyle.humanizeOne(text, hzScore, hzLogit); } catch (e) { res = null; }
+        hzNext = { key: text, res: res };
+      }
+      // repaint the joker + button if the page text hasn't moved on meanwhile
       if (lastResult && lastResult._text === text && lastResult.panel) renderCraft(lastResult.panel);
+      updateHalfBtn();
     }, 0);
   }
 
@@ -264,16 +273,25 @@
     const text = box.value || "";
     if (text.trim().length < 8) { hzMsg("Write a few lines in the lyrics box first."); return; }
     if (!globalThis.HumanizeFreestyle) { hzMsg("Humanizer is still loading — try again in a second."); return; }
-    let res = null;
+    let res = null, chaos = kind === "half" && hzChaosArmed;
     if (kind === "one" && hzNext.key === text) res = hzNext.res; // the previewed press, precomputed
     else {
       try {
-        res = kind === "half"
-          ? HumanizeFreestyle.humanizeHalf(text, hzScore, hzLogit)
+        res = chaos ? HumanizeFreestyle.humanizeChaos(text, hzScore, hzLogit)
+          : kind === "half" ? HumanizeFreestyle.humanizeHalf(text, hzScore, hzLogit)
           : HumanizeFreestyle.humanizeOne(text, hzScore, hzLogit);
       } catch (e) { res = null; }
     }
     if (!res) { hzMsg(hzShapeMsg(text)); return; }
+    if (chaos) {
+      hzUndoStack.push(text);
+      if (refs.hzUndo) refs.hzUndo.hidden = false;
+      setCreateBoxText(box, res.text);
+      scheduleAnalyse();
+      hzMsg("Chaos: dropped every safety gate and reworked " + res.count + " " + (res.count === 1 ? "line" : "lines") +
+        " — " + res.before + "% → " + res.after + "% AI. Rhymes and your hooks kept. Undo to revert.");
+      return;
+    }
     hzUndoStack.push(text);
     if (refs.hzUndo) refs.hzUndo.hidden = false;
     setCreateBoxText(box, res.text);

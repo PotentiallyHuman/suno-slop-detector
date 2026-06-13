@@ -199,7 +199,14 @@
       if ((lyricsEl.value || "") === text) renderJokerPreview(panel);
     }, 0);
   }
+  var hzChaosArmed = false; // Rewrite would refuse but the song still reads AI -> the button becomes Chaos
+  function updateRewriteBtn() {
+    if (!rewriteBtn) return;
+    hzChaosArmed = !!(hzNext.key === (lyricsEl.value || "") && !hzNext.res && aiScore(lyricsEl.value || "") >= 20);
+    rewriteBtn.textContent = hzChaosArmed ? "🌀 Humanize Chaos" : "Humanize Rewrite";
+  }
   function renderJokerPreview(panel) {
+    updateRewriteBtn();
     var p = panel || {};
     var joker = null;
     if (hzNext.res) {
@@ -337,7 +344,18 @@
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
     // "Humanize Rewrite": rebuild the worst HALF of the song in one press, keep the better half the user's.
     var res = null;
-    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
+    var chaos = hzChaosArmed;
+    try { res = chaos ? HumanizeFreestyle.humanizeChaos(text, aiScore, aiLogit) : HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
+    if (chaos && res) {
+      undoStack.push(text);
+      undoBtn.hidden = false;
+      lyricsEl.value = res.text;
+      clearBtn.hidden = false;
+      flashBox();
+      analyse();
+      showToast("Chaos: dropped every safety gate and reworked " + res.count + " " + (res.count === 1 ? "line" : "lines") + " — " + res.before + "% → " + res.after + "% AI. Rhymes and your hooks kept. Undo to revert.");
+      return;
+    }
     if (!res) {
       var s0 = aiScore(text);
       if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());

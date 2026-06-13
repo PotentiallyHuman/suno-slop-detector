@@ -359,7 +359,8 @@
     function jacc(a, b) {
       if (a.size < 3 || b.size < 3) return 0;
       var n = 0; a.forEach(function (w) { if (b.has(w)) n++; });
-      return n / (a.size + b.size - n);
+      // jaccard OR overlap-coefficient: short hooks stay kin after a one-word variation
+      return Math.max(n / (a.size + b.size - n), n / Math.min(a.size, b.size) - 0.05);
     }
     // Candidates = ONLY lines carrying their own AI evidence: blocklist clichés, or a high line-level
     // AI score. A line that reads human is never touched, no matter how AI the whole song scores —
@@ -485,6 +486,79 @@
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
   }
+  // ---- "Humanize Chaos": the aggressive tier — offered only when Rewrite has nothing
+  // safe left and the song still reads AI. MEANING may bend; RHYME and COHERENCE may not:
+  // full-line rebuilds come from the freestyle generator, which writes BACKWARD from the
+  // original line's end-rhyme word (rhyme kept by construction), themed to the song's own
+  // vocabulary, and judged by the grammar professor + craft lenses. Evidence gates are
+  // dropped (any AI-leaning line is fair game) but hook ROOTS stay sacred and every edit
+  // must measurably lower the log-odds. Stops under CHAOS_TARGET or when nothing helps.
+  var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 30;
+  // NOTE: chaos has NO n-gram rebuild path. It was built and disproven (2026-06-13): across
+  // 8 corpus songs + Hydrogen, ZERO generator rebuilds passed the strict whole-line POS
+  // template — under a real coherence bar the walk produces soup or nothing. The chaos gain
+  // is entirely the designed ops with the evidence/score gates dropped.
+  function humanizeChaos(text, scoreFn, logitFn) {
+    var theme = themeVec(text); if (!theme) return null;
+    var before = Math.round(scoreFn(text));
+    var cur = String(text).split("\n"), steps = [];
+    if (cur.length > MAX_LINES) cur.length = MAX_LINES;
+    function songNow() { return cur.join("\n"); }
+    // jaccard OR overlap-coefficient: a 3-word line that lost one word to a variation
+    // ("Breaking every law" vs "Breaking each law") scores 2/4=0.5 jaccard — below any
+    // sane threshold — but 2/3=0.67 overlap. Short hooks must stay recognized as kin.
+    function jacc2(a, b) {
+      if (a.size < 3 || b.size < 3) return 0;
+      var n = 0; a.forEach(function (w) { if (b.has(w)) n++; });
+      return Math.max(n / (a.size + b.size - n), n / Math.min(a.size, b.size) - 0.05);
+    }
+
+    for (var pass = 0; pass < 3 && steps.length < CHAOS_MAX_EDITS; pass++) {
+      var songScore = scoreFn(songNow());
+      if (songScore < CHAOS_TARGET) break;
+      var fineBase = logitFn ? logitFn(songNow()) : null;
+      var sets = [], i;
+      for (i = 0; i < cur.length; i++) sets.push(new Set(words(cur[i])));
+      var cands = [];
+      for (i = 0; i < cur.length; i++) {
+        var wn = words(cur[i]).length;
+        if (wn < 3 || wn > 16 || /^\s*\[/.test(cur[i])) continue;
+        var earlier = -1, later = false;
+        for (var j = 0; j < cur.length; j++) { if (j === i) continue; if (jacc2(sets[i], sets[j]) >= 0.6) { if (j < i) { earlier = j; break; } later = true; } }
+        if (later && earlier < 0) continue;                     // hook root: sacred even in chaos
+        cands.push({ i: i, dup: earlier >= 0, ai: scoreFn(cur[i]) });
+      }
+      cands.sort(function (a, b) { return b.ai - a.ai; });
+      var improved = false;
+      for (var c = 0; c < cands.length && steps.length < CHAOS_MAX_EDITS; c++) {
+        var idx = cands[c].i, orig = cur[idx], tries = [];
+        if (cands[c].dup) {
+          var dv = dupVariant(orig); if (dv) tries.push({ to: dv, mode: "vary" });
+        } else {
+          var rot = (songNow().match(/^(That|This|Some|Perhaps|Could be|Why do) /gmi) || []).length;
+          var rs = restructure(orig, rot); if (rs && !moldLine(rs)) tries.push({ to: rs, mode: "restructure" });
+          var sw = swapCliches(orig, songNow()); if (sw && sw !== orig) tries.push({ to: sw, mode: "swap" });
+        }
+        for (var t = 0; t < tries.length; t++) {
+          var trial = cur.slice(); trial[idx] = tries[t].to;
+          var tnew = trial.join("\n");
+          var ok = logitFn ? (logitFn(tnew) <= fineBase - 0.1) : (scoreFn(tnew) < songScore);
+          if (ok) {
+            cur = trial; steps.push({ lineIndex: idx, from: orig, to: tries[t].to, mode: tries[t].mode });
+            fineBase = logitFn ? logitFn(tnew) : null; songScore = scoreFn(tnew);
+            improved = true;
+            break;
+          }
+        }
+        if (songScore < CHAOS_TARGET) break;
+      }
+      if (!improved) break;
+    }
+    if (!steps.length) return null;
+    var finalText = cur.join("\n");
+    return { text: finalText, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(finalText)), target: CHAOS_TARGET };
+  }
+
   // diagnoseShape(text): measure the song's STRUCTURAL stamping — the corpus-mined AI
   // fingerprint is metric stamping (equal lengths + couplet rhyme: AI 26-29% vs human 20%)
   // WITHOUT verbal anaphora (humans repeat openers 1.4-2x MORE). Names the dominant tell
@@ -558,5 +632,5 @@
     return bits.join("; ") + (more > 0 ? " (+" + more + " more)" : "");
   }
 
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary };
+  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanizeChaos: humanizeChaos, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary };
 })();

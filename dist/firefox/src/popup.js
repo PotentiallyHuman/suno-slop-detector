@@ -198,7 +198,15 @@
       if ((pasteEl.value || "") === text) renderJoker(panel);
     }, 0);
   }
+  let hzChaosArmed = false; // Rewrite would refuse but the song still reads AI -> the button becomes Chaos
+  function updateRewriteBtn() {
+    const rb = document.getElementById("rewrite");
+    if (!rb) return;
+    hzChaosArmed = !!(hzNext.key === (pasteEl.value || "") && !hzNext.res && aiScore(pasteEl.value || "") >= 20);
+    rb.textContent = hzChaosArmed ? "🌀 Humanize Chaos" : "Humanize Rewrite";
+  }
   function renderJoker(panel) {
+    updateRewriteBtn();
     const p = panel || {};
     let joker = null;
     if (hzNext.res) {
@@ -303,7 +311,18 @@
     const text = pasteEl.value || "";
     if (text.trim().length < 8) { showMsg("Paste a few lines first."); return; }
     let res = null;
-    try { res = HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
+    const chaos = hzChaosArmed;
+    try { res = chaos ? HumanizeFreestyle.humanizeChaos(text, aiScore, aiLogit) : HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
+    if (chaos && res) {
+      undoStack.push(text);
+      undoBtn.hidden = false;
+      pasteEl.value = res.text;
+      pasteEl.classList.add("hz-flash");
+      setTimeout(() => pasteEl.classList.remove("hz-flash"), 700);
+      analysePaste();
+      showMsg("Chaos: dropped every safety gate and reworked " + res.count + " " + (res.count === 1 ? "line" : "lines") + " — " + res.before + "% → " + res.after + "% AI. Rhymes and your hooks kept. Undo to revert.");
+      return;
+    }
     if (!res) {
       const s0 = aiScore(text);
       if (s0 >= 55) showMsg((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
