@@ -51,9 +51,9 @@ function student(targetRhyme, targetSyl, themeText){
   if (!pool.length) return null;
   // rank by theme fit; tie-break by closeness of syllables
   pool.sort((a,b)=>((tv&&b.tv?dotp(tv,b.tv):0)-Math.abs(b.syl-targetSyl)*0.05) - ((tv&&a.tv?dotp(tv,a.tv):0)-Math.abs(a.syl-targetSyl)*0.05));
-  // swap the library line's end word to the song's actual rhyme word (keeps the exact rhyme)
-  let best = pool[0].line.split(/\s+/); best[best.length-1] = best[best.length-1].replace(/[A-Za-z']+/, targetRhyme);
-  return best.join(" ");
+  // KEEP the library line's own end word — it already rhymes (same rhyme-key as the target), so
+  // forcing the exact target word would jam a wrong-fit word in ("screws, and thin"). Coherence first.
+  return pool[0].line;
 }
 
 let hit=0;
