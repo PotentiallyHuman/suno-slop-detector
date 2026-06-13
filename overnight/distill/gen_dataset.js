@@ -45,7 +45,7 @@ Output EXACTLY 10 numbered lines, nothing else.`;
   try{return execSync("ollama run qwen2.5:32b",{input:prompt,encoding:"utf8",timeout:240000,maxBuffer:1<<20});}catch(e){return "";}
 }
 
-const out=fs.createWriteStream(path.join(__dirname,"dataset.jsonl"),{flags:"a"});
+const DS=path.join(__dirname,"dataset.jsonl");
 let made=0, kept=0, seen=0;
 const stride=Math.max(1,Math.floor(all.length/200));
 for(let si=0; si<all.length && made<N; si+=stride){
@@ -64,10 +64,9 @@ for(let si=0; si<all.length && made<N; si+=stride){
     const cands=raw.split("\n").map(l=>l.replace(/^\s*\d+[.)]\s*/,"").replace(/^["']|["',]+$/g,"").trim()).filter(l=>words(l).length>=4);
     const good=cands.filter(l=>{const w=words(l),last=w[w.length-1];return rk(last)===rk(rhyme)&&last!==rhyme&&sc(l)<55&&Math.abs(sylLine(l)-sylLine(mid))<=3;});
     made++;
-    if(good.length){kept+=good.length;out.write(JSON.stringify({above,below,theme,rhyme,rhymeWith,syl:sylLine(mid),mid,good})+"\n");}
+    if(good.length){kept+=good.length;fs.appendFileSync(DS, JSON.stringify({above,below,theme,rhyme,rhymeWith,syl:sylLine(mid),mid,good})+"\n");}
     console.log("["+made+"/"+N+"] mid("+sc(mid)+"%): "+mid.slice(0,40)+" -> "+good.length+" kept");
     if(good.length)good.slice(0,3).forEach(g=>console.log("     + "+g));
   }
 }
-out.end();
 console.log("\nDONE: "+made+" contexts, "+kept+" good lines kept -> overnight/distill/dataset.jsonl");
