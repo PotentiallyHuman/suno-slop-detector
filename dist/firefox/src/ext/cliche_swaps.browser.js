@@ -129,6 +129,12 @@
     whispers: ["mutters", "mumbles"],
     wildfire: ["brushfire", "bonfire"],
   };
+  // FROZEN phrases (>=90x human corpus) + the collocation-ANCHOR words to protect inside them.
+  // Cycle 3 proved a BLANKET frozen guard over-blocks (it killed 'lost in'->'stranded in', a fine
+  // swap). The bad/fine split is the SOURCE WORD, not the phrase: only love & hands show up as bad
+  // pairs (love->longing x8, hands->palms x11) AND live in many frozen phrases. lost/silence swap fine.
+  globalThis.FROZEN_PHRASE = new Set(["a fire", "a kiss", "a love", "a stranger", "and love", "beneath the", "fire and", "for love", "hands on", "hands up", "i lost", "i love", "in love", "is love", "kiss me", "light of", "lost in", "lost my", "love again", "love and", "love can", "love for", "love her", "love i", "love i'm", "love in", "love is", "love it", "love it's", "love like", "love love", "love me", "love my", "love oh", "love so", "love that", "love the", "love to", "love was", "love will", "love with", "love you", "me love", "my dreams", "my hands", "my love", "my soul", "of love", "on fire", "our love", "the fire", "the light", "the lights", "the love", "the road", "the sky", "the streets", "the tears", "this love", "to love", "true love", "you love", "your hands", "your love", "your soul"]);
+  globalThis.FROZEN_ANCHOR = { love: 1, hands: 1 };
   globalThis.CLICHE_SWAPS_VERB = {
     echo: { obj: ["repeat", "spell", "tell"], noobj: ["ring", "rebound"] },
     echoes: { obj: ["repeats", "spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings", "rebounds"] },

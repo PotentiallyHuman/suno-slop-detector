@@ -307,10 +307,15 @@
       // word out AND risks a broken compound ("diamond ring" -> "jewel ring"). The score can be
       // fooled here (cliché-density drops) but coherence is the hard constraint. (test song 9)
       if (HUMAN_WORD[lw]) return tok;
-      // (A blunt collocation guard was tried here and REVERTED: phrase-frequency can't tell a GOOD
-      // swap from a bad one — "the silence"(58)->"the stillness" is fine yet "my voice"(41)->"my tone"
-      // is bad, and silence's phrase is MORE frequent. Substitute quality is the real signal, so bad
-      // cases are fixed by pruning the POOL, not by blocking every swap in a common phrase. 50-song fleet.)
+      // PER-WORD frozen-phrase guard: only the collocation-ANCHOR words (love, hands — proven bad
+      // pairs that live in frozen phrases) are protected inside a >=90x frozen phrase. A BLANKET
+      // version was reverted (it killed "lost in"->"stranded in", a fine swap); the split is the
+      // SOURCE WORD, not phrase frequency. (cycle 4, refining cycle 3's disproof)
+      if (globalThis.FROZEN_ANCHOR && globalThis.FROZEN_ANCHOR[lw] && globalThis.FROZEN_PHRASE) {
+        var fzn = raw.slice(off + tok.length).match(/[A-Za-z'’‘]+/);
+        var fzw = fzn ? fzn[0].toLowerCase().replace(/[’‘]/g, "'") : "";
+        if ((prev && globalThis.FROZEN_PHRASE.has(prev + " " + lw)) || (fzw && globalThis.FROZEN_PHRASE.has(lw + " " + fzw))) return tok;
+      }
       // clichés joined into ONE phrase ("flame of fire") get a single swap; separate phrases
       // in the same line ("heartbeat ... echoes") both swap — the user requires the full clean
       if (lastSwapEnd >= 0 && /^[\s,]*(of|and|or)\s*$/.test(raw.slice(lastSwapEnd, off))) return tok;
