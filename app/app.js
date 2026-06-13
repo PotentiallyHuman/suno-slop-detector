@@ -177,8 +177,35 @@
     var panel = null;
     try { panel = SlopPanel.build(text, sc); } catch (e) { /* panel optional */ }
     renderCraft(panel);
+    computeHzNext(text, panel); // joker preview: the line the next press will rebuild
 
     if (resultEl.scrollIntoView) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // Next-press preview (joker): precompute humanizeOne on the current text — the
+  // engine is deterministic, so this IS the next press. The joker names that line,
+  // the press reuses the cached result, and the re-analysis rotates the joker to
+  // the new most-AI line.
+  var hzNext = { key: null, res: null };
+  function computeHzNext(text, panel) {
+    if (!globalThis.HumanizeFreestyle) return;
+    if (hzNext.key === text) { renderJokerPreview(panel); return; }
+    setTimeout(function () {
+      if (hzNext.key !== text) {
+        var res = null;
+        try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
+        hzNext = { key: text, res: res };
+      }
+      if ((lyricsEl.value || "") === text) renderJokerPreview(panel);
+    }, 0);
+  }
+  function renderJokerPreview(panel) {
+    if (!hzNext.res) return; // keep the craft joker
+    var p = panel || {};
+    renderCraft({
+      good: p.good, bad: p.bad,
+      joker: { text: "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line." },
+    });
   }
 
   howaiBtn.addEventListener("click", analyse);
@@ -233,12 +260,29 @@
       try { work(); } finally { btn.disabled = false; btn.textContent = label; }
     }, 30);
   }
+  // Press feedback that names the concrete edit. On a saturated song the rounded %
+  // is pinned (100% before AND after a good edit), so "100% → 100%" reads like the
+  // press failed — say what changed and why the number can't move instead.
+  function pressMsgText(res, kind) {
+    var summary = "";
+    try { summary = HumanizeFreestyle.pressSummary(res); } catch (e) {}
+    var head = (kind === "half"
+      ? "Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines")
+      : "Rebuilt your most-AI line (#" + (res.lineIndex + 1) + ")") + (summary ? " — " + summary : "");
+    if (res.after < res.before) return head + ". " + res.before + "% → " + res.after + "% AI. Press again for the next-worst — Undo to revert.";
+    var dg = null;
+    try { dg = HumanizeFreestyle.diagnoseShape(res.text); } catch (e) {}
+    return head + ". The % won't budge — this song is pinned at " + res.after + "% by its SHAPE, not these words. " +
+      (dg ? "Measured on your song: " + dg + "." : "To move it: vary your line lengths, or let a line end without its rhyme.") +
+      " Undo to revert.";
+  }
   function humanize() {   // "Humanize Line" — rebuild the single worst line, one per click
     var text = lyricsEl.value || "";
     if (text.trim().length < 8) { hintEl.textContent = "Paste a few lines first."; return; }
     // "Humanize Line": rebuild the single most-AI line with the on-device freestyle generator. One per click.
     var res = null;
-    try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; }
+    if (hzNext.key === text) res = hzNext.res; // the previewed press, precomputed
+    else { try { res = HumanizeFreestyle.humanizeOne(text, aiScore); } catch (e) { res = null; } }
     if (!res) {
       var s0 = aiScore(text);
       if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
@@ -251,7 +295,7 @@
     clearBtn.hidden = false;
     flashBox();
     analyse();                         // re-score + repaint meter from the new text
-    showToast("Rebuilt your most-AI line (#" + (res.lineIndex + 1) + "): " + res.before + "% → " + res.after + "% AI. Click again for the next-worst — Undo to revert.");
+    showToast(pressMsgText(res, "one"));
   }
 
   // brief highlight so the user SEES the textarea changed (textareas can't style ranges)
@@ -290,7 +334,7 @@
     clearBtn.hidden = false;
     flashBox();
     analyse();
-    showToast("Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines") + " (" + res.before + "% → " + res.after + "% AI), kept the rest yours. Press again for the worst half of what's left — Undo to revert.");
+    showToast(pressMsgText(res, "half"));
   }
   if (rewriteBtn) rewriteBtn.addEventListener("click", function () { busyRun(rewriteBtn, rewrite); });
 

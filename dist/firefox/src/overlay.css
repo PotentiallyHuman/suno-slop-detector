@@ -68,6 +68,25 @@
   letter-spacing: 0.02em;
 }
 
+/* /create only: Humanize buttons that edit the lyrics box in place */
+#slop-hz:empty { display: none; }
+#slop-hz { margin: 0 0 10px; }
+.slop-hz-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.slop-hz-btn {
+  background: #2b2b33;
+  border: 1px solid #44444f;
+  color: #e8e8e8;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.slop-hz-btn:hover:not(:disabled) { background: #34343e; }
+.slop-hz-btn:disabled { opacity: 0.6; cursor: wait; }
+.slop-hz-undo { border-style: dashed; }
+.slop-hz-msg { color: #9a9a9a; font-size: 11px; margin-top: 6px; }
+.slop-hz-msg:empty { display: none; }
+
 /* the 5 ✅ · 1 🃏 · 5 ⚠️ craft panel */
 #slop-craft { margin-top: 4px; }
 .slop-craft-h {

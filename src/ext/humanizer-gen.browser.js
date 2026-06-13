@@ -439,5 +439,33 @@
     if (!tips.length) return null;
     return tips.join("; ");
   }
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape };
+  // pressSummary(res): name the CONCRETE edit a press made ("swapped 'shadows' → 'doorways'"),
+  // so the user sees what happened even when the 0-100 score is pinned and can't move
+  // (a saturated song rounds to 100% before AND after a genuinely good edit).
+  function wordSwap(from, to) {
+    var A = String(from).toLowerCase().match(/[a-z']+/g) || [];
+    var B = String(to).toLowerCase().match(/[a-z']+/g) || [];
+    var inB = {}, inA = {}, i;
+    for (i = 0; i < B.length; i++) inB[B[i]] = true;
+    for (i = 0; i < A.length; i++) inA[A[i]] = true;
+    var out = [], add = [];
+    for (i = 0; i < A.length; i++) if (!inB[A[i]]) out.push(A[i]);
+    for (i = 0; i < B.length; i++) if (!inA[B[i]]) add.push(B[i]);
+    if (!out.length || out.length > 3 || add.length > 3) return null; // a reshape, not a swap
+    return "'" + out.join(" ") + "' → '" + add.join(" ") + "'";
+  }
+  function pressSummary(res) {
+    if (!res) return "";
+    var steps = res.steps || [{ from: res.from, to: res.to }];
+    var parts = [], i;
+    for (i = 0; i < steps.length && parts.length < 3; i++) {
+      var s = wordSwap(steps[i].from, steps[i].to);
+      if (s) parts.push(s);
+    }
+    var more = steps.length - parts.length;
+    if (!parts.length) return "reshaped " + steps.length + (steps.length === 1 ? " line" : " lines");
+    return "swapped " + parts.join(", ") + (more > 0 ? " (+" + more + " more)" : "");
+  }
+
+  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary };
 })();

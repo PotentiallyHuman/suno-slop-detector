@@ -41,15 +41,41 @@
     return /^https:\/\/suno\.com\/(song|create)\b/.test(location.href);
   }
 
+  function isCreatePage() {
+    return /^https:\/\/suno\.com\/create\b/.test(location.href);
+  }
+
+  // The /create lyrics editor, pinned to the STABLE data-testid="lyrics-textarea"
+  // (verified live), with fuzzy fallbacks. Never the style/title box.
+  // Suno can keep MORE THAN ONE matching textarea mounted (e.g. a restored draft
+  // in a hidden editor instance) — caught live 2026-06-13 when the panel quoted a
+  // line that wasn't in the visible box. Always pick the first VISIBLE match.
+  function getCreateBox() {
+    if (!isCreatePage()) return null;
+    const list = document.querySelectorAll(
+      'textarea[data-testid="lyrics-textarea"], textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]'
+    );
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].getClientRects().length > 0) return list[i]; // on-screen editor
+    }
+    return list[0] || null;
+  }
+
+  // Write into the lyrics box ONLY — through the native value setter, then an
+  // `input` event, so Suno's controlled React textarea picks the change up as if
+  // the user had typed it. Plain `.value =` would render but desync React state,
+  // and the next keystroke would snap the box back to the stale value.
+  function setCreateBoxText(box, text) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+    setter.call(box, text);
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   // The ONLY text we read: the song-page lyrics <p>, or (on /create) the lyrics
   // input box. Returns "" if neither is present. Reads nothing else on the page.
   function getLyricsText() {
-    // /create: the lyrics editor, pinned to the STABLE data-testid="lyrics-textarea"
-    // (verified live), with fuzzy fallbacks. Never the style/title box.
-    if (/^https:\/\/suno\.com\/create\b/.test(location.href)) {
-      const box = document.querySelector(
-        'textarea[data-testid="lyrics-textarea"], textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]'
-      );
+    if (isCreatePage()) {
+      const box = getCreateBox();
       return (box && typeof box.value === "string") ? box.value : "";
     }
     // /song: the rendered lyrics paragraph (or "" — never anything else on the page).
@@ -147,12 +173,14 @@
     ]);
     refs.verdict = el("div", { id: "slop-verdict" });
     refs.components = el("div", { id: "slop-components", class: "slop-components" });
+    refs.hz = el("div", { id: "slop-hz" }); // /create only: edits the lyrics box in place
     refs.craft = el("div", { id: "slop-craft" }); // the 5 ✅ · 1 🃏 · 5 ⚠️ panel
     const closeBtn = el("button", { id: "slop-close", type: "button", "aria-label": "close", text: "×" });
     panel = el("div", { id: "slop-panel", hidden: true }, [
       el("div", { class: "slop-head" }, [el("strong", { text: "Suno Slop Detector" }), closeBtn]),
       refs.verdict,
       refs.components,
+      refs.hz,
       refs.craft,
       el("div", { class: "slop-foot", text: "Reads only the lyrics box · model confidence, not proof" }),
     ]);
@@ -163,6 +191,119 @@
     });
     closeBtn.addEventListener("click", () => {
       panel.hidden = true;
+    });
+    if (isCreatePage()) buildHumanizeUI();
+  }
+
+  // ---- /create: Humanize buttons that edit the lyrics box in place -----------
+  // Same engine and press semantics as the popup (humanizeOne = worst line,
+  // humanizeHalf = worst half), but the result is written straight back into the
+  // create-page lyrics textarea. Undo restores the previous press, lyrics box ONLY.
+  const hzUndoStack = [];
+
+  // Next-press preview: the joker card shows the exact line the next "Humanize
+  // Line" press will rebuild. The engine is deterministic, so precomputing
+  // humanizeOne on the current text IS the next press — the press then reuses
+  // this cached result (instant), the box change re-analyses, and the joker
+  // rotates to the new most-AI line.
+  let hzNext = { key: null, res: null };
+
+  function computeHzNext(text) {
+    if (!isCreatePage() || !globalThis.HumanizeFreestyle) return;
+    if (hzNext.key === text) return; // cache hit — joker already current
+    setTimeout(() => { // off the render path: never delay the pill
+      if (hzNext.key === text) return;
+      let res = null;
+      try { res = HumanizeFreestyle.humanizeOne(text, hzScore); } catch (e) { res = null; }
+      hzNext = { key: text, res: res };
+      // repaint the joker if the page text hasn't moved on meanwhile
+      if (lastResult && lastResult._text === text && lastResult.panel) renderCraft(lastResult.panel);
+    }, 0);
+  }
+
+  function hzScore(t) {
+    try { const r = SlopV8.scoreV8(t); return (r && r.score != null) ? r.score : 0; } catch (e) { return 0; }
+  }
+
+  function hzBusyRun(btn, work) {
+    if (!btn || btn.disabled) return;
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Working…";
+    setTimeout(() => {
+      try { work(); } finally { btn.disabled = false; btn.textContent = label; }
+    }, 30);
+  }
+
+  function hzMsg(text) {
+    if (refs.hzMsg) refs.hzMsg.textContent = text || "";
+  }
+
+  function hzShapeMsg(text) {
+    const s0 = hzScore(text);
+    if (s0 < 55) return "Every line already reads human — nothing left to rebuild.";
+    let dg = null;
+    try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {}
+    return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " +
+      (dg ? "Measured on your song: " + dg + "."
+          : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme.");
+  }
+
+  function hzPress(kind) {
+    const box = getCreateBox();
+    if (!box) { hzMsg("Couldn't find the lyrics box on this page."); return; }
+    const text = box.value || "";
+    if (text.trim().length < 8) { hzMsg("Write a few lines in the lyrics box first."); return; }
+    if (!globalThis.HumanizeFreestyle) { hzMsg("Humanizer is still loading — try again in a second."); return; }
+    let res = null;
+    if (kind === "one" && hzNext.key === text) res = hzNext.res; // the previewed press, precomputed
+    else {
+      try {
+        res = kind === "half"
+          ? HumanizeFreestyle.humanizeHalf(text, hzScore)
+          : HumanizeFreestyle.humanizeOne(text, hzScore);
+      } catch (e) { res = null; }
+    }
+    if (!res) { hzMsg(hzShapeMsg(text)); return; }
+    hzUndoStack.push(text);
+    if (refs.hzUndo) refs.hzUndo.hidden = false;
+    setCreateBoxText(box, res.text);
+    scheduleAnalyse(); // refresh the pill % from the edited box
+    let summary = "";
+    try { summary = HumanizeFreestyle.pressSummary(res); } catch (e) {}
+    const head = (kind === "half"
+      ? "Rewrote your " + res.count + " most-AI " + (res.count === 1 ? "line" : "lines")
+      : "Rebuilt your most-AI line (#" + (res.lineIndex + 1) + ")") + (summary ? " — " + summary : "");
+    if (res.after < res.before) {
+      hzMsg(head + ". " + res.before + "% → " + res.after + "% AI. Press again for the next-worst — Undo to revert.");
+    } else {
+      // saturated song: the edit removed real evidence but the rounded % can't show
+      // it — say what changed and why the number is pinned, instead of "100% → 100%"
+      let dg = null;
+      try { dg = HumanizeFreestyle.diagnoseShape(res.text); } catch (e) {}
+      hzMsg(head + ". The % won't budge — this song is pinned at " + res.after +
+        "% by its SHAPE, not these words. " +
+        (dg ? "Measured on your song: " + dg + "."
+            : "To move it: vary your line lengths, or let a line end without its rhyme.") +
+        " Undo to revert.");
+    }
+  }
+
+  function buildHumanizeUI() {
+    refs.hzLine = el("button", { class: "slop-hz-btn", type: "button", text: "✍️ Humanize Line" });
+    refs.hzHalf = el("button", { class: "slop-hz-btn", type: "button", text: "🪄 Humanize Rewrite" });
+    refs.hzUndo = el("button", { class: "slop-hz-btn slop-hz-undo", type: "button", text: "↩ Undo", hidden: true });
+    refs.hzMsg = el("div", { class: "slop-hz-msg" });
+    refs.hz.appendChild(el("div", { class: "slop-hz-row" }, [refs.hzLine, refs.hzHalf, refs.hzUndo]));
+    refs.hz.appendChild(refs.hzMsg);
+    refs.hzLine.addEventListener("click", () => hzBusyRun(refs.hzLine, () => hzPress("one")));
+    refs.hzHalf.addEventListener("click", () => hzBusyRun(refs.hzHalf, () => hzPress("half")));
+    refs.hzUndo.addEventListener("click", () => {
+      const box = getCreateBox();
+      if (!box || !hzUndoStack.length) return;
+      setCreateBoxText(box, hzUndoStack.pop());
+      refs.hzUndo.hidden = hzUndoStack.length === 0;
+      scheduleAnalyse();
+      hzMsg("Reverted the last Humanize press.");
     });
   }
 
@@ -186,10 +327,16 @@
       p.good.forEach((g) =>
         refs.craft.appendChild(craftRow("good", "✅", g.label, g.quote || "", "")));
     }
-    // 🃏 joker — do this
-    if (p.joker) {
+    // 🃏 joker — do this. On /create, when the next-press preview is current, the
+    // joker names the exact line the next "Humanize Line" press will rebuild.
+    let joker = p.joker ? p.joker.text : null;
+    if (isCreatePage() && hzNext.res && lastResult && hzNext.key === lastResult._text) {
+      joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from +
+        "” — press Humanize Line above to rebuild exactly that line.";
+    }
+    if (joker) {
       refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "🃏 Try this" }));
-      refs.craft.appendChild(craftRow("joker", "🃏", p.joker.text, "", ""));
+      refs.craft.appendChild(craftRow("joker", "🃏", joker, "", ""));
     }
     // ⚠️ bad — work on
     if (p.bad && p.bad.length) {
@@ -255,6 +402,7 @@
     refs.components.textContent = `model confidence this is AI: ${result.score}%`;
 
     renderCraft(result.panel);
+    computeHzNext(result._text); // refresh the joker's next-press preview (async)
   }
 
   // ---- Suno is a SPA: lyrics load late, and the page changes without reload ---
@@ -263,6 +411,8 @@
   function flush() {
     if (host) { host.remove(); host = null; badge = null; panel = null; refs = {}; }
     lastResult = null;
+    hzUndoStack.length = 0; // a new page must never "undo" into a previous song's text
+    hzNext = { key: null, res: null };
   }
 
   let debounce = null;
