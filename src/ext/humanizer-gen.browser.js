@@ -142,7 +142,7 @@
   // Gerund-fragment list lines ("Every shadow dancin'", "biscuits light as air") have no finite verb;
   // editing them produces fragments the eye reads as soup. Leave fragments alone.
   var FINITE_POS = { VB: 1, VBP: 1, VBZ: 1, VBD: 1, MD: 1 };
-  function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (!p || !FINITE_POS[p]) continue; var pp = WPOS[w[i - 1]] || ""; if (pp === "DT" || pp === "VBG") continue; /* "the RAIN", "a setting SAIL" = an object noun, not the clause verb (cycle 19 verbless-simile fix) */ return true; } return false; }
+  function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (!p || !FINITE_POS[p]) continue; var pp = WPOS[w[i - 1]] || ""; if (pp === "DT" || pp === "VBG" || pp === "TO") continue; /* "the RAIN" / "a setting SAIL" = object noun; "to TRY" = infinitive — none is the clause's finite verb (cycle 19+21 fragment guard) */ return true; } return false; }
   // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
   // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----

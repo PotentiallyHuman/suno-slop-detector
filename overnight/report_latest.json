@@ -11,12 +11,12 @@
   ]
  },
  "summary": {
-  "improved": "224/300",
-  "noop_ai_songs": 56,
-  "mean_dz": "-2.01"
+  "improved": "205/300",
+  "noop_ai_songs": 58,
+  "mean_dz": "-1.89"
  },
  "POOLS": {
-  "distinct_subs": 116,
+  "distinct_subs": 103,
   "top_reused_subs": [
    [
     "that",
@@ -27,55 +27,43 @@
     27
    ],
    [
+    "daylight",
+    21
+   ],
+   [
+    "headlights",
+    19
+   ],
+   [
+    "each",
+    19
+   ],
+   [
     "stillness",
-    20
-   ],
-   [
-    "beam",
-    20
-   ],
-   [
-    "nickel",
-    20
-   ],
-   [
-    "palms",
-    19
-   ],
-   [
-    "lane",
-    19
+    18
    ],
    [
     "sand",
     18
    ],
    [
-    "each",
-    18
+    "lane",
+    17
    ],
    [
-    "daylight",
-    16
+    "palms",
+    15
    ],
    [
     "clouds",
-    15
+    14
    ],
    [
     "trace",
     13
    ],
    [
-    "stranded",
-    12
-   ],
-   [
-    "vacant",
-    11
-   ],
-   [
-    "lamps",
+    "below",
     11
    ],
    [
@@ -83,109 +71,105 @@
     10
    ],
    [
+    "boiling",
+    9
+   ],
+   [
+    "lamps",
+    9
+   ],
+   [
+    "vacant",
+    8
+   ],
+   [
+    "shape",
+    7
+   ],
+   [
     "wrecked",
-    10
-   ],
-   [
-    "headlights",
-    10
-   ],
-   [
-    "drumbeat",
-    9
-   ],
-   [
-    "busted",
-    9
-   ],
-   [
-    "plans",
-    9
-   ],
-   [
-    "below",
-    9
+    7
    ],
    [
     "keepsake",
-    8
-   ],
-   [
-    "under",
-    8
+    7
    ],
    [
     "cleared",
-    7
+    6
+   ],
+   [
+    "dimming",
+    6
+   ],
+   [
+    "curfew",
+    6
+   ],
+   [
+    "drumbeat",
+    6
+   ],
+   [
+    "adrift",
+    6
+   ],
+   [
+    "mutters",
+    5
    ]
   ],
   "top_sources": [
    [
     "every",
-    97
+    98
    ],
    [
     "light",
-    46
-   ],
-   [
-    "road",
-    22
-   ],
-   [
-    "hands",
-    21
-   ],
-   [
-    "silence",
-    21
-   ],
-   [
-    "silver",
-    21
+    40
    ],
    [
     "dust",
     20
    ],
    [
-    "broken",
-    19
+    "road",
+    20
    ],
    [
-    "lost",
+    "silence",
     19
    ],
    [
     "beneath",
-    17
+    16
    ],
    [
-    "sky",
+    "hands",
     15
    ],
    [
-    "shadows",
+    "ghost",
     14
    ],
    [
-    "ghost",
-    13
+    "sky",
+    14
    ],
    [
-    "midnight",
-    13
+    "shadows",
+    12
    ],
    [
-    "lights",
-    13
-   ],
-   [
-    "empty",
+    "broken",
     10
    ],
    [
-    "soul",
+    "lost",
+    10
+   ],
+   [
+    "midnight",
     10
    ],
    [
@@ -197,8 +181,24 @@
     9
    ],
    [
-    "heartbeat",
+    "lights",
     9
+   ],
+   [
+    "fading",
+    8
+   ],
+   [
+    "empty",
+    8
+   ],
+   [
+    "ghosts",
+    8
+   ],
+   [
+    "shadow",
+    7
    ]
   ]
  },
@@ -212,15 +212,19 @@
    3
   ],
   [
+   "broken->wrecked",
+   3
+  ],
+  [
    "every->this",
    3
   ],
   [
-   "light->beam",
+   "lost->adrift",
    3
   ],
   [
-   "broken->wrecked",
+   "shadows->doorways",
    2
   ],
   [
@@ -228,31 +232,7 @@
    2
   ],
   [
-   "dreams->plans",
-   2
-  ],
-  [
-   "soul->gut",
-   2
-  ],
-  [
-   "lost->adrift",
-   2
-  ],
-  [
-   "broken->busted",
-   1
-  ],
-  [
-   "shadows->doorways",
-   1
-  ],
-  [
-   "hands->grip",
-   1
-  ],
-  [
-   "burning->scalding",
+   "burning->boiling",
    1
   ],
   [
@@ -286,12 +266,12 @@
    72
   ],
   [
-   "i …(short)",
+   "but …(mid)",
    68
   ],
   [
-   "but …(mid)",
-   67
+   "i …(short)",
+   68
   ],
   [
    "the …(short)",
@@ -327,6 +307,10 @@
   ],
   [
    "in …(short)",
+   28
+  ],
+  [
+   "like …(short)",
    27
   ],
   [
@@ -336,10 +320,6 @@
   [
    "can't …(short)",
    27
-  ],
-  [
-   "like …(short)",
-   26
   ],
   [
    "every …(mid)",
@@ -359,7 +339,7 @@
   ],
   [
    "just …(mid)",
-   23
+   24
   ],
   [
    "in …(mid)",
