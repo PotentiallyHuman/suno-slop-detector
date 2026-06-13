@@ -268,6 +268,10 @@
   // prepositions: a prep->prep swap (beneath->under) never stilts a phrase, so it's exempt from the
   // collocation guard (which protects content-word phrases like "the night" / "my hands").
   var PREP = { beneath: 1, under: 1, below: 1, above: 1, beyond: 1, within: 1, without: 1, upon: 1, across: 1, against: 1, beside: 1, amid: 1, atop: 1 };
+  // subjects/auxiliaries that put the following cliché word in VERB position ("I love", "you whisper",
+  // "still love"). If neither this NOR a noun-marker precedes ("call it love", "is love"), the word is
+  // a noun and must not get the verb substitute ("I call it love" -> "...choose" was the bug).
+  var VERB_CTX = { i: 1, you: 1, we: 1, they: 1, he: 1, she: 1, "i'll": 1, "you'll": 1, "we'll": 1, "they'll": 1, "i've": 1, "you've": 1, "we've": 1, "they've": 1, "don't": 1, "won't": 1, "can't": 1, "didn't": 1, never: 1, still: 1, always: 1, gonna: 1, wanna: 1, gotta: 1, to: 1, can: 1, will: 1, would: 1, could: 1, should: 1, might: 1, must: 1, may: 1, "let's": 1, just: 1, only: 1, who: 1, "i'd": 1 };
   function swapCliches(line, songText) {
     var SW = globalThis.CLICHE_SWAPS; if (!SW) return null;
     var swapTheme = null; try { swapTheme = themeVec(songText); } catch (e) {}
@@ -323,8 +327,12 @@
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
+        } else if (VERB_CTX[prev]) {
+          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;   // clear verb position (a subject/aux precedes)
         } else {
-          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;   // clear verb position
+          // neither a noun-marker nor a subject precedes ("call it love", "is love", "it's love"):
+          // the word is a NOUN here. Use noun subs; if there are none, leave it (don't verb-swap a noun).
+          if (!SW[lw]) return tok;
         }
       }
       // role split: a verb with an object plays a different role than a bare one

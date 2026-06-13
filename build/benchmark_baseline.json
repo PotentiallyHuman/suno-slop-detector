@@ -6,13 +6,13 @@
  },
  "song01": {
   "startZ": 6.705,
-  "finalScore": 98,
-  "finalZ": 3.747
+  "finalScore": 97,
+  "finalZ": 3.469
  },
  "song02": {
   "startZ": 1.667,
-  "finalScore": 76,
-  "finalZ": 1.151
+  "finalScore": 75,
+  "finalZ": 1.114
  },
  "song03": {
   "startZ": 59.664,
@@ -26,8 +26,8 @@
  },
  "song05": {
   "startZ": 0.376,
-  "finalScore": 21,
-  "finalZ": -1.296
+  "finalScore": 14,
+  "finalZ": -1.8
  },
  "song06": {
   "startZ": 0.415,
