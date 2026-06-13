@@ -101,3 +101,18 @@ accept it), so more rhymes find a fitting template without lowering quality.
 - NEXT BUILD: (1) Claude curates ~150-300 common-word skeletons w/ typed slots + validated fills,
   indexed by ending. (2) runtime fill from that curated set only. (3) gate each produced line:
   professor + real-ending + anti-copy + v8-less-AI; keep best. (4) wire as Chaos-rebuild, A/B + eye.
+
+## PROVEN: local-Qwen generates + our rules filter (the user's design, end-to-end)
+qwen2.5:32b (offline via ollama, 19GB, 110GB free — NO network/API) given [theme words + our rules
++ surrounding lines + rhyme word] produced 10 coherent, rhyming, common-word candidate lines. Our
+deterministic engine then FILTERS: keep lines that (a) rhyme correctly (vkey), (b) score LOW-AI on v8
+(<55% — Qwen's lines mostly score 0%! they read fully human), (c) fit syllables. ~8/10 pass.
+Examples kept: "Until you came into my life, the one true aim" (perfect bridge into the next line),
+"Without your love, I was alone in shame", "My world was gray and still, like an empty name".
+FILTER FIX: do NOT apply the cliché-WORD list to whole generated lines — "love/heart/night/song" are
+natural in a ballad; that list is only for the swap layer. The real generated-line filter = rhyme +
+v8-low-AI + syllable.
+SHIP MODEL: Qwen is the OFFLINE library-builder. For each common cliché MOLD × theme × rhyme, pre-
+generate + filter good replacements -> a static library indexed by (rhyme-key, syllable, theme,
+mold). Ship the library (no Qwen on device). Device looks it up + lightly adapts to the song's words.
+This is the resolution: the extension stays LLM-free; the LLM's quality is baked into shipped data.
