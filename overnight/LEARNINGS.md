@@ -49,7 +49,15 @@ better one fits the evidence.
 
 ## THE DECISION TREE (current state — refine every cycle)
 
-For each lyric line, worst-AI first, only touching lines that carry their own evidence:
+For each lyric line, worst-AI first, only touching lines that carry their own evidence.
+
+**OVERARCHING NO-SOUP PRINCIPLE (cycle 16):** REFUSE beats SOUP. v1.0.0's bar is "humanize line/half
+WITHOUT soup", not "lower the AI%". Every emitted edit (swap, restructure, OR replacement) must:
+(a) come from a song that reads AI (song-level guard >=50 — never mutate a clean song),
+(b) act only on a real CLAUSE (>=4 words WITH a finite verb — never a gerund-fragment list line), and
+(c) pass the PROFESSOR on its OUTPUT (grammatical POS-bigrams + completeLine opens/closes).
+If nothing passes for a line, emit nothing. Measure with build/soup_test.js (real Line+Half judged by
+the calibrated blind judge), NOT the A/B (which is coherence/register-blind). Result: swap soup 6-9%->0%.
 
 1. **Is it a verbatim REPEAT of an earlier line (a hook)?**
    - First occurrence → KEEP (sacred; the hook is the song).
@@ -75,9 +83,15 @@ For each lyric line, worst-AI first, only touching lines that carry their own ev
      own embedding, never itself a cliché, a **real sung word**, and **song-seed-varied** so two
      songs don't get the same substitute (but only among the top-quality picks).
 
-4. **Else** → no safe mechanical edit. If the song still reads AI, its AI-ness is phrase TYPICALITY
-   or pure structure (uniform line lengths, all-perfect rhyme, zero specifics). Hand to the writer:
-   diagnose the shape + ask for one real anchor (a street, a time, a name). Never invent content.
+4. **No swap/mold applies?** → the SENTENCE-REPLACER (the coverage path, cycles 11-16): replace the AI
+   line with a whole CLEAN-LIBRARY line — same rhyme-key (the song's scheme holds), syllable ±1, best
+   theme fit, with a theme-fit FLOOR + anti-repeat, passed through the professor; refuse if none passes.
+   The library is BUILD-TIME judge-cleaned (overnight/distill/clean_library.js = deterministic gates +
+   a Qwen coherence judge) because coherence is NOT capturable deterministically at runtime — proven
+   repeatedly — so the LLM judge runs at BUILD time and the runtime stays no-network. ~98% coverage on
+   real AI songs; ~0 soup after the judge-clean. (overnight/distill/replacer_proto.js is the prototype.)
+   - If even the replacer refuses → pure TYPICALITY (uniform line lengths, all-perfect rhyme, zero
+     specifics). Hand to the writer: diagnose the shape + ask for one real anchor. Never invent content.
    - CONFIRMED structural-typicality frame with NO safe mechanical lever (cycle 13): the
      "I don't want X … I just want Y" antithesis (detector measures it via negNegPos/antithesisNotBut).
      Frame words aren't clichés → word-swap N/A; it's a TWO-LINE parallelism → no coherent single-line
@@ -160,3 +174,4 @@ POOLS · BADPAIRS · RESIDUAL(new molds) · NOOP · VOWEL · SYLLABLE · WIT/REG
 - cycle 13 (VOWEL): user flagged the "I don't want X / I just want Y" antithesis as a measured cliché and asked whether the teacher CLONES it. Ran the cheap clone-test (W6) -> Grok does NOT clone the frame: 0/10 frame-clones, 10/10 distinct, it escapes into "Sick of this nonstop pretending" / "Done with always over spending". Our "original" prompt already breaks the mold -> NO teacher frame-guard needed (clean disproof = deliverable). Classified the antithesis as a branch-4 typicality case (see DECISION TREE): detector measures it but there's no safe mechanical humanizer lever; adding it to MOLD would be net-negative. VOWEL re-confirmed detection-only (report: end-vowel e:3950 dominates, perfect-rhyme 0.102, rhymes sacred); BADPAIRS all low-count marginal (lights->lamps:4, memory->keepsake:3) -> swap dimension stays CONVERGED. NO engine change (don't manufacture a wash; don't disturb the running teachers). Real motion this session = the teacher/library thread: fed both models the detector's full 125-word cliche lexicon + 50-phrase list as an avoid-list, hard-banned "hum/humming", added an echo-guard + resume-dedup (overnight/distill/gen_dataset.js + gen_grok.js).
 - cycle 14 (SYLLABLE — NOOP-by-design): SYLLABLE re-confirmed detection-only (adjacent-equal-length 0.306 vs human ~0.20; fixing line-length = the generation frontier, no swap lever). Swaps converged; report shows only the marginal long tail (lights->lamps:4, memory->keepsake:3). Checked whether last turn's acceptance-proof coherence-gate belongs in humanizer-gen -> it does NOT: humanizer-gen ALREADY has a STRONGER professor than the student (completeLine: STARTBG/ENDBG opens+closes like a real line, DANGLE set, MD-without-VB, content quota; grammatical: VALIDBG POS-bigrams). The 80->96% acceptance failures live in the separate student2/library thread (weaker gate), NOT here. NO engine change (don't manufacture a wash; don't disturb the running teachers). Frontier value remains the PROVEN architecture (see ACCEPTANCE PROOF): build-time judge-cleaned library + retrieve + refuse-branch -> ~100% acceptable emitted at ~96% coverage. NEXT: wire the FREE local-Qwen judge into the teacher (clean-by-construction library), then wire Chaos to the cleaned library.
 - cycle 15 (WIT — NOOP-by-design): WIT/REGISTER is a dead SWAP lens, and it was effectively WORKED this session via the red-team de-souping: pruned 8 register-wrong substitutes (nickel/sodium/beam(s)/outline/mumble/scalding) + emptied bad noun-echo, added a song-level AI guard, the professor grammar-gate on BOTH swap and restructure outputs, and a clause guard (only edit real >=4-word clauses with a finite verb). Validated by the NEW build/soup_test.js (real Line+Half, calibrated blind judge): swap-path soup 6-9% -> 0% on 12 songs — a better validator than the coherence-blind A/B. Skipped analyze.js + try_change.sh: both compete heavily with the RUNNING judge-cleaner (Qwen) + teacher, and the A/B scores register-prunes as washes anyway (register/coherence not capturable by the metric — CONFIRMED). The real frontier is the SENTENCE-REPLACER: prototype (overnight/distill/replacer_proto.js) hits 98% coverage on real AI songs with deterministic gates (8% soup); the build-time Qwen judge-clean (overnight/distill/clean_library.js) is RUNNING to remove the awkward survivors and push retrieval soup ->0. NEXT: wire the cleaned library into Line/Half (with refuse) + drive soup_test to 0 + the 5-song Firefox demo. NOTE: Qwen judge is dropping only ~3% vs the prototype's 8% Grok-soup — Qwen may be too lenient; reassess the judge strength when the clean run finishes.
+- cycle 16 (SYNTHESIS — no code change): folded the session's shift into the DECISION TREE (added the OVERARCHING NO-SOUP PRINCIPLE + rewrote branch 4 around the sentence-replacer). What cycles 9-16 proved: the SWAP dimension is fully converged AND, when red-teamed by a human-level eye, was shipping SOUP the coherence-blind A/B could never see — register-wrong substitutes (nickel/sodium/beam/outline), agreement breaks ("rooftops keeps"), fragments ("This shape dancin'"). The fix-set that reached 0 swap-soup: prune register-wrong subs + song-level AI guard + professor gate on ALL outputs + clause guard. The product bar moved from "lower AI%" to "humanize WITHOUT soup", so REFUSE>SOUP is now overarching, measured by build/soup_test.js (real Line+Half + calibrated blind judge), NOT the A/B. Coverage now comes from the SENTENCE-REPLACER (clean-library whole-line, ~98% coverage on real songs), whose library is BUILD-TIME judge-cleaned by a Qwen pass (this run: 2684 kept / 204 dropped = 7.1%) because coherence can't be gated deterministically at runtime. The hourly SWAP cycle is retired in practice — 5 straight NOOPs (12-16); the live work is the replacer. NEXT (when judge-clean finishes): build the clean-library index -> wire the replacer into Line/Half (with refuse) -> drive soup_test to 0 -> the 5-song Firefox demo (the v1.0.0 GO gate).
