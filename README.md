@@ -13,6 +13,18 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
+## What's new in v1.1.0
+
+**Rewrite now catches every AI word, and Chaos finally cracks the stubborn songs.** ([full reasoning](DESIGN_AND_DISCOVERIES.md))
+
+- **Humanize Rewrite** swaps *every* cliché word in *every* line (a bug used to skip clichés sitting in verbless lines like "a neutron in **the shadows**"). And it **rotates** substitutes so it never mints the next slop word — `silence` becomes *stillness* in one song, *hush* in another.
+- **Humanize Chaos** is the aggressive tier that now actually lands: it cracks 10 of 11 test songs below 90% AI (a stuck 100% song now reads ~5%). It does this by replacing whole lines from a clean, judge-checked library — coherent, but off-topic by design ("meaning may bend"). Built from a discovery: the AI signal is two independent things — **typicality** (how template-close the phrasing is) and **repetition** — so Chaos attacks both.
+- Smaller wins: `hum` is finally caught, non-English songs (katakana, Cyrillic, …) show "Looks non-English" instead of a fake number, and a huge paste can no longer freeze the UI.
+
+Still 100% on-device: no network, no LLM, no accounts, nothing stored.
+
+---
+
 ## What's new in v1.0.0
 
 The Humanize buttons are now **two kinds of honest surgery**, both keeping the song yours:

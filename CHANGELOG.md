@@ -2,6 +2,37 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
+## [1.1.0] — every cliché word, and Chaos that actually cracks (2026-06-14)
+The release where Rewrite catches **every** AI word and Chaos finally drops the saturated songs.
+Full reasoning in `DESIGN_AND_DISCOVERIES.md`.
+### Humanize Rewrite — now swaps every cliché word, in every line
+- Fixed the root bug where a cliché inside a verbless line ("a neutron in **the shadows**") was
+  silently skipped — the word-swap was wrongly gated behind "is this a full sentence?". A single-word
+  swap keeps the sentence's structure, so that gate is gone; Rewrite now cleans **all** the AI words.
+- **Variety / anti-mode-collapse:** substitutes rotate across songs (silence → stillness / calm /
+  hush / lull, seeded by the song) instead of always minting the same replacement word. Curated
+  multi-word forms ("soft hush") keep the meter when a shorter sub would drop a beat. Expanded the
+  high-frequency words (dreams, fading, empty, broken, road, lights, memories, ghosts, dust, tears…).
+- **`hum`/`humming` added** to the cliché list (the most-flagged AI word, previously missing) →
+  drone / buzz / murmur. New soup guards: article-number ("a sky" ↛ "a clouds"), phrasal ("broken
+  down"), idiom ("lost and found").
+### Humanize Chaos — the aggressive tier that now lands
+- **Two levers**, both derived from a controlled experiment that found the AI signal is two
+  independent axes — **typicality** and **repetition**: (1) library line-replacement drops its
+  theme/syllable constraints so it replaces the unhandleable typicality lines; (2) repeated lines
+  it can't lightly vary get replaced (the first occurrence / hook stays sacred). Chaos now cracks
+  10 of 11 benchmark songs below 90% (a stuck 100% song with log-odds 83 → ~5%). Output stays
+  grammatically clean (judge-cleaned library) but goes off-topic by design.
+- Chaos = lines, **then** words: a cliché a replacement line introduces gets cleaned afterward.
+### Detector
+- Non-English guard now catches non-Latin scripts (kana, kanji, Hangul, Cyrillic, Arabic, Thai) —
+  a katakana song was reading 96%; it now correctly shows "Looks non-English".
+### Robustness, audit, hygiene
+- **No more UI freeze / data loss on huge pastes:** processing is bounded to 200 lines and the
+  untouched tail is re-appended (a 1000-line paste went 16.6s → 0.14s, with zero lines dropped).
+- Red-teamed (56/58 edge cases clean), store-audited (no blockers: `activeTab` only, no network/
+  storage, all files <4MB), and de-cluttered (10 dead files removed; baseline.js/json no longer ship).
+
 ## [1.0.0] — the honest humanizer (2026-06-13)
 The release where every edit class is corpus-proven, human-audited, and deterministic.
 (Folds in the unreleased 0.8.0–0.9.0 work.)
