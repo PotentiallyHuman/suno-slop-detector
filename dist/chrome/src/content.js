@@ -371,8 +371,10 @@
     let joker = p.joker ? p.joker.text : null;
     if (isCreatePage() && lastResult && hzNext.key === lastResult._text) {
       if (hzNext.res) {
-        joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from +
-          "” — press Humanize Line above to rebuild exactly that line.";
+        // SYNONYMS + button hint (user choice): keep the panel's synonym suggestion, add a one-click nudge.
+        var hint = "Or press Humanize Line above to auto-rebuild your most-AI line (#" + (hzNext.res.lineIndex + 1) + ").";
+        joker = joker ? (joker + " " + hint) :
+          ("Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — press Humanize Line above to rebuild it.");
       } else if (lastResult.score >= 55) {
         let dg = null;
         try { dg = HumanizeFreestyle.diagnoseShape(lastResult._text); } catch (e) {}

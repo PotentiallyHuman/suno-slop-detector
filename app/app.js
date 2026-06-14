@@ -208,9 +208,13 @@
   function renderJokerPreview(panel) {
     updateRewriteBtn();
     var p = panel || {};
-    var joker = null;
+    var baseJoker = p.joker ? p.joker.text : null;   // the panel's synonym suggestion
+    var joker = baseJoker;
     if (hzNext.res) {
-      joker = "Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds exactly that line.";
+      // SYNONYMS + button hint (user choice): keep the synonym suggestion, add a one-click nudge.
+      var hint = "Or press Humanize Line to auto-rebuild your most-AI line (#" + (hzNext.res.lineIndex + 1) + ").";
+      joker = baseJoker ? (baseJoker + " " + hint) :
+        ("Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds it.");
     } else if (aiScore(lyricsEl.value || "") >= 55) {
       // engine exhausted but the song still reads AI: say what only the writer can fix
       var dg = null;
