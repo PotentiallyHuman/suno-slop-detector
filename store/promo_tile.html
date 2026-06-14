@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* store promo tile generator (440x280). Render:
+   chromium --headless --screenshot=promo_tile_440x280.png --window-size=440,280 file://.../promo_tile.html */
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:440px; height:280px; background:#15151a; overflow:hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.row { position:absolute; left:32px; top:48px; display:flex; align-items:center; gap:22px; }
+.row img { width:92px; height:92px; border-radius:20px; }
+.name { line-height:1.05; }
+.name .a { font-size:33px; font-weight:800; color:#fff; }
+.name .b { font-size:33px; font-weight:800; color:#ff5a5a; }
+.tag { position:absolute; left:32px; top:176px; color:#c4c4c4; font-size:20px; }
+.meta { position:absolute; left:32px; top:214px; color:#7e7e84; font-size:16px; letter-spacing:.01em; }
+</style></head><body>
+  <div class="row">
+    <img src="../icons/icon128.png" alt="">
+    <div class="name"><div class="a">Suno Slop</div><div class="b">Detector</div></div>
+  </div>
+  <div class="tag">How AI do the lyrics read?</div>
+  <div class="meta">Private · on-device · for fun</div>
+</body></html>
