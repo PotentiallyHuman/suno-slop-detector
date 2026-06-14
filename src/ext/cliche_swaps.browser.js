@@ -39,7 +39,7 @@
     electric: ["wired"],
     ember: ["cinder", "coal"],
     embers: ["cinders", "coals"],
-    empty: ["vacant", "blank", "cleared"],
+    empty: ["vacant", "blank"],
     endless: ["ceaseless", "constant", "nonstop", "unending"],
     eternal: ["lifelong", "permanent"],
     eternity: ["forever", "lifetimes", "centuries"],
@@ -137,7 +137,7 @@
   globalThis.FROZEN_ANCHOR = { love: 1, hands: 1 };
   globalThis.CLICHE_SWAPS_VERB = {
     echo: { obj: ["repeat", "spell", "tell"], noobj: ["ring", "rebound"] },
-    echoes: { obj: ["repeats", "spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings", "rebounds"] },
+    echoes: { obj: ["spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings"] },
     echoing: { obj: ["repeating", "carrying", "spelling"], noobj: ["ringing", "rebounding"] },
     flicker: ["sputter", "blink"],
     flickering: ["sputtering"],
