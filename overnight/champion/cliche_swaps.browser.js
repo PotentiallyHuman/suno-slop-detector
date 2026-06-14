@@ -141,7 +141,7 @@
   globalThis.FROZEN_ANCHOR = { love: 1, hands: 1 };
   globalThis.CLICHE_SWAPS_VERB = {
     echo: { obj: ["repeat", "spell", "tell"], noobj: ["ring", "rebound"] },
-    echoes: { obj: ["spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings"] },
+    echoes: { obj: ["spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings", "calls", "pumps", "jolts", "moves"] },
     echoing: { obj: ["repeating", "carrying", "spelling"], noobj: ["ringing", "rebounding"] },
     flicker: ["sputter", "blink"],
     flickering: ["sputtering"],

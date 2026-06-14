@@ -167,6 +167,7 @@
     return false;
   }
   function lineHasUncleanableCliche(line) { var ws = words(line); for (var i = 0; i < ws.length; i++) if (CLICHE.has(ws[i]) && !clicheCleanable(ws[i])) return true; return false; }
+  function lineHasCliche(line) { var ws = words(line); for (var i = 0; i < ws.length; i++) if (CLICHE.has(ws[i])) return true; return false; }
   // Swap EVERY cliché WORD that has a curated substitute, across EVERY line — the user's
   // "Humanize Rewrite = all AI words", and the Chaos final pass that cleans any cliché a library
   // line left behind. A word swap keeps the sentence's structure, so there is no clause gate here —
@@ -185,10 +186,10 @@
     }
     return { text: lines.join("\n"), steps: steps };
   }
-  function sentenceReplace(aiLine, theme, songLines, aggressive) {
+  function sentenceReplace(aiLine, theme, songLines, aggressive, strict, anyRhyme) {
     if (!REPLIDX) buildReplaceIndex();
     if (!REPLIDX.length) return null;
-    var rk = VK[lastWord(aiLine)]; if (!rk) return null;
+    var rk = VK[lastWord(aiLine)]; if (!rk && !anyRhyme) return null;
     var syl = nsylLine(aiLine), used = {};
     for (var s = 0; s < songLines.length; s++) used[String(songLines[s]).toLowerCase()] = 1;   // never reuse a line already in the song
     // LEVER 1 (Chaos typicality): the theme-fit FLOOR + syllable±1 leave ~half the lines of a
@@ -198,8 +199,8 @@
     var best = null, bs = aggressive ? -2 : 0.08, sylTol = aggressive ? 2 : 1;
     for (var i = 0; i < REPLIDX.length; i++) {
       var c = REPLIDX[i];
-      if (c.rk !== rk || Math.abs(c.syl - syl) > sylTol || used[c.line.toLowerCase()]) continue;
-      if (lineHasUncleanableCliche(c.line)) continue;                                           // allow a swappable cliché (post-pass cleans it); reject only un-fixable ones
+      if ((!anyRhyme && c.rk !== rk) || Math.abs(c.syl - syl) > sylTol || used[c.line.toLowerCase()]) continue;
+      if ((strict ? lineHasCliche : lineHasUncleanableCliche)(c.line)) continue;                 // strict (Chaos sweep) = reject ANY cliché; else reject only un-fixable ones
       var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
       if (fit > bs) { bs = fit; best = c.line; }
     }
@@ -416,6 +417,10 @@
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
         } else if (VERB_CTX[prev]) {
           subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;   // clear verb position (a subject/aux precedes)
+        } else if (/^(through|in|on|across|over|under|into|out|down|up|along|past|around|by|at|beneath|above|within)$/.test(nxtL) || !nxtL) {
+          // a common-noun subject precedes and a PREPOSITION (or clause end) follows: this is an
+          // intransitive VERB ("heartbeat echoes THROUGH", "footsteps echo") — use the verb subs.
+          subs = (globalThis.CLICHE_SWAPS_VERB || {})[lw]; if (!subs) return tok;
         } else {
           // neither a noun-marker nor a subject precedes ("call it love", "is love", "it's love"):
           // the word is a NOUN here. Use noun subs; if there are none, leave it (don't verb-swap a noun).
@@ -759,6 +764,19 @@
     // sentence structure (no soup) and runs even when no line was replaced above.
     var wp = swapAllWords(cur.join("\n"));
     if (wp.steps.length) { cur = wp.text.split("\n"); for (var wi = 0; wi < wp.steps.length; wi++) steps.push(wp.steps[wi]); }
+    // CLICHÉ SWEEP — Chaos must leave ZERO AI cliché word standing. After word-swaps, some clichés
+    // still survive: ones with NO substitute ("echoes", "light", "whisper") or phrase-protected ones
+    // ("city lights"). For each line that STILL carries a cliché, replace it wholesale with a fully
+    // cliché-free library line (strict). Chorus-consistent; the FIRST occurrence of a repeated hook is
+    // kept. This is the rule that stops the whack-a-mole: "Chaos = no AI word left", not per-word fixes.
+    for (var ck = 0; ck < cur.length; ck++) {
+      var cl = cur[ck];
+      if (/^\s*\[/.test(cl) || words(cl).length < 3 || !lineHasCliche(cl)) continue;
+      var firstOcc = false; for (var cf = 0; cf < ck; cf++) if (cur[cf] === cl) { firstOcc = true; break; }
+      if (firstOcc) continue;                                    // a later chorus copy of an already-seen line — its first occurrence is the hook
+      var crep = sentenceReplace(cl, theme, cur, true, true) || sentenceReplace(cl, theme, cur, true, true, true);   // STRICT (cliché-free); rhyme-matched first, then OFF-RHYME so no cliché ever survives for lack of a rhyme
+      if (crep && crep !== cl) { for (var cc = 0; cc < cur.length; cc++) if (cur[cc] === cl) cur[cc] = crep; steps.push({ lineIndex: ck, from: cl, to: crep, mode: "replace" }); }
+    }
     if (!steps.length) return null;
     var finalText = cur.join("\n");
     return { text: finalText, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(finalText)), target: CHAOS_TARGET };
