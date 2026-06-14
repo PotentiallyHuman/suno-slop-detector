@@ -184,7 +184,9 @@
     renderCraft(panel);
     computeHzNext(text, panel); // joker preview: the line the next press will rebuild
 
-    if (resultEl.scrollIntoView) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Don't scroll the result into view while the user is typing in the lyrics box — it would push
+    // their text out of sight. Only scroll when they're NOT focused in the box (e.g. tapped an example).
+    if (resultEl.scrollIntoView && document.activeElement !== lyricsEl) resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   // Next-press preview (joker): precompute humanizeOne on the current text — the
