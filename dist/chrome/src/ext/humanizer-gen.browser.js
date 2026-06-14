@@ -492,7 +492,7 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
+  function humanizeOneCore(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
@@ -650,6 +650,14 @@
     }
     return null;
   }
+  // Guard wrapper: an edit that leaves the song reading MORE AI than it started is never an improvement —
+  // refuse it so the panel can't claim "X% -> Y%" with Y>X. (red-team 2026-06-14: ~2/64 one-line edits, and
+  // the half/chaos tiers, could backfire on shape-pinned songs.) Equal is allowed (saturated songs hold).
+  function humanizeOne(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
+    var r = humanizeOneCore(text, scoreFn, logitFn, allowReplace, skipSongGuard);
+    if (r && typeof r.after === "number" && typeof r.before === "number" && r.after > r.before) return null;
+    return r;
+  }
   // ---- "Humanize Rewrite": one press rebuilds the worst HALF of the song (ranked by cliché then AI),
   // leaving the better half the user's own words. Press again to rewrite the worst half of what now
   // remains — it converges, always sparing the cleaner half. Returns null when no line still reads AI. ----
@@ -675,7 +683,9 @@
       steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
     if (!steps.length) return null;
-    return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
+    var after = Math.round(scoreFn(cur));
+    if (after > before) return null; // never hand back an edit that reads MORE AI than the original
+    return { text: cur, count: steps.length, steps: steps, before: before, after: after };
   }
   // ---- "Humanize Chaos": the aggressive tier — offered only when Rewrite has nothing
   // safe left and the song still reads AI. MEANING may bend; RHYME and COHERENCE may not:
@@ -779,7 +789,9 @@
     }
     if (!steps.length) return null;
     var finalText = cur.join("\n");
-    return { text: finalText, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(finalText)), target: CHAOS_TARGET };
+    var fafter = Math.round(scoreFn(finalText));
+    if (fafter > before) return null; // a structural rework that backfired (read MORE AI) is not an improvement — refuse it
+    return { text: finalText, count: steps.length, steps: steps, before: before, after: fafter, target: CHAOS_TARGET };
   }
 
   // diagnoseShape(text): measure the song's STRUCTURAL stamping — the corpus-mined AI

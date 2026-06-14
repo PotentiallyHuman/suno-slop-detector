@@ -6,6 +6,23 @@ All notable changes to the Suno Slop Detector. Dates are release-submission date
 The first proven, public version (Firefox + Chrome). The 0.x line was beta; everything below
 (including the earlier 1.0.0 release-candidate work) is folded into this release.
 Full reasoning in `DESIGN_AND_DISCOVERIES.md`.
+### Compact craft panel + reliability (2026-06-14)
+- **Compact, phone-friendly panel.** The craft panel is now three rows — one 🃏 joker (top),
+  one ⚠️ "work on" (middle), one ✅ "keep this" (bottom) — instead of a long list, so it fits a
+  short phone screen. **Tap any row to reroll** within its own category; the joker cycles a smart
+  synonym move first ("silence" → stillness / calm / hush) and then your most-AI lines, each offered
+  as a synonym list rather than a fixed "street/road" anchor. Identical on the Suno overlay, the
+  popup, and the Android app.
+- **Reroll-reset fix.** Suno is a single-page app whose DOM mutates constantly, and the panel's own
+  taps re-fired our observer — so the panel used to repaint and wipe your reroll. The overlay now
+  skips repainting when the lyrics are unchanged, so a reroll sticks.
+- **Humanizer never makes a song worse.** All three tiers (Line / Rewrite / Chaos) now refuse to
+  return an edit that reads *more* AI than the original — the panel can no longer show "95% → 99%"
+  as if it helped. Verified: 0 worsened across 150 Suno songs (was ~12).
+- **Footer** now names `suno.com/create` alongside `suno.com/song` (the tool runs on both).
+- Android app rebuilt to **2.1.0** (versionCode 13) with all of the above; delivered as a signed APK.
+- Known fast-follows (red-teamed, low-risk): cap the detector's input length to avoid a freeze on a
+  pathological giant paste; a couple of rare grammar-agreement slips in Chaos word-swaps.
 ### This release
 - Rewrite catches **every** AI word and Chaos finally drops the saturated songs (details below).
 - `scar`/`scars` (user-flagged AI word) → `mark`/`marks`; `shadows` only swaps in the object sense

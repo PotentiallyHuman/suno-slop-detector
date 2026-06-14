@@ -154,3 +154,26 @@ edge of what's possible on-device without an LLM.
   the runtime. Permissions: `activeTab` only. The lyrics box is the only element ever read.
 - **Cross-browser:** the Firefox and Chrome packages ship byte-identical runtime JS; only the
   manifest differs (Chrome strips `browser_specific_settings`). All `chrome.*` calls are guarded.
+
+## The compact, cyclable craft panel (2026-06-14)
+The craft feedback used to be a long list (5 "keep this" + joker + 5 "work on"), which overran short
+phone screens. It is now **three rows**: one 🃏 joker (top), one ⚠️ "work on" (middle), one ✅ "keep
+this" (bottom). **Tapping a row rerolls it within its own category**, so all the feedback is still
+reachable — it's paged, not cut. The joker is special: it cycles a *smart synonym move* first ("silence"
+→ stillness / calm / hush) and then your most-AI lines, each with its own synonym list, instead of a
+fixed real-world anchor people found arbitrary.
+
+The non-obvious bug this surfaced: Suno is a single-page app whose DOM mutates constantly, and the
+overlay watches the page with a `MutationObserver`. The panel's own reroll edits *are* DOM mutations,
+so every tap re-fired the observer, which repainted the panel and **reset the reroll**. The fix is a
+one-line guard: `render()` skips repainting when the analysed lyrics string is unchanged (tracked in
+`renderedText`, cleared on page change). Lesson for any interactive control injected into a host SPA:
+it will be wiped by the host's (or your own) mutation observer unless you guard repaint on real change.
+
+## Honesty guard: the humanizer never makes a song worse
+The detector is dominated by a song's *shape* (typicality + repetition), not its individual words, so on
+a shape-pinned song a word-level edit can leave the score flat — or, occasionally, nudge it *up*. The
+panel reported the before/after score literally, so a rare edit would announce "95% → 99%" as if it had
+helped. All three tiers now compare the final score to the original and **return nothing if it got
+worse** — the tool would rather say "this is pinned by its structure" than claim a fake win. Verified
+across 150 Suno songs: zero edits returned that read more AI than the original.
