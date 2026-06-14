@@ -2,12 +2,12 @@
  "hydrogen": {
   "startZ": 11.006,
   "finalScore": 100,
-  "finalZ": 5.433
+  "finalZ": 5.821
  },
  "song01": {
   "startZ": 6.705,
-  "finalScore": 96,
-  "finalZ": 3.294
+  "finalScore": 97,
+  "finalZ": 3.54
  },
  "song02": {
   "startZ": 1.667,
@@ -26,8 +26,8 @@
  },
  "song05": {
   "startZ": 0.376,
-  "finalScore": 28,
-  "finalZ": -0.923
+  "finalScore": 22,
+  "finalZ": -1.248
  },
  "song06": {
   "startZ": 0.415,
