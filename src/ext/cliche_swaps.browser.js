@@ -102,7 +102,7 @@
     shadows: ["dark", "gloom", "distance", "dusk"],   // the DARKNESS/place sense ("a neutron in the shadows" -> "in the dark/distance"). Guarded in the engine to fire ONLY after "the" — the bare-subject moving sense ("Shadows dance and sway") is left alone (a mass-noun sub would break agreement).
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
-    silence: ["stillness", "calm", "hush", "lull"],   // rotate (anti-mode-collapse): never the SAME sub every song. all low-AI, no-sound sense.
+    silence: ["stillness", "calm", "hush", "lull", "soft hush", "dead calm"],   // rotate (anti-mode-collapse): never the SAME sub every song. multi-word forms (soft hush) keep the 2-syllable meter where a 1-syllable sub would drop a beat. all low-AI, no-sound sense.
     silent: ["hushed", "soundless"],
     silhouette: ["outline", "profile"],
     silhouettes: ["outlines", "profiles"],
