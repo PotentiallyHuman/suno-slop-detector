@@ -402,13 +402,40 @@
   function buildJoker(scoreResult, text, model) {
     var moves = [];
 
-    // Move 1 — swap an overused image (top +weight BoW word present)
+    // Move 1 — name the most-AI word AND hand over the engine's REAL synonyms (user-requested
+    // 2026-06-14). The joker library predates the CLICHE_SWAPS lists, so it used to suggest a random
+    // "laundromat on 5th" anchor; now it offers the actual swap options ("silence -> stillness, calm,
+    // hush"). The original specificity move stays as the fallback only when no swappable cliché exists.
     (function () {
-      var w = topAiWordPresent(text, model);
-      if (!w) return;
-      var idx = model.vocab.indexOf(w);
-      var wt = idx >= 0 ? model.wBow[idx] : 0;
-      // z proxy: tf of the word weighted by model BoW weight; score by |weight| only
+      var G = (typeof globalThis !== "undefined") ? globalThis : window;
+      var SW = G.CLICHE_SWAPS || {}, SWV = G.CLICHE_SWAPS_VERB || {};
+      function subsFor(w) {
+        if (SW[w] && SW[w].length) return SW[w];
+        var v = SWV[w]; if (!v) return null;
+        if (Array.isArray(v)) return v.length ? v : null;
+        var o = (v.noobj && v.noobj.length) ? v.noobj : v.obj;
+        return (o && o.length) ? o : null;
+      }
+      var ws = (String(text).toLowerCase().match(/[a-z']+/g) || []), bestW = null, bestWt = 0, bestMW = null, bestMWt = 0, seen = {};
+      for (var i = 0; i < ws.length; i++) {
+        var cw = ws[i]; if (seen[cw]) continue; seen[cw] = 1;
+        var sub = subsFor(cw); if (!sub) continue;                    // only words we can actually offer synonyms for
+        var ci = model.vocab.indexOf(cw), cwt = ci >= 0 ? model.wBow[ci] : 0;
+        if (cwt > bestWt) { bestWt = cwt; bestW = cw; }
+        if (sub.length >= 2 && cwt > bestMWt) { bestMWt = cwt; bestMW = cw; }   // prefer a word that has a real LIST of options
+      }
+      var pick = bestMW || bestW;
+      if (pick) {
+        var arr = subsFor(pick), opts = arr.slice(0, 3);
+        moves.push({ move: 1, score: Math.abs(bestMW ? bestMWt : bestWt) * 1.5 + 1.2, text:   // boosted so it usually wins
+          arr.length === 1
+            ? "“" + pick + "” is a word AI leans on — try “" + opts[0] + "” instead."
+            : "“" + pick + "” is a word AI leans on — try one of these instead: " + opts.join(", ") + "." });
+        return;
+      }
+      // fallback: the song's AI-ness isn't in a swappable word -> the deeper specificity move
+      var w = topAiWordPresent(text, model); if (!w) return;
+      var idx = model.vocab.indexOf(w), wt = idx >= 0 ? model.wBow[idx] : 0;
       moves.push({ move: 1, score: Math.abs(wt) * 1.0, text:
         "“" + w + "” is a word AI leans on. Swap it for one small, specific thing only your narrator would notice right then — an object, a place, a name (e.g. “the laundromat on 5th”)." });
     })();
