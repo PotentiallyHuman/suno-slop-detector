@@ -13,9 +13,9 @@ Born out of spite after r/SunoAI removed an open-source de-clicker post. So now 
 
 ---
 
-## What's new in v1.1.0
+## What's new in v1.0.0 — the first public release
 
-**Rewrite now catches every AI word, and Chaos finally cracks the stubborn songs.** ([full reasoning](DESIGN_AND_DISCOVERIES.md))
+The 0.x line was beta; **1.0.0 is the first proven, public version** (Firefox + Chrome). **Rewrite catches every AI word, and Chaos finally cracks the stubborn songs.** ([full reasoning](DESIGN_AND_DISCOVERIES.md))
 
 - **Humanize Rewrite** swaps *every* cliché word in *every* line (a bug used to skip clichés sitting in verbless lines like "a neutron in **the shadows**"). And it **rotates** substitutes so it never mints the next slop word — `silence` becomes *stillness* in one song, *hush* in another.
 - **Humanize Chaos** is the aggressive tier that now actually lands: it cracks 10 of 11 test songs below 90% AI (a stuck 100% song now reads ~5%). It does this by replacing whole lines from a clean, judge-checked library — coherent, but off-topic by design ("meaning may bend"). Built from a discovery: the AI signal is two independent things — **typicality** (how template-close the phrasing is) and **repetition** — so Chaos attacks both.
@@ -25,9 +25,9 @@ Still 100% on-device: no network, no LLM, no accounts, nothing stored.
 
 ---
 
-## What's new in v1.0.0
+## Also in 1.0.0 — the honest humanizer (release-candidate work)
 
-The Humanize buttons are now **two kinds of honest surgery**, both keeping the song yours:
+The Humanize buttons are **two kinds of honest surgery**, both keeping the song yours:
 
 - **Word surgery** — cliché words swap to hand-curated substitutes, your sentence untouched: "Every heartbeat echoes your name" → "Every drumbeat repeats your name" in one press. Every substitute is corpus-checked so it can't smuggle AI vocabulary back in (naive picks like *quiet* and *salt* are modern AI words — measured, and rejected).
 - **Structure surgery** — the sentence shapes AI leans on hardest (proven by removing every line of 3,388 AI songs one at a time and measuring: "Every X…" lines carry the most blame) get designed rewrites that keep 100% of your words: "Maybe I stay broke, maybe I stay small" → "I stay broke, I stay small". Applied only when your song reads AI *and* that exact line is provably load-bearing.

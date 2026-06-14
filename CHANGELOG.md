@@ -2,9 +2,15 @@
 
 All notable changes to the Suno Slop Detector. Dates are release-submission dates.
 
-## [1.1.0] — every cliché word, and Chaos that actually cracks (2026-06-14)
-The release where Rewrite catches **every** AI word and Chaos finally drops the saturated songs.
+## [1.0.0] — first public release (2026-06-14)
+The first proven, public version (Firefox + Chrome). The 0.x line was beta; everything below
+(including the earlier 1.0.0 release-candidate work) is folded into this release.
 Full reasoning in `DESIGN_AND_DISCOVERIES.md`.
+### This release
+- Rewrite catches **every** AI word and Chaos finally drops the saturated songs (details below).
+- `scar`/`scars` (user-flagged AI word) → `mark`/`marks`; `shadows` only swaps in the object sense
+  ("in the shadows"), never as a subject ("The shadows…call" — would break agreement); "Christmas/
+  fairy/twinkle lights" protected as beloved nostalgic phrases; pruned `dreams→tickets`, `lights→bulbs`.
 ### Humanize Rewrite — now swaps every cliché word, in every line
 - Fixed the root bug where a cliché inside a verbless line ("a neutron in **the shadows**") was
   silently skipped — the word-swap was wrongly gated behind "is this a full sentence?". A single-word
@@ -33,8 +39,8 @@ Full reasoning in `DESIGN_AND_DISCOVERIES.md`.
 - Red-teamed (56/58 edge cases clean), store-audited (no blockers: `activeTab` only, no network/
   storage, all files <4MB), and de-cluttered (10 dead files removed; baseline.js/json no longer ship).
 
-## [1.0.0] — the honest humanizer (2026-06-13)
-The release where every edit class is corpus-proven, human-audited, and deterministic.
+### Earlier 1.0.0 release-candidate work (2026-06-13), folded into this release
+Where every edit class became corpus-proven, human-audited, and deterministic.
 (Folds in the unreleased 0.8.0–0.9.0 work.)
 ### The two edit tiers (both keep the song yours)
 - **Word surgery** (20/20 human-audit accepted): cliché words swap to hand-curated,

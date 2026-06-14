@@ -93,13 +93,13 @@
     rising: ["climbing", "swelling"],
     road: ["lane", "trail", "path", "highway", "gravel"],
     roads: ["lanes", "backroads", "highways"],
-    scar: ["welt", "bruise", "scrape", "nick"],
-    scars: ["welts", "bruises", "stitches"],
+    scar: ["mark"],     // user-flagged AI word. metaphorical sense ("scars of the past") -> "mark"; welt/bruise/scrape were too physical ("these welts remind me of the love" reads wrong).
+    scars: ["marks"],
     sacred: ["hallowed", "godly", "burial"],
     serenade: ["ballad"],
     shadow: ["silhouette", "shape"],
     shadowed: ["shaded", "dimmed"],
-    shadows: ["dark", "gloom", "distance", "dusk"],   // the DARKNESS/place sense ("a neutron in the shadows" -> "in the dark/distance"). Guarded in the engine to fire ONLY after "the" — the bare-subject moving sense ("Shadows dance and sway") is left alone (a mass-noun sub would break agreement).
+    shadows: ["dark", "darkness", "gloom", "distance", "vastness", "dusk"],   // the DARKNESS/place sense ("a neutron in the shadows" -> "in the dark/distance"). Guarded in the engine to fire ONLY after "the" — the bare-subject moving sense ("Shadows dance and sway") is left alone (a mass-noun sub would break agreement).
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
     silence: ["stillness", "calm", "hush", "lull", "soft hush", "dead calm"],   // rotate (anti-mode-collapse): never the SAME sub every song. multi-word forms (soft hush) keep the 2-syllable meter where a 1-syllable sub would drop a beat. all low-AI, no-sound sense.

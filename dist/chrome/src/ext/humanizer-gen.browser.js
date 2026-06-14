@@ -364,12 +364,12 @@
         if (allLines[ri].trim() !== String(line).trim() && ll && ll !== lineLast && VK[ll] === VK[lineLast]) { rhymesWithNeighbor = true; break; }
       }
     }
-    var changed = 0, prevTok = "", lastSwapEnd = -1;
+    var changed = 0, prevTok = "", prev2Tok = "", lastSwapEnd = -1;
     var raw = String(line);
     // include the curly apostrophe in the token so "love’s" stays ONE token (not "love"+"s"):
     // the split made "love’s a route" swap the bare "love" in verb position -> "choose’s a route".
     var out = raw.replace(/[A-Za-z'’‘]+/g, function (tok, off) {
-      var lw = tok.toLowerCase().replace(/[’‘]/g, "'"), prev = prevTok; prevTok = lw;
+      var lw = tok.toLowerCase().replace(/[’‘]/g, "'"), prev = prevTok, prev2 = prev2Tok; prev2Tok = prevTok; prevTok = lw;
       if (/'s?$/.test(lw) && lw.length > 2) return tok;          // possessive/contraction ("love's", "don't"): noun-ish, leave it
       if (!CLICHE.has(lw) || !SW[lw]) return tok;
       if (counts[lw] > 1) return tok;                            // repeated on purpose ("Who your love, Who your love")
@@ -404,7 +404,11 @@
       // "shadows": swap only the "(in/from) the shadows" = darkness/place sense (prev is "the").
       // A bare-subject "Shadows dance and sway" is moving shapes; a mass-noun sub (dark/gloom)
       // breaks plural agreement, so leave it. (cycle 36 — restoring the catch the user expects.)
-      if (lw === "shadows" && prev !== "the") return tok;
+      // "shadows" (plural) only swaps in the OBJECT/place sense — "[prep] the shadows" ("in/from/
+      // through the shadows") — where all its singular subs (dark/gloom/distance/dusk) read fine.
+      // As a bare SUBJECT ("The shadows of the past CALL...") a singular sub breaks plural agreement
+      // ("The dusk...call"), so require a preposition before "the". (cycle: fixes the agreement soup.)
+      if (lw === "shadows" && !(prev === "the" && /^(in|from|into|through|past|among|beneath|under|behind|within|on|of|by|to)$/.test(prev2))) return tok;
       // phrasal verbs: "broken down/up", "fading out" — a swap ("wrecked down") isn't idiomatic.
       if (lw === "broken" && /^(down|up|in|into|off|apart|free)$/.test(nxtL)) return tok;
       if (VERBY[lw]) {
@@ -431,8 +435,10 @@
       // -> curation order as the last tiebreak.
       // plural slots ("two shadows", "these lights") demand a plural substitute — never a mass noun
       var needPlural = /^(two|three|four|five|six|seven|many|few|both|these|those|all)$/.test(prev) && lw.charAt(lw.length - 1) === "s";
-      // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps
-      if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street)$/.test(prev)) return tok;
+      // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps;
+      // "christmas/holiday/fairy/string/twinkle/porch lights" are BELOVED nostalgic phrases — a cliché
+      // people love (like jingle-bells imagery), NOT slop to scrub. Leave all of these untouched.
+      if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street|christmas|holiday|fairy|string|twinkle|porch|candle)$/.test(prev)) return tok;
       // Collect the acceptable substitutes ranked by QUALITY (meter match + theme fit; curation
       // order breaks ties — earlier = better). Curation order is a real quality signal, so we never
       // reach into the low-quality tail ("dimming" is a better "fading" than "bleaching").
