@@ -430,7 +430,7 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn, logitFn) {
+  function humanizeOne(text, scoreFn, logitFn, allowReplace) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
@@ -561,9 +561,11 @@
         return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
       }
     }
-    // BRANCH 4 — SENTENCE-REPLACER: no swap/mold/dup fired. Replace the most-AI full-clause line with a
-    // whole clean-library line (rhyme-key + syllable + theme matched). Must measurably LOWER the song's
-    // log-odds (a clean line reads human), else refuse. This is the coverage path for typicality lines.
+    // BRANCH 4 — SENTENCE-REPLACER (OPT-IN ONLY, gated by allowReplace). v1.0.0 = OPTION A: Line/Half do
+    // NOT pass allowReplace, so they stay MEANING-PRESERVING (swap/mold only — every edit keeps the
+    // user's own words). The replacer is coherent but OFF-TOPIC (retrieval can't fit, generation makes
+    // soup — both disproven), so whole-line replacement is reserved for a future opt-in aggressive tier.
+    if (allowReplace) {
     var repCand = [];
     for (var ri2 = 0; ri2 < lines.length; ri2++) { if (!isFullClause(lines[ri2])) continue; if (scoreFn(lines[ri2]) < 55) continue; repCand.push({ i: ri2, ai: scoreFn(lines[ri2]) }); }
     repCand.sort(function (a, b) { return b.ai - a.ai; });
@@ -576,6 +578,7 @@
       if (logitFn ? (logitFn(rnew3) <= fineBase - 0.02) : (rns3 <= songScore)) {
         return { text: rnew3, lineIndex: ridx, from: rorig2, to: cap(rep), before: Math.round(songScore), after: Math.round(rns3), mode: "replace" };
       }
+    }
     }
     return null;
   }
