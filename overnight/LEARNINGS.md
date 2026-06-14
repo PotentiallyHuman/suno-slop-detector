@@ -46,6 +46,16 @@ better one fits the evidence.
   (model says X, corpus says Y, reads-wrong-to-the-eye says Z); when they conflict, COHERENCE wins
   over score, and trial-and-error breaks remaining ties. A clean disproof (a change that loses the
   A/B) is a real result — log it and move on; don't force a pet idea through.
+- **TOOLING SAFETY (added c40, learned the hard way c39):** an automated gate that REVERTS to a saved
+  baseline (try_change.sh -> champion/ + benchmark_gate) is only safe while the baseline TRACKS the
+  shipped best. A STALE baseline turns the gate into a DESTROYER: on a "loss" it overwrites the working
+  tree with old code, silently discarding newer validated work (committed OR uncommitted), which then
+  gets committed as a regression. The gate must FAIL SAFE — never silently throw away newer work. RULE:
+  do NOT run try_change while champion/benchmark are stale; rebase them first (copy current engine into
+  champion/, re-capture the benchmark baseline), and that rebase is a DELIBERATE decision, not an
+  autonomous default. When the swap dimension is converged, the loop's expected value is ~0 and its
+  downside is destruction — so HALT it, and commit engine edits directly (validated by eye + the
+  no-worsen corpus check), which is the documented register-fix path anyway (c33-37).
 
 ## THE DECISION TREE (current state — refine every cycle)
 
@@ -254,3 +264,4 @@ restored by hand afterward (easy rebuild), but the lesson stands:
   shipped engine. Until then, engine edits are committed DIRECTLY (register/coherence fixes are A/B-blind
   anyway, per c33-37) and validated by eye + the no-worsen corpus check, NOT by try_change.
 - Re-enabling the loop is a deliberate user decision, not an autonomous default.
+- cycle 40 (SYNTHESIS — no code change, by design AND by halt): reviewed cycles 33-40. The arc since the c32 synthesis: v1.0.0 (Option A) shipped, then a long USER-DRIVEN session added the compact cyclable craft panel, the humanizer WORSEN-GUARD (never return an edit that reads more AI — 0/191 on 150 songs), register fixes (neon->amber/violet, shadows-subject->shapes, midnight->curfew prune), and the whole phone-app UX (live auto-read, 2x2 buttons, Rewrite->Chaos sticky flip, no-scroll-while-typing) delivered as signed APKs over QR. THE DEFINING EVENT was c39's SELF-INFLICTED DISASTER: try_change.sh lost the STALE benchmark, auto-reverted the engine to the STALE champion, and silently WIPED that whole session's engine work (git-visible loss of the worsen-guard; git-INVISIBLE loss of the uncommitted neon/shadows) — then committed+pushed+shipped the regression before the user's parity instinct caught it. Fully restored (46/46 integrity audit + live Firefox test: "Neon shadows...midnight" -> "Violet shapes...nightfall"). LESSON folded into DESIGN PHILOSOPHY as TOOLING SAFETY. The hourly swap loop is HALTED (converged ~25 cycles + now destructive); re-enabling = rebase champion+benchmark = a deliberate user decision. This SYNTHESIS made NO code change and ran NO try_change (both correct: SYNTHESIS-by-design + the halt). Future autonomous cycles should NOOP-and-report until the user re-enables.

@@ -1,5 +1,5 @@
 {
- "cycle": 40,
+ "cycle": 41,
  "lens_order": [
   "BADPAIRS",
   "POOLS",
@@ -10,7 +10,7 @@
   "WIT",
   "SYNTHESIS"
  ],
- "next_lens_index": 7,
- "ab_offset": 1480,
- "note": "cycle 0 seeded the infra + first wins (prune pools, noun-position fix). Loop continues from here. c39 pruned midnight->curfew (register soup), overrode the stale-benchmark false-revert; next = SYNTHESIS (review + consider rebasing benchmark_gate)."
+ "next_lens_index": 0,
+ "ab_offset": 1517,
+ "note": "LOOP RETIRED (2026-06-14, after c40 SYNTHESIS). Swap dimension converged; c39 proved try_change is destructive while champion+benchmark are stale. Both hourly crons (humanizer cycle + teacher watchdog) DELETED per user (code is done). Do NOT auto-run cycles. Re-enabling = a deliberate user decision + a champion/benchmark rebase first."
 }
