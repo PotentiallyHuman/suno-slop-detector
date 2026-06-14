@@ -13,6 +13,9 @@
   var FG = new Set(new Uint32Array(b64(M.fourgB64).buffer));
   var rev2 = M.rev2, rev3 = M.rev3, slant = M.slant, VK = M.vkey, HUM = M.humanness;
   var WPOS = M.wordPOS || {}, VALIDBG = new Set(M.validBG || []), CLICHE = new Set(M.cliche || []);
+  // Supplement the model's cliché list with words it missed but the user flags as AI tells.
+  // "hum/humming" is the most-hated ("echoes hum under streetlights") yet wasn't in the 125.
+  ["hum", "humming", "hums", "hummed"].forEach(function (w) { CLICHE.add(w); });
   var STARTBG = new Set(M.startBG || []), ENDBG = new Set(M.endBG || []), TEMPLATES = new Set(M.templates || []);
   // Words the v8 detector reads as clearly HUMAN (its own learned word-weight is strongly
   // negative). Built once from the loaded v8 model so the swap layer never replaces a word the
@@ -326,7 +329,7 @@
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
   var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up",
     "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night", "holding hands", "hold hands", "held hands", "lot of soul", "heart and soul", "body and soul", "good night", "goodnight", "out of your hands", "out of my hands", "in your hands", "in my hands", "love you so", "love me so", "love her so", "love him so",
-    "hands up", "hands down", "heads up", "heads down", "hand in hand", "hands in the air", "raise your hands", "shadow of", "shadow of a", "in the shadow", "fire away", "play with fire", "light of day", "see the light", "guiding light"];
+    "hands up", "hands down", "heads up", "heads down", "hand in hand", "hands in the air", "raise your hands", "shadow of", "shadow of a", "in the shadow", "fire away", "play with fire", "light of day", "see the light", "guiding light", "lost and found"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
@@ -398,6 +401,8 @@
       // A bare-subject "Shadows dance and sway" is moving shapes; a mass-noun sub (dark/gloom)
       // breaks plural agreement, so leave it. (cycle 36 — restoring the catch the user expects.)
       if (lw === "shadows" && prev !== "the") return tok;
+      // phrasal verbs: "broken down/up", "fading out" — a swap ("wrecked down") isn't idiomatic.
+      if (lw === "broken" && /^(down|up|in|into|off|apart|free)$/.test(nxtL)) return tok;
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
@@ -433,6 +438,9 @@
         if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
         if (mustRhyme && VK[s] !== VK[lw]) continue;             // keep the song's rhyme vowel
         if (needPlural && s.charAt(s.length - 1) !== "s") continue;
+        // article agreement: "a sky" must never become "a clouds" — reject a plural-looking sub
+        // for a singular source right after a/an (the singular->plural number break, cycle 36).
+        if (/^(an?)$/.test(prev) && lw.charAt(lw.length - 1) !== "s" && s.charAt(s.length - 1) === "s") continue;
         var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
         cands.push({ s: s, q: Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4 });
       }

@@ -62,6 +62,10 @@
     hands: [],   // humans OWN "hands" (like heart/eyes) — every swap reads clinical ("Grandmother's palms"). Leave it.
     heartbeat: ["drumbeat", "metronome"],
     hollow: ["vacant"],
+    hum: ["drone", "buzz"],          // the ambient-noise sense ("the static hum", "echoes hum under streetlights") — user's most-hated AI word
+    humming: ["droning", "buzzing"],
+    hums: ["drones", "buzzes"],
+    hummed: ["droned", "buzzed"],
     horizon: ["coastline", "treeline"],
     horizons: ["coastlines", "treelines"],
     infinity: ["forever"],
