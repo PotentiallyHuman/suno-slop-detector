@@ -185,16 +185,20 @@
     }
     return { text: lines.join("\n"), steps: steps };
   }
-  function sentenceReplace(aiLine, theme, songLines) {
+  function sentenceReplace(aiLine, theme, songLines, aggressive) {
     if (!REPLIDX) buildReplaceIndex();
     if (!REPLIDX.length) return null;
     var rk = VK[lastWord(aiLine)]; if (!rk) return null;
     var syl = nsylLine(aiLine), used = {};
     for (var s = 0; s < songLines.length; s++) used[String(songLines[s]).toLowerCase()] = 1;   // never reuse a line already in the song
-    var best = null, bs = 0.08;                                                                 // theme-fit FLOOR -> refuse a poor match (lines stay coherent; this only governs topical fit)
+    // LEVER 1 (Chaos typicality): the theme-fit FLOOR + syllable±1 leave ~half the lines of a
+    // saturated song with no library match, so the song never drops below 90%. Chaos is the
+    // explicitly off-topic tier, so it relaxes both — no floor (any coherent rhyme-match), syllable
+    // ±2 (varying line length also cuts the AI "stamped lengths" signal). Line/Half keep the floor.
+    var best = null, bs = aggressive ? -2 : 0.08, sylTol = aggressive ? 2 : 1;
     for (var i = 0; i < REPLIDX.length; i++) {
       var c = REPLIDX[i];
-      if (c.rk !== rk || Math.abs(c.syl - syl) > 1 || used[c.line.toLowerCase()]) continue;
+      if (c.rk !== rk || Math.abs(c.syl - syl) > sylTol || used[c.line.toLowerCase()]) continue;
       if (lineHasUncleanableCliche(c.line)) continue;                                           // allow a swappable cliché (post-pass cleans it); reject only un-fixable ones
       var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
       if (fit > bs) { bs = fit; best = c.line; }
@@ -669,7 +673,7 @@
   // vocabulary, and judged by the grammar professor + craft lenses. Evidence gates are
   // dropped (any AI-leaning line is fair game) but hook ROOTS stay sacred and every edit
   // must measurably lower the log-odds. Stops under CHAOS_TARGET or when nothing helps.
-  var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 30;
+  var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 55;   // raised from 30: long (60+-line) songs hit the cap before all their typicality lines were replaced
   // NOTE: chaos has NO n-gram rebuild path. It was built and disproven (2026-06-13): across
   // 8 corpus songs + Hydrogen, ZERO generator rebuilds passed the strict whole-line POS
   // template — under a real coherence bar the walk produces soup or nothing. The chaos gain
@@ -709,7 +713,13 @@
       for (var c = 0; c < cands.length && steps.length < CHAOS_MAX_EDITS; c++) {
         var idx = cands[c].i, orig = cur[idx], tries = [];
         if (cands[c].dup) {
+          // LEVER 2 (Chaos repetition): exact line-duplication is an INDEPENDENT AI axis (~4-5 z;
+          // AI over-repeats vs human). This is a LATER copy (the first occurrence = the hook = sacred,
+          // filtered above). Vary it if we can (keeps it recognizable); else, in Chaos, replace it with
+          // a fresh library line so the song stops repeating the same line verbatim. Line/Half never do
+          // this (they keep chorus consistency); Chaos trades it for the repetition drop.
           var dv = dupVariant(orig); if (dv) tries.push({ to: dv, mode: "vary" });
+          else { var lrd = sentenceReplace(orig, theme, cur, true); if (lrd && lrd !== orig) tries.push({ to: lrd, mode: "replace" }); }
         } else {
           var rot = (songNow().match(/^(That|This|Some|Perhaps|Could be|Why do) /gmi) || []).length;
           var rs = restructure(orig, rot); if (rs && !moldLine(rs)) tries.push({ to: rs, mode: "restructure" });
@@ -721,7 +731,7 @@
           // structural songs; it is COHERENT (0 soup, build-time judged) but may go OFF-TOPIC —
           // the explicit "meaning may bend" contract of Chaos. Tried last, so cliché lines still
           // get a meaning-preserving swap first; only the unhandleable lines get replaced.
-          var lr = sentenceReplace(orig, theme, cur); if (lr && lr !== orig) tries.push({ to: lr, mode: "replace" });
+          var lr = sentenceReplace(orig, theme, cur, true); if (lr && lr !== orig) tries.push({ to: lr, mode: "replace" });
         }
         for (var t = 0; t < tries.length; t++) {
           var trial = cur.slice(); trial[idx] = tries[t].to;
