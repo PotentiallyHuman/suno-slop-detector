@@ -430,7 +430,7 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn, logitFn, allowReplace) {
+  function humanizeOne(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
@@ -466,14 +466,14 @@
         if (jacc(sets[i], sets[j2]) >= 0.6) { if (j2 < i) { earlierDup = j2; break; } laterDup = true; }
       }
       if (earlierDup >= 0) {                                   // a REPEAT of an earlier line
-        if (songScore >= 55) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
+        if (skipSongGuard || songScore >= 30) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
         continue;
       }
       if (laterDup) continue;                                  // the hook's root occurrence: sacred
       // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
       // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
       // teeth, engine coughing black") — it may rank candidates, never condemn.
-      var cc = clicheCount(lines[i]), mold = songScore >= 55 && moldLine(lines[i]);
+      var cc = clicheCount(lines[i]), mold = (skipSongGuard || songScore >= 30) && moldLine(lines[i]);
       if (cc === 0 && !mold) continue;
       ranked.push({ i: i, mold: mold, r: (mold ? 2000 : 0) + cc * 1000 + scoreFn(lines[i]) });
     }
@@ -524,7 +524,7 @@
       // SONG-LEVEL AI GUARD (red-team fix): never mutate a clean song's words — a 0%-AI line like
       // "Whispers in the wind" must be left alone. Only swap when the song actually reads AI (>=50),
       // matching the dup/mold gates (55). Saturated AI songs still pass, so good swaps are unaffected.
-      if (clicheCount(orig) > 0 && songScore >= 50) {
+      if (clicheCount(orig) > 0 && (skipSongGuard || songScore >= 30)) {
         var swapped = swapCliches(orig, text);
         if (swapped && clicheCount(swapped) < clicheCount(orig) && isFullClause(orig) && grammatical(words(swapped))) {
           var trialS = lines.slice(); trialS[idx] = swapped;
@@ -587,13 +587,22 @@
   // remains — it converges, always sparing the cleaner half. Returns null when no line still reads AI. ----
   function humanizeHalf(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
+    if (scoreFn(text) < 30) return null;               // genuinely human songs (0-21% in corpus) — leave them alone
     var lines = String(text).split("\n"), nb = 0, i;
     for (i = 0; i < lines.length; i++) if (words(lines[i]).length >= 3) nb++;
     var half = Math.ceil(nb / 2), cur = text, before = Math.round(scoreFn(text)), steps = [], k;
+    // Decision made once: this song reads AI -> keep swapping its CLICHÉ lines (skipSongGuard) even as
+    // the running score drops. Otherwise one structural edit (v8 is hyper-sensitive: 37%->1%) would
+    // re-trip the per-line guard and halt, leaving obvious clichés (silence/shadows/whisper) untouched.
     for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
-      var res = humanizeOne(cur, scoreFn, logitFn);
+      var res = humanizeOne(cur, scoreFn, logitFn, false, true);
       if (!res) break;
-      cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
+      cur = res.text;
+      // CHORUS CONSISTENCY: a repeated line (chorus) must read the same everywhere. Apply the same
+      // edit to every identical copy, so we never get "Breaking each law" in one spot and "Breaking
+      // every law" in another. (Trades the "vary the repeat" de-AI trick for a consistent chorus.)
+      if (res.from && res.to && res.from !== res.to) cur = cur.split("\n").map(function (l) { return l === res.from ? res.to : l; }).join("\n");
+      steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };

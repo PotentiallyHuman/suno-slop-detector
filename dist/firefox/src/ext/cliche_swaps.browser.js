@@ -108,7 +108,7 @@
     soul: ["core", "marrow", "gut", "spine"],
     souls: ["spirits"],
     stardust: ["glitter", "confetti"],
-    starlight: ["satellites", "lamplight"],
+    starlight: [],   // context-ambiguous (like light/silver): "lamplight" wrecks a cosmic line ("a language only starlight hears"). Leave it.
     storm: ["downpour"],
     stranger: ["drifter", "outsider"],
     streetlight: ["lamppost"],
