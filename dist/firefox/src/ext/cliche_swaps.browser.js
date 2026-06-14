@@ -81,7 +81,7 @@
     luminous: ["lamplit"],
     memories: ["keepsakes", "snapshots", "pictures", "mementos"],
     memory: ["keepsake", "snapshot", "flashback"],
-    midnight: ["nightfall", "curfew"],
+    midnight: ["nightfall"],   // "curfew" pruned (WIT c39): a curfew is a RESTRICTION, not a time — "curfew clouds"/"curfew rain"/"curfew hour" are soup, and it was selected over nightfall every time. Single safe sub (cf. lights->lamps).
     mist: ["fog", "drizzle", "exhaust"],
     moonlight: ["lamplight", "moonglow"],
     neon: [],

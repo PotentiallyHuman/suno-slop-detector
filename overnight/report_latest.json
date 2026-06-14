@@ -11,12 +11,12 @@
   ]
  },
  "summary": {
-  "improved": "202/300",
-  "noop_ai_songs": 37,
-  "mean_dz": "-1.84"
+  "improved": "215/300",
+  "noop_ai_songs": 38,
+  "mean_dz": "-2.02"
  },
  "POOLS": {
-  "distinct_subs": 143,
+  "distinct_subs": 151,
   "top_reused_subs": [
    [
     "that",
@@ -27,15 +27,15 @@
     28
    ],
    [
-    "clouds",
-    22
+    "blaze",
+    26
+   ],
+   [
+    "lamps",
+    21
    ],
    [
     "each",
-    19
-   ],
-   [
-    "keepsake",
     18
    ],
    [
@@ -43,12 +43,12 @@
     18
    ],
    [
-    "ash",
-    15
+    "blue",
+    16
    ],
    [
-    "battered",
-    13
+    "mark",
+    14
    ],
    [
     "adrift",
@@ -59,23 +59,27 @@
     12
    ],
    [
+    "battered",
+    12
+   ],
+   [
+    "ash",
+    12
+   ],
+   [
     "path",
     12
    ],
    [
-    "vacant",
-    12
+    "heavens",
+    11
    ],
    [
     "some",
     10
    ],
    [
-    "spirit",
-    10
-   ],
-   [
-    "barren",
+    "bare",
     10
    ],
    [
@@ -99,54 +103,50 @@
     9
    ],
    [
+    "barren",
+    9
+   ],
+   [
+    "vacant",
+    9
+   ],
+   [
+    "keepsake",
+    8
+   ],
+   [
     "trail",
-    8
-   ],
-   [
-    "downpour",
-    8
-   ],
-   [
-    "friendless",
-    8
-   ],
-   [
-    "blistering",
-    8
-   ],
-   [
-    "lamps",
     8
    ]
   ],
   "top_sources": [
    [
     "every",
-    99
+    98
    ],
    [
     "road",
     39
    ],
    [
+    "sky",
+    32
+   ],
+   [
+    "flame",
+    28
+   ],
+   [
     "broken",
-    30
+    28
    ],
    [
     "empty",
-    28
+    27
    ],
    [
     "lost",
     23
-   ],
-   [
-    "sky",
-    22
-   ],
-   [
-    "dust",
-    22
    ],
    [
     "beneath",
@@ -158,11 +158,7 @@
    ],
    [
     "memory",
-    18
-   ],
-   [
-    "dreams",
-    17
+    16
    ],
    [
     "silver",
@@ -173,23 +169,23 @@
     16
    ],
    [
+    "shadows",
+    16
+   ],
+   [
+    "dreams",
+    16
+   ],
+   [
     "silence",
     15
    ],
    [
-    "lonely",
+    "scar",
     14
    ],
    [
-    "burning",
-    13
-   ],
-   [
-    "hum",
-    13
-   ],
-   [
-    "love",
+    "lonely",
     13
    ],
    [
@@ -199,25 +195,33 @@
    [
     "shadow",
     12
+   ],
+   [
+    "burning",
+    12
    ]
   ]
  },
  "BADPAIRS": [
   [
-   "memory->keepsake",
-   9
-  ],
-  [
    "lights->lamps",
-   5
+   9
   ],
   [
    "lost->adrift",
    5
   ],
   [
+   "memory->keepsake",
+   4
+  ],
+  [
    "silence->lull",
    4
+  ],
+  [
+   "sky->heavens",
+   3
   ],
   [
    "broken->battered",
@@ -228,12 +232,12 @@
    3
   ],
   [
-   "lights->bulbs",
+   "broken->wrecked",
    3
   ],
   [
-   "broken->wrecked",
-   3
+   "memory->snapshot",
+   2
   ],
   [
    "lonely->solo",
@@ -248,10 +252,6 @@
    2
   ],
   [
-   "dreams->tickets",
-   2
-  ],
-  [
    "love->longing",
    2
   ],
@@ -260,7 +260,7 @@
    1
   ],
   [
-   "lights->beams",
+   "shadows->figures",
    1
   ],
   [
@@ -280,7 +280,15 @@
    1
   ],
   [
-   "sky->clouds",
+   "memory->flashback",
+   1
+  ],
+  [
+   "dreams->hopes",
+   1
+  ],
+  [
+   "soul->being",
    1
   ],
   [
@@ -291,23 +299,23 @@
  "RESIDUAL": [
   [
    "and …(mid)",
-   109
+   108
   ],
   [
    "the …(mid)",
-   79
+   76
   ],
   [
    "and …(short)",
    72
   ],
   [
-   "but …(mid)",
-   69
-  ],
-  [
    "i …(short)",
    68
+  ],
+  [
+   "but …(mid)",
+   67
   ],
   [
    "the …(short)",
@@ -319,7 +327,7 @@
   ],
   [
    "two …(short)",
-   47
+   46
   ],
   [
    "one …(short)",
@@ -327,7 +335,7 @@
   ],
   [
    "we …(mid)",
-   41
+   40
   ],
   [
    "i …(mid)",
@@ -342,15 +350,15 @@
    29
   ],
   [
-   "now …(mid)",
-   28
-  ],
-  [
    "like …(short)",
    27
   ],
   [
    "in …(short)",
+   27
+  ],
+  [
+   "now …(mid)",
    27
   ],
   [
@@ -378,15 +386,15 @@
    24
   ],
   [
-   "with …(mid)",
-   21
-  ],
-  [
    "in …(mid)",
    20
   ],
   [
    "a …(mid)",
+   20
+  ],
+  [
+   "with …(mid)",
    20
   ],
   [
@@ -402,27 +410,27 @@
    19
   ],
   [
-   "he …(mid)",
+   "that …(short)",
    18
   ],
   [
-   "that …(short)",
+   "say …(short)",
    18
   ]
  ],
  "NOOP_samples": [
+  "At night in the bed I hear the creaks / Wooden floorboards echo / Weak / Like I heard someone else walk down the hall",
   "Mama's crying in the kitchen again / Daddy's got his good boots on / My sister's twisting flowers in her hair / In the mirror where she's been since dawn",
   "Come in / Step inside / Look down / There it is",
+  "You left your records and you left your key / Left a note that didn't say a damn thing to me / And now I'm standing in the wreckage of the thing we made / With my fists clenched tight and my heart on a grenade",
   "Where am I now / Maybe outer space / And I don't know how / I've gotten to this place",
   "Hyperdrive / Coding through the night / Coding through the night / Coding through the night",
   "With the first snow of the year / She wrote a letter to her mother / Said / \"I've never been so sure",
   "He ties his boots by the chair / Slow like the rain at dawn / The same blue shirt, frayed at the cuff / The years have worn him down",
   "Your name lit up my screen / Like a match in the dark / Three little bubbles / Then a knife in my heart",
-  "I still have the notification glow burned in my eyes / Three forty seven AM and the end of my life / I thought I knew the shape of you by heart / But I didn't know a text could take a person apart",
+  "There’s one tree left / By the bus depot curb / Roots in a crack / Where the rain used to work",
   "You signed in at eleven / I caught your name on the board / Blue pens in the pockets / A coffee ring on the floor",
-  "Sunday on the linoleum, / bare feet, cold tile, / grandma at the stove again, / stirring low and slow.",
-  "Under one umbrella / We fit, we fit / Under one umbrella / You and I like this",
-  "Mr. Leon got the cape on right / Scissors sing on a Saturday night / Kids on the bench, old men in line / He know your story by the second line"
+  "Sunday on the linoleum, / bare feet, cold tile, / grandma at the stove again, / stirring low and slow."
  ],
  "VOWEL": {
   "perfect_rhyme_rate": "0.102",

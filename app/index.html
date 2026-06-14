@@ -30,11 +30,13 @@
       <textarea id="lyrics" rows="9" autocomplete="off" autocapitalize="off"
         spellcheck="false" placeholder="Paste your lyrics here…&#10;&#10;Section tags like [Chorus] are fine — they're stripped before scoring."></textarea>
       <div class="actions">
-        <button id="howai" class="primary" type="button">How AI?</button>
-        <button id="humanize" class="ghost" type="button" hidden>Humanize Line</button>
-        <button id="rewrite" class="ghost" type="button" hidden>Humanize Rewrite</button>
-        <button id="undo" class="ghost" type="button" hidden>Undo</button>
-        <button id="clear" class="ghost" type="button" hidden>Clear</button>
+        <!-- auto-reads live as you type/paste — no analyse button needed. Buttons below sit in a 2x2 grid. -->
+        <div class="btn-grid">
+          <button id="humanize" class="ghost" type="button" hidden>Humanize Line</button>
+          <button id="rewrite" class="ghost" type="button" hidden>Humanize Rewrite</button>
+          <button id="undo" class="ghost" type="button" hidden>Undo</button>
+          <button id="clear" class="ghost" type="button" hidden>Clear</button>
+        </div>
         <button id="example" class="link" type="button">Try an example</button>
         <span id="hint" class="hint"></span>
       </div>

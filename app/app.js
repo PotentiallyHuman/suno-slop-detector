@@ -7,7 +7,6 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var lyricsEl = $("lyrics");
-  var howaiBtn = $("howai");
   var humanizeBtn = $("humanize");
   var rewriteBtn = $("rewrite");
   var undoBtn  = $("undo");
@@ -17,17 +16,17 @@
   var toastEl  = $("toast");
 
   // A typical AI-generated lyric: repeated chorus, stacked stock imagery, perfect rhymes.
-  // Chosen so "Try an example" → "How AI?" reads high, and "Humanize" can visibly improve
-  // it over several clicks (each click swaps a stock image / varies a repeated line).
+  // Chosen so it reads ~100% AI, and the humanizer can visibly improve it: Rewrite clears the stock
+  // words, and Chaos drops it all the way (100% -> ~5%) by reworking the structure too.
   var EXAMPLE = [
-    "Neon shadows fill the endless midnight sky tonight",
-    "Whispered echoes of a crimson flame ignite",
-    "Burning embers, frozen tears, we chase the fading light",
-    "Drowning in the velvet silence of the night",
-    "Neon shadows fill the endless midnight sky tonight",
-    "Whispered echoes of a crimson flame ignite",
-    "Shattered dreams and faded scars dissolve into the rain",
-    "Lost forever in the shadows of the pain"
+    "In the shadows of the night, I'm searching for a sign",
+    "Every broken dream I chase keeps slipping out of line",
+    "The city lights are calling but the silence pulls me back",
+    "Echoes of a love we lost are fading down the track",
+    "I will rise above the ashes, break these chains tonight",
+    "Through the fire and the storm I'll find my guiding light",
+    "Forever and forever, in the echoes we remain",
+    "Dancing through the endless dark, chasing the falling rain"
   ].join("\n");
   var resultEl = $("result");
   var scoreEl  = $("score");
@@ -206,9 +205,10 @@
     }, 0);
   }
   var hzChaosArmed = false; // Rewrite would refuse but the song still reads AI -> the button becomes Chaos
+  var chaosSticky = false;  // once a Rewrite press fails to lower the score, the next step IS Chaos — arm it now
   function updateRewriteBtn() {
     if (!rewriteBtn) return;
-    hzChaosArmed = !!(hzNext.key === (lyricsEl.value || "") && !hzNext.res && aiScore(lyricsEl.value || "") >= 20);
+    hzChaosArmed = chaosSticky || !!(hzNext.key === (lyricsEl.value || "") && !hzNext.res && aiScore(lyricsEl.value || "") >= 20);
     rewriteBtn.textContent = hzChaosArmed ? "🌀 Humanize Chaos" : "Humanize Rewrite";
   }
   function renderJokerPreview(panel) {
@@ -227,7 +227,15 @@
     }
   }
 
-  howaiBtn.addEventListener("click", analyse);
+  // Live auto-read: score as you type/paste (debounced) — replaces the old "How AI?" button.
+  var autoTimer = null;
+  function scheduleAuto() {
+    if (autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(function () {
+      if ((lyricsEl.value || "").trim().length >= 8) analyse();
+      else { resultEl.hidden = true; humanizeBtn.hidden = true; if (rewriteBtn) rewriteBtn.hidden = true; }
+    }, 350);
+  }
 
   // ---- Humanize: apply ONE mechanical fix per click, with Undo ----------------
   var undoStack = [];
@@ -340,6 +348,7 @@
     lyricsEl.value = undoStack.pop();
     undoBtn.hidden = undoStack.length === 0;
     clearBtn.hidden = lyricsEl.value.length === 0;
+    chaosSticky = false;
     analyse();
     showToast("Undid last change.");
   }
@@ -354,6 +363,7 @@
     var chaos = hzChaosArmed;
     try { res = chaos ? HumanizeFreestyle.humanizeChaos(text, aiScore, aiLogit) : HumanizeFreestyle.humanizeHalf(text, aiScore, aiLogit); } catch (e) { res = null; }
     if (chaos && res) {
+      chaosSticky = false;            // Chaos has run; let the button re-evaluate from the result
       undoStack.push(text);
       undoBtn.hidden = false;
       lyricsEl.value = res.text;
@@ -365,7 +375,7 @@
     }
     if (!res) {
       var s0 = aiScore(text);
-      if (s0 >= 55) showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Still reads " + s0 + "% AI — but that's the song's SHAPE, not its words. " + (dg ? "Measured on your song: " + dg + "." : "To bring it down: vary your line lengths, break up a repeated chorus, let a line spill past the rhyme."); })());
+      if (s0 >= 55) { chaosSticky = true; updateRewriteBtn(); showToast((function () { var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(text); } catch (e) {} return "Rewrite has nothing safe left, but it still reads " + s0 + "% AI by its SHAPE. " + (dg ? "Measured on your song: " + dg + ". " : "") + "Press 🌀 Humanize Chaos to rework the structure too."; })()); }
       else showToast("Every line already reads human — nothing to rewrite.");
       return;
     }
@@ -374,6 +384,7 @@
     lyricsEl.value = res.text;
     clearBtn.hidden = false;
     flashBox();
+    if (res.after >= res.before) chaosSticky = true;   // Rewrite changed words but couldn't lower the % -> next press is Chaos
     analyse();
     showToast(pressMsgText(res, "half"));
   }
@@ -387,18 +398,25 @@
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") { ev.preventDefault(); analyse(); }
   });
 
-  // show/hide Clear; reset hint as the user types
+  // show/hide Clear; reset hint as the user types; auto-read live
   lyricsEl.addEventListener("input", function () {
-    clearBtn.hidden = lyricsEl.value.length === 0;
+    var empty = lyricsEl.value.length === 0;
+    clearBtn.hidden = empty;
+    exampleBtn.hidden = !empty;   // "Try an example" only while the box is empty
     if (hintEl.textContent) hintEl.textContent = "";
+    chaosSticky = false;      // a manual edit means Rewrite gets a fresh chance before Chaos
+    scheduleAuto();
   });
   clearBtn.addEventListener("click", function () {
     lyricsEl.value = "";
     clearBtn.hidden = true;
+    exampleBtn.hidden = false;   // empty box -> offer the example again
     resultEl.hidden = true;
     humanizeBtn.hidden = true;
+    if (rewriteBtn) rewriteBtn.hidden = true;
     undoBtn.hidden = true;
     undoStack = [];
+    chaosSticky = false;
     if (toastEl) toastEl.hidden = true;
     lyricsEl.focus();
   });
@@ -406,6 +424,8 @@
   exampleBtn.addEventListener("click", function () {
     lyricsEl.value = EXAMPLE;
     clearBtn.hidden = false;
+    exampleBtn.hidden = true;   // box now has text
+    chaosSticky = false;
     analyse();
   });
 

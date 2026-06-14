@@ -59,7 +59,11 @@ textarea {
 }
 textarea:focus { outline: none; border-color: rgba(176, 123, 255, 0.5); }
 
-.actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 12px; }
+/* the humanize/undo/clear buttons sit in a 2x2 grid; hidden ones collapse so 2 visible = one row */
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-grid button { width: 100%; }
+.actions .link { text-align: center; }
 button {
   border: none;
   border-radius: 11px;
