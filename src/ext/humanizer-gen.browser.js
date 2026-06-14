@@ -431,8 +431,10 @@
       // -> curation order as the last tiebreak.
       // plural slots ("two shadows", "these lights") demand a plural substitute — never a mass noun
       var needPlural = /^(two|three|four|five|six|seven|many|few|both|these|those|all)$/.test(prev) && lw.charAt(lw.length - 1) === "s";
-      // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps
-      if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street)$/.test(prev)) return tok;
+      // vehicle/stage light compounds ("sheriff lights", "brake lights") are fixtures, not lamps;
+      // "christmas/holiday/fairy/string/twinkle/porch lights" are BELOVED nostalgic phrases — a cliché
+      // people love (like jingle-bells imagery), NOT slop to scrub. Leave all of these untouched.
+      if ((lw === "lights" || lw === "light") && /^(sheriff|police|cop|brake|traffic|city|stage|tail|street|christmas|holiday|fairy|string|twinkle|porch|candle)$/.test(prev)) return tok;
       // Collect the acceptable substitutes ranked by QUALITY (meter match + theme fit; curation
       // order breaks ties — earlier = better). Curation order is a real quality signal, so we never
       // reach into the low-quality tail ("dimming" is a better "fading" than "bleaching").
