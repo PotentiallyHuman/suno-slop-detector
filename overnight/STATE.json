@@ -1,5 +1,5 @@
 {
- "cycle": 35,
+ "cycle": 36,
  "lens_order": [
   "BADPAIRS",
   "POOLS",
@@ -10,7 +10,7 @@
   "WIT",
   "SYNTHESIS"
  ],
- "next_lens_index": 2,
- "ab_offset": 1295,
+ "next_lens_index": 3,
+ "ab_offset": 1332,
  "note": "cycle 0 seeded the infra + first wins (prune pools, noun-position fix). Loop continues from here."
 }

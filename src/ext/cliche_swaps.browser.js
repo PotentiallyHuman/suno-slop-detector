@@ -95,7 +95,7 @@
     serenade: ["ballad"],
     shadow: ["silhouette", "shape"],
     shadowed: ["shaded", "dimmed"],
-    shadows: ["doorways", "alleys", "corners", "background"],
+    shadows: [],   // polysemous + idiom-locked: "in the shadows" (places) vs "shadows that pass/dance" (moving shapes) — no single substitute is safe across both, and "background/corners" broke "Shadows dance and sway". Leave it.
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
     silence: ["stillness", "calm"],
@@ -105,7 +105,7 @@
     silver: ["ash", "slate"],
     sky: ["clouds"],
     skyline: ["treeline"],
-    soul: ["core", "marrow", "gut", "spine"],
+    soul: ["spirit"],   // "soul" is BOTH a person ("a single soul", "every soul" = nobody) and an essence ("my soul"). core/marrow/gut/spine break the person sense ("a single core who hears me"). "spirit" reads right in both (matches souls->spirits).
     souls: ["spirits"],
     stardust: ["glitter", "confetti"],
     starlight: [],   // context-ambiguous (like light/silver): "lamplight" wrecks a cosmic line ("a language only starlight hears"). Leave it.
@@ -124,9 +124,9 @@
     velvet: ["satin", "suede"],
     void: ["vacuum", "chasm"],
     whisper: [],
-    whispered: ["muttered"],
-    whispering: ["muttering"],
-    whispers: ["mutters"],
+    whispered: [],   // "mutter" reads grumbly/annoyed — user-flagged. No neutral substitute for the soft/secret sense; leave the whole family.
+    whispering: [],
+    whispers: [],
     wildfire: ["brushfire", "bonfire"],
   };
   // FROZEN phrases (>=90x human corpus) + the collocation-ANCHOR words to protect inside them.
@@ -148,8 +148,8 @@
     shimmer: ["glint"],
     surrender: ["yield"],
     whisper: { obj: [], noobj: [] },   // whisper is evocative/context-dependent (like light/starlight) — "mutter" reads grumbly, no universal substitute. Leave it.
-    whispered: ["muttered"],
-    whispering: ["muttering"],
-    whispers: { obj: ["mutters", "offers"], noobj: ["mutters"] },
+    whispered: [],
+    whispering: [],
+    whispers: { obj: [], noobj: [] },   // dropped "mutters" (grumbly, user-flagged) — no neutral substitute. Leave it.
   };
 })();

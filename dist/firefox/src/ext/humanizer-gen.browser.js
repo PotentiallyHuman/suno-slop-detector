@@ -279,6 +279,10 @@
       return l.replace(/\bevery\b/gi, function (w) {                 // replacing ONE reads broken — replace BOTH with "each",
         return w.charAt(0) === "E" ? "Each" : "each";                // which keeps the parallelism (0.62x human-leaning)
       });
+    // "Every X I ever Y" — the relative "ever" is a negative-polarity item LICENSED by
+    // "every"/"any". Swapping the opener to This/That/Some strands it ("This fear I ever
+    // carried" reads ungrammatical). Leave the whole line to the swap layer instead.
+    if (/\b(every|any)\b[^.]*\bever\b/i.test(l)) return null;
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
     m = l.match(/^(\W*)[Ee]very\s+(.*)$/);

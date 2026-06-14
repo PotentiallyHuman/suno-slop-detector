@@ -143,6 +143,32 @@
   // editing them produces fragments the eye reads as soup. Leave fragments alone.
   var FINITE_POS = { VB: 1, VBP: 1, VBZ: 1, VBD: 1, MD: 1 };
   function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (!p || !FINITE_POS[p]) continue; var pp = WPOS[w[i - 1]] || ""; if (pp === "DT" || pp === "VBG" || pp === "TO") continue; /* "the RAIN" / "a setting SAIL" = object noun; "to TRY" = infinitive — none is the clause's finite verb (cycle 19+21 fragment guard) */ return true; } return false; }
+  // ---- SENTENCE-REPLACER (decision-tree branch 4 — the coverage path). When no swap/mold/dup fits a
+  // line that reads AI (often pure typicality, no cliché to swap), replace the WHOLE line with a clean
+  // library line: same rhyme-key (the song's scheme holds), syllable-matched (±1), best theme fit, with
+  // a theme-fit FLOOR + anti-dup. The library (globalThis.REPLACE_LIB) is BUILD-TIME judge-cleaned, so
+  // every candidate is coherent by construction. Refuse if nothing fits (REFUSE > SOUP). Indexed once.
+  var REPLIDX = null;
+  function buildReplaceIndex() {
+    REPLIDX = [];
+    var L = globalThis.REPLACE_LIB || [];
+    for (var i = 0; i < L.length; i++) { var lw = lastWord(L[i]), rk = VK[lw]; if (!rk) continue; REPLIDX.push({ line: L[i], rk: rk, syl: nsylLine(L[i]), tv: themeVec(L[i]) }); }
+  }
+  function sentenceReplace(aiLine, theme, songLines) {
+    if (!REPLIDX) buildReplaceIndex();
+    if (!REPLIDX.length) return null;
+    var rk = VK[lastWord(aiLine)]; if (!rk) return null;
+    var syl = nsylLine(aiLine), used = {};
+    for (var s = 0; s < songLines.length; s++) used[String(songLines[s]).toLowerCase()] = 1;   // never reuse a line already in the song
+    var best = null, bs = 0.08;                                                                 // theme-fit FLOOR -> refuse a poor match (lines stay coherent; this only governs topical fit)
+    for (var i = 0; i < REPLIDX.length; i++) {
+      var c = REPLIDX[i];
+      if (c.rk !== rk || Math.abs(c.syl - syl) > 1 || used[c.line.toLowerCase()]) continue;
+      var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
+      if (fit > bs) { bs = fit; best = c.line; }
+    }
+    return best;
+  }
   // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
   // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----
@@ -253,6 +279,10 @@
       return l.replace(/\bevery\b/gi, function (w) {                 // replacing ONE reads broken — replace BOTH with "each",
         return w.charAt(0) === "E" ? "Each" : "each";                // which keeps the parallelism (0.62x human-leaning)
       });
+    // "Every X I ever Y" — the relative "ever" is a negative-polarity item LICENSED by
+    // "every"/"any". Swapping the opener to This/That/Some strands it ("This fear I ever
+    // carried" reads ungrammatical). Leave the whole line to the swap layer instead.
+    if (/\b(every|any)\b[^.]*\bever\b/i.test(l)) return null;
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
     m = l.match(/^(\W*)[Ee]very\s+(.*)$/);
@@ -404,7 +434,7 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn, logitFn) {
+  function humanizeOne(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
@@ -440,14 +470,14 @@
         if (jacc(sets[i], sets[j2]) >= 0.6) { if (j2 < i) { earlierDup = j2; break; } laterDup = true; }
       }
       if (earlierDup >= 0) {                                   // a REPEAT of an earlier line
-        if (songScore >= 55) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
+        if (skipSongGuard || songScore >= 30) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
         continue;
       }
       if (laterDup) continue;                                  // the hook's root occurrence: sacred
       // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
       // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
       // teeth, engine coughing black") — it may rank candidates, never condemn.
-      var cc = clicheCount(lines[i]), mold = songScore >= 55 && moldLine(lines[i]);
+      var cc = clicheCount(lines[i]), mold = (skipSongGuard || songScore >= 30) && moldLine(lines[i]);
       if (cc === 0 && !mold) continue;
       ranked.push({ i: i, mold: mold, r: (mold ? 2000 : 0) + cc * 1000 + scoreFn(lines[i]) });
     }
@@ -498,7 +528,7 @@
       // SONG-LEVEL AI GUARD (red-team fix): never mutate a clean song's words — a 0%-AI line like
       // "Whispers in the wind" must be left alone. Only swap when the song actually reads AI (>=50),
       // matching the dup/mold gates (55). Saturated AI songs still pass, so good swaps are unaffected.
-      if (clicheCount(orig) > 0 && songScore >= 50) {
+      if (clicheCount(orig) > 0 && (skipSongGuard || songScore >= 30)) {
         var swapped = swapCliches(orig, text);
         if (swapped && clicheCount(swapped) < clicheCount(orig) && isFullClause(orig) && grammatical(words(swapped))) {
           var trialS = lines.slice(); trialS[idx] = swapped;
@@ -535,6 +565,25 @@
         return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
       }
     }
+    // BRANCH 4 — SENTENCE-REPLACER (OPT-IN ONLY, gated by allowReplace). v1.0.0 = OPTION A: Line/Half do
+    // NOT pass allowReplace, so they stay MEANING-PRESERVING (swap/mold only — every edit keeps the
+    // user's own words). The replacer is coherent but OFF-TOPIC (retrieval can't fit, generation makes
+    // soup — both disproven), so whole-line replacement is reserved for a future opt-in aggressive tier.
+    if (allowReplace) {
+    var repCand = [];
+    for (var ri2 = 0; ri2 < lines.length; ri2++) { if (!isFullClause(lines[ri2])) continue; if (scoreFn(lines[ri2]) < 55) continue; repCand.push({ i: ri2, ai: scoreFn(lines[ri2]) }); }
+    repCand.sort(function (a, b) { return b.ai - a.ai; });
+    for (var rc = 0; rc < repCand.length; rc++) {
+      var ridx = repCand[rc].i, rorig2 = lines[ridx];
+      var rep = sentenceReplace(rorig2, theme, lines);
+      if (!rep) continue;
+      var rtrial2 = lines.slice(); rtrial2[ridx] = cap(rep);
+      var rnew3 = rtrial2.join("\n"), rns3 = scoreFn(rnew3);
+      if (logitFn ? (logitFn(rnew3) <= fineBase - 0.02) : (rns3 <= songScore)) {
+        return { text: rnew3, lineIndex: ridx, from: rorig2, to: cap(rep), before: Math.round(songScore), after: Math.round(rns3), mode: "replace" };
+      }
+    }
+    }
     return null;
   }
   // ---- "Humanize Rewrite": one press rebuilds the worst HALF of the song (ranked by cliché then AI),
@@ -542,13 +591,22 @@
   // remains — it converges, always sparing the cleaner half. Returns null when no line still reads AI. ----
   function humanizeHalf(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
+    if (scoreFn(text) < 30) return null;               // genuinely human songs (0-21% in corpus) — leave them alone
     var lines = String(text).split("\n"), nb = 0, i;
     for (i = 0; i < lines.length; i++) if (words(lines[i]).length >= 3) nb++;
     var half = Math.ceil(nb / 2), cur = text, before = Math.round(scoreFn(text)), steps = [], k;
+    // Decision made once: this song reads AI -> keep swapping its CLICHÉ lines (skipSongGuard) even as
+    // the running score drops. Otherwise one structural edit (v8 is hyper-sensitive: 37%->1%) would
+    // re-trip the per-line guard and halt, leaving obvious clichés (silence/shadows/whisper) untouched.
     for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
-      var res = humanizeOne(cur, scoreFn, logitFn);
+      var res = humanizeOne(cur, scoreFn, logitFn, false, true);
       if (!res) break;
-      cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
+      cur = res.text;
+      // CHORUS CONSISTENCY: a repeated line (chorus) must read the same everywhere. Apply the same
+      // edit to every identical copy, so we never get "Breaking each law" in one spot and "Breaking
+      // every law" in another. (Trades the "vary the repeat" de-AI trick for a consistent chorus.)
+      if (res.from && res.to && res.from !== res.to) cur = cur.split("\n").map(function (l) { return l === res.from ? res.to : l; }).join("\n");
+      steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };

@@ -39,13 +39,13 @@
     electric: ["wired"],
     ember: ["cinder", "coal"],
     embers: ["cinders", "coals"],
-    empty: ["vacant", "blank", "cleared"],
+    empty: ["vacant", "blank"],
     endless: ["ceaseless", "constant", "nonstop", "unending"],
     eternal: ["lifelong", "permanent"],
     eternity: ["forever", "lifetimes", "centuries"],
     ethereal: ["airy"],
     faded: ["bleached", "washed"],
-    fading: ["dimming", "thinning", "bleaching"],
+    fading: ["dimming", "thinning"],
     fire: ["blaze", "furnace", "bonfire", "gasoline"],
     flame: ["torch"],
     flames: ["sparks", "torches"],
@@ -58,8 +58,8 @@
     ghost: ["trace", "imprint", "specter"],
     ghosts: ["traces", "imprints", "specters"],
     glimmer: ["glint", "shine"],
-    golden: ["gilded", "mustard", "amber"],
-    hands: ["palms", "fingers", "knuckles", "fists", "fingertips", "grip", "wrists"],
+    golden: ["gilded", "amber"],
+    hands: [],   // humans OWN "hands" (like heart/eyes) — every swap reads clinical ("Grandmother's palms"). Leave it.
     heartbeat: ["drumbeat", "metronome"],
     hollow: ["vacant"],
     horizon: ["coastline", "treeline"],
@@ -68,7 +68,7 @@
     kaleidoscope: ["pinwheel", "mosaic"],
     kiss: ["peck", "smooch"],
     labyrinth: ["maze", "warren"],
-    light: ["headlights", "daylight"],
+    light: [],
     lightning: ["voltage", "flash"],
     lights: ["lamps"],
     lonely: ["solo", "friendless"],
@@ -95,7 +95,7 @@
     serenade: ["ballad"],
     shadow: ["silhouette", "shape"],
     shadowed: ["shaded", "dimmed"],
-    shadows: ["doorways", "alleys", "corners", "background"],
+    shadows: [],   // polysemous + idiom-locked: "in the shadows" (places) vs "shadows that pass/dance" (moving shapes) — no single substitute is safe across both, and "background/corners" broke "Shadows dance and sway". Leave it.
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
     silence: ["stillness", "calm"],
@@ -105,10 +105,10 @@
     silver: ["ash", "slate"],
     sky: ["clouds"],
     skyline: ["treeline"],
-    soul: ["core", "marrow", "gut", "spine"],
+    soul: ["spirit"],   // "soul" is BOTH a person ("a single soul", "every soul" = nobody) and an essence ("my soul"). core/marrow/gut/spine break the person sense ("a single core who hears me"). "spirit" reads right in both (matches souls->spirits).
     souls: ["spirits"],
     stardust: ["glitter", "confetti"],
-    starlight: ["satellites", "lamplight"],
+    starlight: [],   // context-ambiguous (like light/silver): "lamplight" wrecks a cosmic line ("a language only starlight hears"). Leave it.
     storm: ["downpour"],
     stranger: ["drifter", "outsider"],
     streetlight: ["lamppost"],
@@ -123,10 +123,10 @@
     veins: ["arteries", "bloodstream"],
     velvet: ["satin", "suede"],
     void: ["vacuum", "chasm"],
-    whisper: ["mutter"],
-    whispered: ["muttered"],
-    whispering: ["muttering"],
-    whispers: ["mutters"],
+    whisper: [],
+    whispered: [],   // "mutter" reads grumbly/annoyed — user-flagged. No neutral substitute for the soft/secret sense; leave the whole family.
+    whispering: [],
+    whispers: [],
     wildfire: ["brushfire", "bonfire"],
   };
   // FROZEN phrases (>=90x human corpus) + the collocation-ANCHOR words to protect inside them.
@@ -137,7 +137,7 @@
   globalThis.FROZEN_ANCHOR = { love: 1, hands: 1 };
   globalThis.CLICHE_SWAPS_VERB = {
     echo: { obj: ["repeat", "spell", "tell"], noobj: ["ring", "rebound"] },
-    echoes: { obj: ["repeats", "spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings", "rebounds"] },
+    echoes: { obj: ["spells", "tells", "shouts", "owns", "haunts"], noobj: ["rings"] },
     echoing: { obj: ["repeating", "carrying", "spelling"], noobj: ["ringing", "rebounding"] },
     flicker: ["sputter", "blink"],
     flickering: ["sputtering"],
@@ -147,9 +147,9 @@
     scar: ["mark"],
     shimmer: ["glint"],
     surrender: ["yield"],
-    whisper: { obj: ["mutter", "offer", "breathe", "slip"], noobj: ["mutter"] },
-    whispered: ["muttered"],
-    whispering: ["muttering"],
-    whispers: { obj: ["mutters", "offers"], noobj: ["mutters"] },
+    whisper: { obj: [], noobj: [] },   // whisper is evocative/context-dependent (like light/starlight) — "mutter" reads grumbly, no universal substitute. Leave it.
+    whispered: [],
+    whispering: [],
+    whispers: { obj: [], noobj: [] },   // dropped "mutters" (grumbly, user-flagged) — no neutral substitute. Leave it.
   };
 })();
