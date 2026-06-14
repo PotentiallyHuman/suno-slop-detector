@@ -11,12 +11,12 @@
   ]
  },
  "summary": {
-  "improved": "205/300",
-  "noop_ai_songs": 58,
-  "mean_dz": "-1.89"
+  "improved": "202/300",
+  "noop_ai_songs": 37,
+  "mean_dz": "-1.84"
  },
  "POOLS": {
-  "distinct_subs": 103,
+  "distinct_subs": 143,
   "top_reused_subs": [
    [
     "that",
@@ -24,195 +24,203 @@
    ],
    [
     "this",
-    27
+    28
    ],
    [
-    "daylight",
-    21
-   ],
-   [
-    "headlights",
-    19
+    "clouds",
+    22
    ],
    [
     "each",
     19
    ],
    [
-    "stillness",
+    "keepsake",
     18
-   ],
-   [
-    "sand",
-    18
-   ],
-   [
-    "lane",
-    17
-   ],
-   [
-    "palms",
-    15
-   ],
-   [
-    "clouds",
-    14
-   ],
-   [
-    "trace",
-    13
    ],
    [
     "below",
-    11
+    18
+   ],
+   [
+    "ash",
+    15
+   ],
+   [
+    "battered",
+    13
+   ],
+   [
+    "adrift",
+    13
+   ],
+   [
+    "shape",
+    12
+   ],
+   [
+    "path",
+    12
+   ],
+   [
+    "vacant",
+    12
    ],
    [
     "some",
     10
    ],
    [
-    "boiling",
+    "spirit",
+    10
+   ],
+   [
+    "barren",
+    10
+   ],
+   [
+    "stranded",
+    10
+   ],
+   [
+    "lane",
+    10
+   ],
+   [
+    "hushed",
     9
    ],
    [
-    "lamps",
+    "slate",
     9
-   ],
-   [
-    "vacant",
-    8
-   ],
-   [
-    "shape",
-    7
-   ],
-   [
-    "wrecked",
-    7
-   ],
-   [
-    "keepsake",
-    7
-   ],
-   [
-    "cleared",
-    6
-   ],
-   [
-    "dimming",
-    6
    ],
    [
     "curfew",
-    6
+    9
    ],
    [
-    "drumbeat",
-    6
+    "trail",
+    8
    ],
    [
-    "adrift",
-    6
+    "downpour",
+    8
    ],
    [
-    "mutters",
-    5
+    "friendless",
+    8
+   ],
+   [
+    "blistering",
+    8
+   ],
+   [
+    "lamps",
+    8
    ]
   ],
   "top_sources": [
    [
     "every",
-    98
-   ],
-   [
-    "light",
-    40
-   ],
-   [
-    "dust",
-    20
+    99
    ],
    [
     "road",
-    20
-   ],
-   [
-    "silence",
-    19
-   ],
-   [
-    "beneath",
-    16
-   ],
-   [
-    "hands",
-    15
-   ],
-   [
-    "ghost",
-    14
-   ],
-   [
-    "sky",
-    14
-   ],
-   [
-    "shadows",
-    12
+    39
    ],
    [
     "broken",
-    10
-   ],
-   [
-    "lost",
-    10
-   ],
-   [
-    "midnight",
-    10
-   ],
-   [
-    "rising",
-    9
-   ],
-   [
-    "burning",
-    9
-   ],
-   [
-    "lights",
-    9
-   ],
-   [
-    "fading",
-    8
+    30
    ],
    [
     "empty",
-    8
+    28
    ],
    [
-    "ghosts",
-    8
+    "lost",
+    23
+   ],
+   [
+    "sky",
+    22
+   ],
+   [
+    "dust",
+    22
+   ],
+   [
+    "beneath",
+    21
+   ],
+   [
+    "lights",
+    21
+   ],
+   [
+    "memory",
+    18
+   ],
+   [
+    "dreams",
+    17
+   ],
+   [
+    "silver",
+    16
+   ],
+   [
+    "midnight",
+    16
+   ],
+   [
+    "silence",
+    15
+   ],
+   [
+    "lonely",
+    14
+   ],
+   [
+    "burning",
+    13
+   ],
+   [
+    "hum",
+    13
+   ],
+   [
+    "love",
+    13
+   ],
+   [
+    "ghost",
+    12
    ],
    [
     "shadow",
-    7
+    12
    ]
   ]
  },
  "BADPAIRS": [
   [
+   "memory->keepsake",
+   9
+  ],
+  [
    "lights->lamps",
+   5
+  ],
+  [
+   "lost->adrift",
+   5
+  ],
+  [
+   "silence->lull",
    4
   ],
   [
-   "memory->keepsake",
-   3
-  ],
-  [
-   "broken->wrecked",
+   "broken->battered",
    3
   ],
   [
@@ -220,11 +228,19 @@
    3
   ],
   [
-   "lost->adrift",
+   "lights->bulbs",
    3
   ],
   [
-   "shadows->doorways",
+   "broken->wrecked",
+   3
+  ],
+  [
+   "lonely->solo",
+   2
+  ],
+  [
+   "broken->ruined",
    2
   ],
   [
@@ -232,15 +248,35 @@
    2
   ],
   [
-   "burning->boiling",
+   "dreams->tickets",
+   2
+  ],
+  [
+   "love->longing",
+   2
+  ],
+  [
+   "silence->hush",
    1
   ],
   [
-   "lonely->solo",
+   "lights->beams",
    1
   ],
   [
-   "tears->sobs",
+   "burning->blistering",
+   1
+  ],
+  [
+   "dust->grit",
+   1
+  ],
+  [
+   "love->craving",
+   1
+  ],
+  [
+   "midnight->curfew",
    1
   ],
   [
@@ -248,18 +284,18 @@
    1
   ],
   [
-   "road->lane",
+   "road->gravel",
    1
   ]
  ],
  "RESIDUAL": [
   [
    "and …(mid)",
-   112
+   109
   ],
   [
    "the …(mid)",
-   81
+   79
   ],
   [
    "and …(short)",
@@ -267,7 +303,7 @@
   ],
   [
    "but …(mid)",
-   68
+   69
   ],
   [
    "i …(short)",
@@ -275,7 +311,7 @@
   ],
   [
    "the …(short)",
-   56
+   55
   ],
   [
    "teach …(short)",
@@ -283,7 +319,7 @@
   ],
   [
    "two …(short)",
-   46
+   47
   ],
   [
    "one …(short)",
@@ -299,14 +335,14 @@
   ],
   [
    "and …(long)",
-   31
+   32
   ],
   [
    "you …(mid)",
    29
   ],
   [
-   "in …(short)",
+   "now …(mid)",
    28
   ],
   [
@@ -314,7 +350,7 @@
    27
   ],
   [
-   "now …(mid)",
+   "in …(short)",
    27
   ],
   [
@@ -322,15 +358,15 @@
    27
   ],
   [
-   "every …(mid)",
-   26
-  ],
-  [
    "salt …(short)",
    26
   ],
   [
    "but …(long)",
+   25
+  ],
+  [
+   "every …(mid)",
    25
   ],
   [
@@ -342,27 +378,19 @@
    24
   ],
   [
+   "with …(mid)",
+   21
+  ],
+  [
    "in …(mid)",
-   22
+   20
   ],
   [
    "a …(mid)",
    20
   ],
   [
-   "with …(mid)",
-   20
-  ],
-  [
-   "i'm …(short)",
-   20
-  ],
-  [
    "like …(mid)",
-   19
-  ],
-  [
-   "i'm …(mid)",
    19
   ],
   [
@@ -372,21 +400,29 @@
   [
    "dance …(short)",
    19
+  ],
+  [
+   "he …(mid)",
+   18
+  ],
+  [
+   "that …(short)",
+   18
   ]
  ],
  "NOOP_samples": [
-  "At night in the bed I hear the creaks / Wooden floorboards echo / Weak / Like I heard someone else walk down the hall",
-  "Phone line crackles across the miles tonight / Your voice comes through but it fades out of sight / Been counting the years since we said our goodbyes / Still holding on tight with these old weathered eyes",
-  "We should take the edge off / I like my revenge raw / Painted face / Painted smile",
   "Mama's crying in the kitchen again / Daddy's got his good boots on / My sister's twisting flowers in her hair / In the mirror where she's been since dawn",
   "Come in / Step inside / Look down / There it is",
-  "Sunday night, church let out, parked by the water tower / Mason and Nick got them matching tattoos / All my friends in the parking lot of the Super Walmart / Tell me I should stay, I've got nothing to lose",
   "Where am I now / Maybe outer space / And I don't know how / I've gotten to this place",
   "Hyperdrive / Coding through the night / Coding through the night / Coding through the night",
   "With the first snow of the year / She wrote a letter to her mother / Said / \"I've never been so sure",
   "He ties his boots by the chair / Slow like the rain at dawn / The same blue shirt, frayed at the cuff / The years have worn him down",
   "Your name lit up my screen / Like a match in the dark / Three little bubbles / Then a knife in my heart",
-  "The screen door slammed in June / Your name on a folded note / Mud on my thrift-store boots / And a bruise on my throat"
+  "I still have the notification glow burned in my eyes / Three forty seven AM and the end of my life / I thought I knew the shape of you by heart / But I didn't know a text could take a person apart",
+  "You signed in at eleven / I caught your name on the board / Blue pens in the pockets / A coffee ring on the floor",
+  "Sunday on the linoleum, / bare feet, cold tile, / grandma at the stove again, / stirring low and slow.",
+  "Under one umbrella / We fit, we fit / Under one umbrella / You and I like this",
+  "Mr. Leon got the cape on right / Scissors sing on a Saturday night / Kids on the bench, old men in line / He know your story by the second line"
  ],
  "VOWEL": {
   "perfect_rhyme_rate": "0.102",

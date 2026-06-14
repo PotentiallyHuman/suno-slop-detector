@@ -30,7 +30,7 @@
     demons: ["devils", "vices", "habits"],
     diamond: ["jewel", "gemstone"],
     distant: ["faraway"],
-    dreams: ["plans", "hopes", "wishes", "schemes", "visions", "tickets"],
+    dreams: ["plans", "hopes", "wishes", "schemes", "visions"],   // "tickets" pruned: only works for "a ticket OUT", reads as soup generally ("holding onto tickets that slipped through my hands") now that the wider rotation surfaces it.
     drowning: ["sinking", "gasping"],
     dust: ["powder", "sand", "ash", "grit"],
     echo: [],
@@ -74,7 +74,7 @@
     labyrinth: ["maze", "warren"],
     light: [],
     lightning: ["voltage", "flash"],
-    lights: ["lamps", "beams", "bulbs"],
+    lights: ["lamps"],   // "beams"/"bulbs" pruned: lights is polysemous (fixtures vs beams vs glow) — "Christmas bulbs"/"city beams" read wrong. "lamps" is the one sub safe across contexts; no rotation, but no soup.
     lonely: ["solo", "friendless"],
     lost: ["stranded", "adrift"],
     love: ["affection", "longing", "craving"],
