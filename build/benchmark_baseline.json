@@ -1,33 +1,33 @@
 {
  "hydrogen": {
   "startZ": 11.006,
-  "finalScore": 15,
-  "finalZ": -1.71
+  "finalScore": 100,
+  "finalZ": 5.433
  },
  "song01": {
   "startZ": 6.705,
-  "finalScore": 97,
-  "finalZ": 3.469
+  "finalScore": 96,
+  "finalZ": 3.294
  },
  "song02": {
   "startZ": 1.667,
-  "finalScore": 76,
-  "finalZ": 1.151
+  "finalScore": 80,
+  "finalZ": 1.398
  },
  "song03": {
   "startZ": 59.664,
   "finalScore": 100,
-  "finalZ": 55.986
+  "finalZ": 54.852
  },
  "song04": {
   "startZ": -0.586,
-  "finalScore": 11,
-  "finalZ": -2.108
+  "finalScore": 39,
+  "finalZ": -0.439
  },
  "song05": {
   "startZ": 0.376,
-  "finalScore": 16,
-  "finalZ": -1.648
+  "finalScore": 28,
+  "finalZ": -0.923
  },
  "song06": {
   "startZ": 0.415,
@@ -36,27 +36,27 @@
  },
  "song07": {
   "startZ": 6.132,
-  "finalScore": 99,
-  "finalZ": 4.467
+  "finalScore": 100,
+  "finalZ": 6.088
  },
  "song08": {
   "startZ": 4.242,
-  "finalScore": 92,
-  "finalZ": 2.46
+  "finalScore": 98,
+  "finalZ": 3.986
  },
  "song09": {
   "startZ": 7.915,
   "finalScore": 100,
-  "finalZ": 6.518
+  "finalZ": 7.56
  },
  "song10": {
   "startZ": 5.949,
-  "finalScore": 42,
-  "finalZ": -0.322
+  "finalScore": 57,
+  "finalZ": 0.272
  },
  "song11": {
   "startZ": 7.511,
   "finalScore": 100,
-  "finalZ": 7.243
+  "finalZ": 6.239
  }
 }
