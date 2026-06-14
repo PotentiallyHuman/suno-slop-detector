@@ -1,0 +1,81 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* ---- store screenshot generator: the CURRENT craft-coach panel on a 100% AI song ----
+   Render: firefox --headless --window-size=1280,800 --screenshot screenshot_1_ai.png file://.../screenshot_1_ai.html
+   Panel markup + classes mirror src/content.js; styles are copied verbatim from src/overlay.css. */
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:1280px; height:800px; background:#131316;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:#eaeaea; overflow:hidden; }
+.title { position:absolute; left:40px; top:26px; font-size:28px; font-weight:800; color:#fff; }
+.sub { position:absolute; left:40px; top:86px; display:flex; align-items:center; gap:12px; color:#9a9a9a; font-size:18px; }
+.sub .dot { width:30px; height:30px; border-radius:50%; background:#2a2a30; }
+.song { position:absolute; left:60px; top:150px; width:580px; height:600px; border:1px solid rgba(255,255,255,.07);
+  border-radius:16px; background:rgba(255,255,255,.015); padding:30px 34px; }
+.song .meta { color:#8f8f8f; font-size:15px; margin-bottom:26px; }
+.song .meta b { color:#dcdcdc; font-weight:600; }
+.song .lyr { color:#c7c7c7; font-size:21px; line-height:2.0; }
+.right { position:absolute; right:80px; top:150px; width:440px; }
+.badge { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:2px solid #ff4d4d;
+  border-radius:999px; background:rgba(18,18,22,.92); color:#fff; font-weight:700; font-size:16px;
+  box-shadow:0 4px 18px rgba(0,0,0,.45); float:right; }
+.badge .pct { color:#ff4d4d; }
+
+/* ===== verbatim from src/overlay.css ===== */
+#slop-panel { clear:both; margin-top:12px; width:440px; padding:18px; border-radius:14px;
+  background:rgba(18,18,22,.97); color:#eaeaea; border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 40px rgba(0,0,0,.55); font-size:14px; }
+.slop-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.slop-head strong { font-size:15px; }
+#slop-close { background:none; border:none; color:#aaa; font-size:20px; line-height:1; }
+#slop-verdict { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+.slop-big { font-size:34px; font-weight:800; }
+.slop-verdict-text { color:#cfcfcf; font-style:italic; }
+.slop-attribution { display:block; margin-top:2px; font-size:12px; opacity:.75; font-style:italic; }
+.slop-components { margin:-4px 0 10px; color:#8f8f8f; font-size:12px; letter-spacing:.02em; }
+#slop-craft { margin-top:4px; }
+.slop-craft-h { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8a8a; margin:13px 0 4px; }
+.slop-cr { display:flex; gap:7px; align-items:flex-start; padding:7px 10px; margin:5px 0; border-radius:8px;
+  border-left:3px solid transparent; background:rgba(255,255,255,.04); }
+.slop-cr.good { border-left-color:#5fd068; }
+.slop-cr.joker { border-left-color:#b07bff; background:rgba(176,123,255,.09); }
+.slop-cr.bad { border-left-color:#ff9f1c; }
+.slop-cr-emoji { font-size:14px; line-height:1.3; }
+.slop-cr-body { flex:1; min-width:0; }
+.slop-cr-label { color:#eaeaea; font-size:13.5px; font-weight:600; }
+.slop-cr.joker .slop-cr-label { color:#d9c4ff; }
+.slop-cr-quote { color:#cdb6ff; font-size:12.5px; margin-top:2px; }
+.slop-cr.good .slop-cr-quote { color:#a9e6ac; }
+.slop-cr.bad .slop-cr-quote { color:#ffd79a; }
+.slop-foot { margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,.07); color:#777; font-size:12px; }
+</style></head><body>
+  <div class="title">How AI do your Suno lyrics read?</div>
+  <div class="sub"><div class="dot"></div>suno.com / song</div>
+  <div class="song">
+    <div class="meta"><b>“Demo Song”</b> &nbsp;·&nbsp; synthetic lyrics (not a real song)</div>
+    <div class="lyr">Neon shadows on the horizon, echoes in my veins<br>Burning like a wildfire, we rise up from the ashes<br>We are the ones tonight, we will never fall<br>Dancing through the silence, lost in it all</div>
+  </div>
+  <div class="right">
+    <div class="badge"><span>🤖</span><span class="pct">100%</span></div>
+    <div id="slop-panel">
+      <div class="slop-head"><strong>Suno Slop Detector</strong><button id="slop-close">×</button></div>
+      <div id="slop-verdict">
+        <span class="slop-big" style="color:#ff4d4d">100% AI</span>
+        <span class="slop-verdict-text">Reeks of slop</span>
+        <span class="slop-attribution">likely Claude (100%)</span>
+      </div>
+      <div class="slop-components">model confidence this is AI: 100%</div>
+      <div id="slop-craft">
+        <div class="slop-craft-h">✅ Keep this</div>
+        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">repeated vowel sounds</div></div></div>
+        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">reaches for precise words</div></div></div>
+        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">rhymes inside the line</div></div></div>
+        <div class="slop-craft-h">🃏 Try this</div>
+        <div class="slop-cr joker"><span class="slop-cr-emoji">🃏</span><div class="slop-cr-body"><div class="slop-cr-label">“dancing” is a word AI leans on. Swap it for one small, specific thing only your narrator would notice — an object, a place, a name (e.g. “the laundromat on 5th”).</div></div></div>
+        <div class="slop-craft-h">⚠️ Work on</div>
+        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">leans on clichés</div><div class="slop-cr-quote">“Neon shadows on the horizon, echoes in my veins”</div></div></div>
+        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">stock images (shadows / wildfire / neon)</div></div></div>
+        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">‘like a…’ similes</div></div></div>
+      </div>
+      <div class="slop-foot">Reads only the lyrics box · model confidence, not proof</div>
+    </div>
+  </div>
+</body></html>
