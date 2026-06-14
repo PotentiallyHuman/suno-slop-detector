@@ -831,7 +831,25 @@
     return bits.join("; ") + (more > 0 ? " (+" + more + " more)" : "");
   }
 
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanizeChaos: humanizeChaos, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary,
+  // HARD INPUT BOUND (red-team fix): a press re-scores the whole song ~200x, and scoreFn is O(lines),
+  // so a pathologically long paste (>~500 lines) makes the UI freeze (quadratic), and Chaos used to
+  // silently DROP everything past line 200. Cap the text each press OPERATES on to MAX_LINES, then
+  // re-append the untouched tail to the output — so work is bounded AND no content is ever lost.
+  // (Real songs are <100 lines; this only ever triggers on an accidental huge paste.) humanizeHalf
+  // calls the raw humanizeOne internally on the already-capped head, so wrapping the exports suffices.
+  function capHuge(fn) {
+    return function (text) {
+      var ls = String(text == null ? "" : text).split("\n");
+      if (ls.length <= MAX_LINES) return fn.apply(this, arguments);
+      var args = Array.prototype.slice.call(arguments);
+      var tail = "\n" + ls.slice(MAX_LINES).join("\n");
+      args[0] = ls.slice(0, MAX_LINES).join("\n");
+      var res = fn.apply(this, args);
+      if (res && typeof res.text === "string") res.text += tail;   // preserve the tail; never drop lines
+      return res;
+    };
+  }
+  globalThis.HumanizeFreestyle = { humanizeOne: capHuge(humanizeOne), humanizeHalf: capHuge(humanizeHalf), humanizeChaos: capHuge(humanizeChaos), humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary,
     // exposed for the sentence-replacer build + soup tests: the real shipped coherence gates
     _gates: { words: words, nsylLine: nsylLine, lastWord: lastWord, grammatical: grammatical, completeLine: completeLine, isFullClause: isFullClause, rhymeKey: function (l) { return VK[lastWord(l)] || null; } } };
 })();

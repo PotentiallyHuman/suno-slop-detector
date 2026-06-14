@@ -13,6 +13,9 @@
   var FG = new Set(new Uint32Array(b64(M.fourgB64).buffer));
   var rev2 = M.rev2, rev3 = M.rev3, slant = M.slant, VK = M.vkey, HUM = M.humanness;
   var WPOS = M.wordPOS || {}, VALIDBG = new Set(M.validBG || []), CLICHE = new Set(M.cliche || []);
+  // Supplement the model's cliché list with words it missed but the user flags as AI tells.
+  // "hum/humming" is the most-hated ("echoes hum under streetlights") yet wasn't in the 125.
+  ["hum", "humming", "hums", "hummed"].forEach(function (w) { CLICHE.add(w); });
   var STARTBG = new Set(M.startBG || []), ENDBG = new Set(M.endBG || []), TEMPLATES = new Set(M.templates || []);
   // Words the v8 detector reads as clearly HUMAN (its own learned word-weight is strongly
   // negative). Built once from the loaded v8 model so the swap layer never replaces a word the
@@ -143,6 +146,65 @@
   // editing them produces fragments the eye reads as soup. Leave fragments alone.
   var FINITE_POS = { VB: 1, VBP: 1, VBZ: 1, VBD: 1, MD: 1 };
   function isFullClause(line) { var w = words(line); if (w.length < 4) return false; for (var i = 0; i < w.length; i++) { var p = WPOS[w[i]]; if (!p || !FINITE_POS[p]) continue; var pp = WPOS[w[i - 1]] || ""; if (pp === "DT" || pp === "VBG" || pp === "TO") continue; /* "the RAIN" / "a setting SAIL" = object noun; "to TRY" = infinitive — none is the clause's finite verb (cycle 19+21 fragment guard) */ return true; } return false; }
+  // ---- SENTENCE-REPLACER (decision-tree branch 4 — the coverage path). When no swap/mold/dup fits a
+  // line that reads AI (often pure typicality, no cliché to swap), replace the WHOLE line with a clean
+  // library line: same rhyme-key (the song's scheme holds), syllable-matched (±1), best theme fit, with
+  // a theme-fit FLOOR + anti-dup. The library (globalThis.REPLACE_LIB) is BUILD-TIME judge-cleaned, so
+  // every candidate is coherent by construction. Refuse if nothing fits (REFUSE > SOUP). Indexed once.
+  var REPLIDX = null;
+  function buildReplaceIndex() {
+    REPLIDX = [];
+    var L = globalThis.REPLACE_LIB || [];
+    for (var i = 0; i < L.length; i++) { var lw = lastWord(L[i]), rk = VK[lw]; if (!rk) continue; REPLIDX.push({ line: L[i], rk: rk, syl: nsylLine(L[i]), tv: themeVec(L[i]) }); }
+  }
+  // A library line may carry a cliché word ONLY if that word is cleanable — the Chaos word-swap
+  // post-pass will replace it (shadows->dark). Reject a candidate only when it holds an UN-cleanable
+  // cliché (no curated substitute, e.g. neon/echo/light) that the post-pass can't fix.
+  function clicheCleanable(w) {
+    var SWn = globalThis.CLICHE_SWAPS || {}, SWv = globalThis.CLICHE_SWAPS_VERB || {};
+    if (SWn[w] && SWn[w].length) return true;
+    var v = SWv[w]; if (v) { if (Array.isArray(v)) return v.length > 0; return !!((v.obj && v.obj.length) || (v.noobj && v.noobj.length)); }
+    return false;
+  }
+  function lineHasUncleanableCliche(line) { var ws = words(line); for (var i = 0; i < ws.length; i++) if (CLICHE.has(ws[i]) && !clicheCleanable(ws[i])) return true; return false; }
+  // Swap EVERY cliché WORD that has a curated substitute, across EVERY line — the user's
+  // "Humanize Rewrite = all AI words", and the Chaos final pass that cleans any cliché a library
+  // line left behind. A word swap keeps the sentence's structure, so there is no clause gate here —
+  // only grammatical() on the output and a real cliché removed. Chorus-consistent (all copies match).
+  function swapAllWords(text) {
+    var lines = String(text).split("\n"), steps = [], done = {}, i, j;
+    for (i = 0; i < lines.length; i++) {
+      var orig = lines[i];
+      if (done[orig] || /^\s*\[/.test(orig) || words(orig).length < 2 || clicheCount(orig) === 0) { done[orig] = 1; continue; }
+      var sw = swapCliches(orig, text);
+      if (sw && sw !== orig && clicheCount(sw) < clicheCount(orig) && grammatical(words(sw))) {
+        for (j = 0; j < lines.length; j++) if (lines[j] === orig) lines[j] = sw;
+        steps.push({ lineIndex: i, from: orig, to: sw, mode: "swap" });
+      }
+      done[orig] = 1;
+    }
+    return { text: lines.join("\n"), steps: steps };
+  }
+  function sentenceReplace(aiLine, theme, songLines, aggressive) {
+    if (!REPLIDX) buildReplaceIndex();
+    if (!REPLIDX.length) return null;
+    var rk = VK[lastWord(aiLine)]; if (!rk) return null;
+    var syl = nsylLine(aiLine), used = {};
+    for (var s = 0; s < songLines.length; s++) used[String(songLines[s]).toLowerCase()] = 1;   // never reuse a line already in the song
+    // LEVER 1 (Chaos typicality): the theme-fit FLOOR + syllable±1 leave ~half the lines of a
+    // saturated song with no library match, so the song never drops below 90%. Chaos is the
+    // explicitly off-topic tier, so it relaxes both — no floor (any coherent rhyme-match), syllable
+    // ±2 (varying line length also cuts the AI "stamped lengths" signal). Line/Half keep the floor.
+    var best = null, bs = aggressive ? -2 : 0.08, sylTol = aggressive ? 2 : 1;
+    for (var i = 0; i < REPLIDX.length; i++) {
+      var c = REPLIDX[i];
+      if (c.rk !== rk || Math.abs(c.syl - syl) > sylTol || used[c.line.toLowerCase()]) continue;
+      if (lineHasUncleanableCliche(c.line)) continue;                                           // allow a swappable cliché (post-pass cleans it); reject only un-fixable ones
+      var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
+      if (fit > bs) { bs = fit; best = c.line; }
+    }
+    return best;
+  }
   // ---- best-of-10 per press: make several DISTINCT finished lines, judge each one through the
   // trained line score, the cliché count, and the 6 craft lenses (lens score > 0.5 = AI-leaning,
   // same calibration the craft panel uses), and hand back the suggestions best-first. ----
@@ -253,6 +315,10 @@
       return l.replace(/\bevery\b/gi, function (w) {                 // replacing ONE reads broken — replace BOTH with "each",
         return w.charAt(0) === "E" ? "Each" : "each";                // which keeps the parallelism (0.62x human-leaning)
       });
+    // "Every X I ever Y" — the relative "ever" is a negative-polarity item LICENSED by
+    // "every"/"any". Swapping the opener to This/That/Some strands it ("This fear I ever
+    // carried" reads ungrammatical). Leave the whole line to the swap layer instead.
+    if (/\b(every|any)\b[^.]*\bever\b/i.test(l)) return null;
     m = l.match(/^(\W*)[Ee]very\s+single\s+(.*)$/);                  // "every single X" is a unit
     if (m) return m[1] + "This one " + m[2];
     m = l.match(/^(\W*)[Ee]very\s+(.*)$/);
@@ -267,7 +333,7 @@
   // idioms a noun-swap would destroy ("the trumpet caught FURNACE") — never touch the word inside these
   var IDIOMS = ["caught fire", "on fire", "set fire", "in love", "fall in love", "falling in love", "fell in love", "make love", "made love", "my love", "first light", "light up",
     "for the night", "the night of", "all night", "spend the night", "through the night", "tonight", "lights camera", "lights cameras", "flame of fire", "night and day", "day and night", "holding hands", "hold hands", "held hands", "lot of soul", "heart and soul", "body and soul", "good night", "goodnight", "out of your hands", "out of my hands", "in your hands", "in my hands", "love you so", "love me so", "love her so", "love him so",
-    "hands up", "hands down", "heads up", "heads down", "hand in hand", "hands in the air", "raise your hands", "shadow of", "shadow of a", "in the shadow", "fire away", "play with fire", "light of day", "see the light", "guiding light"];
+    "hands up", "hands down", "heads up", "heads down", "hand in hand", "hands in the air", "raise your hands", "shadow of", "shadow of a", "in the shadow", "fire away", "play with fire", "light of day", "see the light", "guiding light", "lost and found"];
   // words that are often VERBS ("i love you" -> "i devotion you") — swap only in clear noun position
   var VERBY = { love: 1, kiss: 1, whisper: 1, whispers: 1, echo: 1, echoes: 1, flicker: 1, shimmer: 1, glimmer: 1, surrender: 1, fire: 1, light: 1, storm: 1, scar: 1, mist: 1, voice: 1, dust: 1 };
   var NOUN_CTX = { the: 1, a: 1, an: 1, my: 1, our: 1, your: 1, his: 1, her: 1, their: 1, this: 1, that: 1, of: 1, "in": 1, with: 1, through: 1, like: 1, every: 1, no: 1, some: 1 };
@@ -335,6 +401,12 @@
       // "lost" is adjectival at line starts ("Lost in the moment" -> Stranded) but a VERB after
       // a subject/auxiliary ("you've almost lost your will") — swap only the adjectival uses
       if (lw === "lost" && /^(i|you|we|they|he|she|i've|you've|we've|they've|have|has|had|almost|nearly|just|never|who)$/.test(prev)) return tok;
+      // "shadows": swap only the "(in/from) the shadows" = darkness/place sense (prev is "the").
+      // A bare-subject "Shadows dance and sway" is moving shapes; a mass-noun sub (dark/gloom)
+      // breaks plural agreement, so leave it. (cycle 36 — restoring the catch the user expects.)
+      if (lw === "shadows" && prev !== "the") return tok;
+      // phrasal verbs: "broken down/up", "fading out" — a swap ("wrecked down") isn't idiomatic.
+      if (lw === "broken" && /^(down|up|in|into|off|apart|free)$/.test(nxtL)) return tok;
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
@@ -370,15 +442,20 @@
         if (CLICHE.has(s) || songWords[s]) continue;             // never re-slop, never duplicate the song
         if (mustRhyme && VK[s] !== VK[lw]) continue;             // keep the song's rhyme vowel
         if (needPlural && s.charAt(s.length - 1) !== "s") continue;
+        // article agreement: "a sky" must never become "a clouds" — reject a plural-looking sub
+        // for a singular source right after a/an (the singular->plural number break, cycle 36).
+        if (/^(an?)$/.test(prev) && lw.charAt(lw.length - 1) !== "s" && s.charAt(s.length - 1) === "s") continue;
         var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
-        cands.push({ s: s, q: Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4 });
+        cands.push({ s: s, sd: Math.abs(nsyl(s) - nsyl(lw)), q: Math.abs(nsyl(s) - nsyl(lw)) * 2.5 + k * 0.3 - fit * 4 });
       }
+      cands = cands.filter(function (c) { return c.sd <= 1; });   // hard meter cap: a ±2-syllable swap stilts the line ("sky"->"stratosphere") — never rotate into it
       if (!cands.length) return tok;
       cands.sort(function (a, b) { return a.q - b.q; });
-      // SONG-TAILORED variety WITHOUT quality loss: pick among only the TOP candidates (within 1.5
-      // of the best), seeded by the song — so two songs vary their swap, but neither dips into the
-      // weak tail. Expansive where safe (several good options), strict where risky (one good option).
-      var topN = 1; while (topN < cands.length && cands[topN].q <= cands[0].q + 1.5) topN++;
+      // SONG-TAILORED variety (anti-mode-collapse): rotate among ALL good candidates (within 4 of the
+      // best), seeded by the song — so the SAME word isn't reused in every song (silence->stillness in
+      // one, ->hush in another). If we always picked the single best, we'd just mint the NEXT slop word.
+      // A ±1-syllable sub is allowed in the rotation (minor meter give, user-approved); ±2 is capped above.
+      var topN = 1; while (topN < cands.length && cands[topN].q <= cands[0].q + 4) topN++;
       var best = cands[songSeed % topN].s;
       changed++;
       songWords[best] = 1;
@@ -404,7 +481,7 @@
     return out;
   }
   var MAX_LINES = 200, MAX_CANDIDATES = 12;   // hard work caps: a press is bounded no matter the input
-  function humanizeOne(text, scoreFn, logitFn) {
+  function humanizeOne(text, scoreFn, logitFn, allowReplace, skipSongGuard) {
     var theme = themeVec(text); if (!theme) return null;
     var lines = String(text).split("\n"), songScore = scoreFn(text), ranked = [], i;
     if (lines.length > MAX_LINES) lines.length = MAX_LINES;   // pathological paste: edit the first 200 lines only
@@ -440,14 +517,14 @@
         if (jacc(sets[i], sets[j2]) >= 0.6) { if (j2 < i) { earlierDup = j2; break; } laterDup = true; }
       }
       if (earlierDup >= 0) {                                   // a REPEAT of an earlier line
-        if (songScore >= 55) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
+        if (skipSongGuard || songScore >= 30) ranked.push({ i: i, dup: true, r: 600 + scoreFn(lines[i]) });
         continue;
       }
       if (laterDup) continue;                                  // the hook's root occurrence: sacred
       // Evidence = cliché WORDS, or an ablation-proven MOLD frame (only when the song itself
       // reads AI). The line-level AI score false-flags specific human lines ("Keys in my
       // teeth, engine coughing black") — it may rank candidates, never condemn.
-      var cc = clicheCount(lines[i]), mold = songScore >= 55 && moldLine(lines[i]);
+      var cc = clicheCount(lines[i]), mold = (skipSongGuard || songScore >= 30) && moldLine(lines[i]);
       if (cc === 0 && !mold) continue;
       ranked.push({ i: i, mold: mold, r: (mold ? 2000 : 0) + cc * 1000 + scoreFn(lines[i]) });
     }
@@ -498,9 +575,15 @@
       // SONG-LEVEL AI GUARD (red-team fix): never mutate a clean song's words — a 0%-AI line like
       // "Whispers in the wind" must be left alone. Only swap when the song actually reads AI (>=50),
       // matching the dup/mold gates (55). Saturated AI songs still pass, so good swaps are unaffected.
-      if (clicheCount(orig) > 0 && songScore >= 50) {
+      if (clicheCount(orig) > 0 && (skipSongGuard || songScore >= 30)) {
         var swapped = swapCliches(orig, text);
-        if (swapped && clicheCount(swapped) < clicheCount(orig) && isFullClause(orig) && grammatical(words(swapped))) {
+        // WORD SWAP needs NO isFullClause gate: substituting one cliché word for a same-POS curated
+        // word keeps the sentence's structure intact, so it's safe even on a verbless fragment
+        // ("a neutron in the shadows" -> "a neutron in the dark"). isFullClause stays on RESTRUCTURE
+        // (line 519) where reshaping the clause CAN break grammar. grammatical(swapped) is the guard
+        // here — it validates the OUTPUT's POS-bigrams. (Fixes the 300-word list silently skipping
+        // every cliché that sits in an appositive/fragment line.)
+        if (swapped && clicheCount(swapped) < clicheCount(orig) && grammatical(words(swapped))) {
           var trialS = lines.slice(); trialS[idx] = swapped;
           var snew = trialS.join("\n"), nsS = scoreFn(snew);
           var sok = logitFn ? (logitFn(snew) <= fineBase + 0.05) : (nsS <= songScore + 1);
@@ -535,6 +618,25 @@
         return { text: trial.join("\n"), lineIndex: idx, from: orig, to: trial[idx], before: Math.round(songScore), after: Math.round(newSong) };
       }
     }
+    // BRANCH 4 — SENTENCE-REPLACER (OPT-IN ONLY, gated by allowReplace). v1.0.0 = OPTION A: Line/Half do
+    // NOT pass allowReplace, so they stay MEANING-PRESERVING (swap/mold only — every edit keeps the
+    // user's own words). The replacer is coherent but OFF-TOPIC (retrieval can't fit, generation makes
+    // soup — both disproven), so whole-line replacement is reserved for a future opt-in aggressive tier.
+    if (allowReplace) {
+    var repCand = [];
+    for (var ri2 = 0; ri2 < lines.length; ri2++) { if (!isFullClause(lines[ri2])) continue; if (scoreFn(lines[ri2]) < 55) continue; repCand.push({ i: ri2, ai: scoreFn(lines[ri2]) }); }
+    repCand.sort(function (a, b) { return b.ai - a.ai; });
+    for (var rc = 0; rc < repCand.length; rc++) {
+      var ridx = repCand[rc].i, rorig2 = lines[ridx];
+      var rep = sentenceReplace(rorig2, theme, lines);
+      if (!rep) continue;
+      var rtrial2 = lines.slice(); rtrial2[ridx] = cap(rep);
+      var rnew3 = rtrial2.join("\n"), rns3 = scoreFn(rnew3);
+      if (logitFn ? (logitFn(rnew3) <= fineBase - 0.02) : (rns3 <= songScore)) {
+        return { text: rnew3, lineIndex: ridx, from: rorig2, to: cap(rep), before: Math.round(songScore), after: Math.round(rns3), mode: "replace" };
+      }
+    }
+    }
     return null;
   }
   // ---- "Humanize Rewrite": one press rebuilds the worst HALF of the song (ranked by cliché then AI),
@@ -542,13 +644,24 @@
   // remains — it converges, always sparing the cleaner half. Returns null when no line still reads AI. ----
   function humanizeHalf(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
-    var lines = String(text).split("\n"), nb = 0, i;
+    if (scoreFn(text) < 30) return null;               // genuinely human songs (0-21% in corpus) — leave them alone
+    var before = Math.round(scoreFn(text));
+    // PASS 1 — Humanize Rewrite = swap EVERY cliché WORD in EVERY line (the user's "all AI words"),
+    // not just the worst half. Word swaps are meaning-preserving and the song % is blind to them,
+    // so doing them everywhere can only help; obvious clichés (shadows/silence/dreams) all go.
+    var w = swapAllWords(text), cur = w.text, steps = w.steps.slice();
+    // PASS 2 — meaning-preserving RESTRUCTURES (Every->This molds, chorus variation) on the worst
+    // remaining lines. Words are already clean, so humanizeOne here returns mold/dup edits.
+    var lines = cur.split("\n"), nb = 0, i;
     for (i = 0; i < lines.length; i++) if (words(lines[i]).length >= 3) nb++;
-    var half = Math.ceil(nb / 2), cur = text, before = Math.round(scoreFn(text)), steps = [], k;
-    for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
-      var res = humanizeOne(cur, scoreFn, logitFn);
+    var half = Math.ceil(nb / 2), k;
+    for (k = steps.length; k < half; k++) {
+      var res = humanizeOne(cur, scoreFn, logitFn, false, true);
       if (!res) break;
-      cur = res.text; steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
+      cur = res.text;
+      // CHORUS CONSISTENCY: a repeated line (chorus) must read the same everywhere.
+      if (res.from && res.to && res.from !== res.to) cur = cur.split("\n").map(function (l) { return l === res.from ? res.to : l; }).join("\n");
+      steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
     if (!steps.length) return null;
     return { text: cur, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(cur)) };
@@ -560,7 +673,7 @@
   // vocabulary, and judged by the grammar professor + craft lenses. Evidence gates are
   // dropped (any AI-leaning line is fair game) but hook ROOTS stay sacred and every edit
   // must measurably lower the log-odds. Stops under CHAOS_TARGET or when nothing helps.
-  var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 30;
+  var CHAOS_TARGET = 15, CHAOS_MAX_EDITS = 55;   // raised from 30: long (60+-line) songs hit the cap before all their typicality lines were replaced
   // NOTE: chaos has NO n-gram rebuild path. It was built and disproven (2026-06-13): across
   // 8 corpus songs + Hydrogen, ZERO generator rebuilds passed the strict whole-line POS
   // template — under a real coherence bar the walk produces soup or nothing. The chaos gain
@@ -600,11 +713,25 @@
       for (var c = 0; c < cands.length && steps.length < CHAOS_MAX_EDITS; c++) {
         var idx = cands[c].i, orig = cur[idx], tries = [];
         if (cands[c].dup) {
+          // LEVER 2 (Chaos repetition): exact line-duplication is an INDEPENDENT AI axis (~4-5 z;
+          // AI over-repeats vs human). This is a LATER copy (the first occurrence = the hook = sacred,
+          // filtered above). Vary it if we can (keeps it recognizable); else, in Chaos, replace it with
+          // a fresh library line so the song stops repeating the same line verbatim. Line/Half never do
+          // this (they keep chorus consistency); Chaos trades it for the repetition drop.
           var dv = dupVariant(orig); if (dv) tries.push({ to: dv, mode: "vary" });
+          else { var lrd = sentenceReplace(orig, theme, cur, true); if (lrd && lrd !== orig) tries.push({ to: lrd, mode: "replace" }); }
         } else {
           var rot = (songNow().match(/^(That|This|Some|Perhaps|Could be|Why do) /gmi) || []).length;
           var rs = restructure(orig, rot); if (rs && !moldLine(rs)) tries.push({ to: rs, mode: "restructure" });
           var sw = swapCliches(orig, songNow()); if (sw && sw !== orig) tries.push({ to: sw, mode: "swap" });
+          // LAST resort (Chaos only): the line carries no cliché/mold handle — it's pure
+          // structural typicality, the kind that keeps Hydrogen pinned at ~100% no matter how
+          // many words we swap. Replace it wholesale with a clean, rhyme-key+syllable-matched
+          // line from the 3085-line judge-cleaned library. This is what actually drops the % on
+          // structural songs; it is COHERENT (0 soup, build-time judged) but may go OFF-TOPIC —
+          // the explicit "meaning may bend" contract of Chaos. Tried last, so cliché lines still
+          // get a meaning-preserving swap first; only the unhandleable lines get replaced.
+          var lr = sentenceReplace(orig, theme, cur, true); if (lr && lr !== orig) tries.push({ to: lr, mode: "replace" });
         }
         for (var t = 0; t < tries.length; t++) {
           var trial = cur.slice(); trial[idx] = tries[t].to;
@@ -621,6 +748,11 @@
       }
       if (!improved) break;
     }
+    // FINAL — Chaos = lines, THEN all AI words: clean every cliché WORD still in the song, including
+    // any a library line introduced ("...in the shadows" -> "...in the dark"). swapAllWords keeps the
+    // sentence structure (no soup) and runs even when no line was replaced above.
+    var wp = swapAllWords(cur.join("\n"));
+    if (wp.steps.length) { cur = wp.text.split("\n"); for (var wi = 0; wi < wp.steps.length; wi++) steps.push(wp.steps[wi]); }
     if (!steps.length) return null;
     var finalText = cur.join("\n");
     return { text: finalText, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(finalText)), target: CHAOS_TARGET };
@@ -699,7 +831,25 @@
     return bits.join("; ") + (more > 0 ? " (+" + more + " more)" : "");
   }
 
-  globalThis.HumanizeFreestyle = { humanizeOne: humanizeOne, humanizeHalf: humanizeHalf, humanizeChaos: humanizeChaos, humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary,
+  // HARD INPUT BOUND (red-team fix): a press re-scores the whole song ~200x, and scoreFn is O(lines),
+  // so a pathologically long paste (>~500 lines) makes the UI freeze (quadratic), and Chaos used to
+  // silently DROP everything past line 200. Cap the text each press OPERATES on to MAX_LINES, then
+  // re-append the untouched tail to the output — so work is bounded AND no content is ever lost.
+  // (Real songs are <100 lines; this only ever triggers on an accidental huge paste.) humanizeHalf
+  // calls the raw humanizeOne internally on the already-capped head, so wrapping the exports suffices.
+  function capHuge(fn) {
+    return function (text) {
+      var ls = String(text == null ? "" : text).split("\n");
+      if (ls.length <= MAX_LINES) return fn.apply(this, arguments);
+      var args = Array.prototype.slice.call(arguments);
+      var tail = "\n" + ls.slice(MAX_LINES).join("\n");
+      args[0] = ls.slice(0, MAX_LINES).join("\n");
+      var res = fn.apply(this, args);
+      if (res && typeof res.text === "string") res.text += tail;   // preserve the tail; never drop lines
+      return res;
+    };
+  }
+  globalThis.HumanizeFreestyle = { humanizeOne: capHuge(humanizeOne), humanizeHalf: capHuge(humanizeHalf), humanizeChaos: capHuge(humanizeChaos), humanize: humanize, genLine: genLine, genSuggestions: genSuggestions, judgeLine: judgeLine, themeVec: themeVec, diagnoseShape: diagnoseShape, pressSummary: pressSummary,
     // exposed for the sentence-replacer build + soup tests: the real shipped coherence gates
     _gates: { words: words, nsylLine: nsylLine, lastWord: lastWord, grammatical: grammatical, completeLine: completeLine, isFullClause: isFullClause, rhymeKey: function (l) { return VK[lastWord(l)] || null; } } };
 })();

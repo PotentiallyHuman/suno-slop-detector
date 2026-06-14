@@ -15,7 +15,14 @@
   // function words. (real English ~30-40%+; Danish/Spanish ~0-6%, so the margin is safe)
   const EN_COMMON = /^(the|and|you|to|a|of|in|it|that|is|my|me|we|for|on|with|but|love|night|i|are|was|be|he|she|they|this|have|not|your|all|like|when|what|so|do|can|just|know|now|time|up|out|no|yes|oh|don't|i'm|we're|you're|it's)$/;
   function looksNonEnglish(text) {
-    const toks = String(text).toLowerCase().match(/[a-z']+/g) || [];
+    const s = String(text);
+    // Non-Latin scripts (Japanese kana/kanji, Korean, Chinese, Cyrillic, Hebrew,
+    // Arabic, Thai, …): the English model can't read a single character, so the score
+    // would be noise (a katakana song was reading 96%). Any meaningful share -> not English.
+    const nonLatin = (s.match(/[぀-ヿ㐀-鿿가-힯Ѐ-ӿ֐-׿؀-ۿ฀-๿]/g) || []).length;
+    const latin = (s.match(/[a-z]/gi) || []).length;
+    if (nonLatin > 0 && nonLatin >= (nonLatin + latin) * 0.2) return true; // >=20% non-Latin letters
+    const toks = s.toLowerCase().match(/[a-z']+/g) || [];
     if (toks.length < 12) return false;            // too short to judge
     let hits = 0;
     for (let i = 0; i < toks.length; i++) if (EN_COMMON.test(toks[i])) hits++;
@@ -76,7 +83,7 @@
   const pageScore = document.getElementById("page-score");
   const pageLabel = document.getElementById("page-label");
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
     if (!tab) return;
     const isSong = /^https:\/\/suno\.com\/song\//.test(tab.url || "");
