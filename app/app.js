@@ -62,7 +62,7 @@
     var h = document.createElement("div");
     h.className = "craft-h"; h.textContent = txt; craftEl.appendChild(h);
   }
-  function row(cls, emoji, label, detail) {
+  function makeRow(cls, emoji, label, detail) {
     var r = document.createElement("div");
     r.className = "craft-row " + cls;
     var e = document.createElement("span");
@@ -76,25 +76,31 @@
       d.className = "cr-detail"; d.textContent = detail; body.appendChild(d);
     }
     r.appendChild(body);
-    craftEl.appendChild(r);
+    return r;
   }
+  // Compact panel (user 2026-06-14): one joker (top) + one ⚠️ (middle) + one ✅ (bottom) so it fits a
+  // phone; tap any row to reroll within its category (the joker cycles the smart move + the most-AI lines).
   function renderCraft(p) {
     clear(craftEl);
     if (!p) return;
-    if (p.good && p.good.length) {
-      head("✅ Keep this");
-      p.good.forEach(function (g) { row("good", "✅", g.label, g.quote || ""); });
+    var jokerOpts = (p.jokerOpts && p.jokerOpts.length) ? p.jokerOpts.slice() : (p.joker ? [p.joker.text] : []);
+    var bad = p.bad || [], good = p.good || [], ix = { joker: 0, bad: 0, good: 0 };
+    function addRow(cat, emoji, header) {
+      head(header);
+      var holder = document.createElement("div"); craftEl.appendChild(holder);
+      (function paint() {
+        clear(holder);
+        var r, count;
+        if (cat === "joker") { if (!jokerOpts.length) return; r = makeRow("joker", emoji, jokerOpts[ix.joker % jokerOpts.length], ""); count = jokerOpts.length; }
+        else if (cat === "bad") { if (!bad.length) return; var b = bad[ix.bad % bad.length]; r = makeRow("bad", emoji, b.label, [b.quote, b.fix].filter(Boolean).join(" — ")); count = bad.length; }
+        else { if (!good.length) return; var g = good[ix.good % good.length]; r = makeRow("good", emoji, g.label, g.quote || ""); count = good.length; }
+        if (count > 1) { r.classList.add("craft-tap"); r.title = "tap for another"; r.addEventListener("click", function () { ix[cat]++; paint(); }); }
+        holder.appendChild(r);
+      })();
     }
-    if (p.joker) {
-      head("🃏 Try this");
-      row("joker", "🃏", p.joker.text, "");
-    }
-    if (p.bad && p.bad.length) {
-      head("⚠️ Work on");
-      p.bad.forEach(function (b) {
-        row("bad", "⚠️", b.label, [b.quote, b.fix].filter(Boolean).join(" — "));
-      });
-    }
+    addRow("joker", "🃏", "🃏 Try this");
+    addRow("bad", "⚠️", "⚠️ Work on");
+    addRow("good", "✅", "✅ Keep this");
   }
 
   function showInstrumental() {
@@ -208,21 +214,17 @@
   function renderJokerPreview(panel) {
     updateRewriteBtn();
     var p = panel || {};
-    var baseJoker = p.joker ? p.joker.text : null;   // the panel's synonym suggestion
-    var joker = baseJoker;
-    if (hzNext.res) {
-      // SYNONYMS + button hint (user choice): keep the synonym suggestion, add a one-click nudge.
-      var hint = "Or press Humanize Line to auto-rebuild your most-AI line (#" + (hzNext.res.lineIndex + 1) + ").";
-      joker = baseJoker ? (baseJoker + " " + hint) :
-        ("Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds it.");
-    } else if (aiScore(lyricsEl.value || "") >= 55) {
-      // engine exhausted but the song still reads AI: say what only the writer can fix
+    // The joker is the cyclable jokerOpts list painted by renderCraft. The only override left: when the
+    // engine has nothing safe left AND the song still reads AI, swap in the shape diagnosis.
+    if (!hzNext.res && aiScore(lyricsEl.value || "") >= 55) {
       var dg = null;
       try { dg = HumanizeFreestyle.diagnoseShape(lyricsEl.value || ""); } catch (e) {}
-      if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
+      if (dg) {
+        var np = {}; for (var k in p) np[k] = p[k];
+        np.jokerOpts = ["Every safe mechanical edit is done — what's left is yours to write: " + dg + "."];
+        renderCraft(np);
+      }
     }
-    if (!joker) return; // keep the craft joker
-    renderCraft({ good: p.good, bad: p.bad, joker: { text: joker } });
   }
 
   howaiBtn.addEventListener("click", analyse);

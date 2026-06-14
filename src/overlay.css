@@ -118,6 +118,11 @@
 .slop-cr.bad  .slop-cr-quote { color: #ffd79a; }
 .slop-cr.joker .slop-cr-quote { color: #cdb6ff; }
 .slop-cr-fix { color: #9a9a9a; font-size: 11px; margin-top: 2px; font-style: italic; }
+/* tap-to-reroll: one row per category, click cycles within it */
+.slop-cr.slop-cr-tap { cursor: pointer; position: relative; }
+.slop-cr.slop-cr-tap:hover { background: rgba(255, 255, 255, 0.07); }
+.slop-cr.slop-cr-tap.joker:hover { background: rgba(176, 123, 255, 0.15); }
+.slop-cr.slop-cr-tap::after { content: "↻"; position: absolute; top: 6px; right: 8px; font-size: 11px; color: #8a8a8a; opacity: 0.7; }
 
 .slop-foot {
   margin-top: 14px;

@@ -593,17 +593,46 @@
       "Craft's already tight — for fun, run the whole thing from an unexpected narrator (the room, the phone, the dog) and see what it reveals." };
   }
 
+  // The cyclable JOKER list (compact panel): the one smart craft move first, then a suggestion for
+  // each of the MOST-AI lines (user 2026-06-14: "the joker rotates between the most ai lines"). Each
+  // line names its top swappable cliché word + the engine's synonyms, or points at Humanize Line.
+  function jokerOptions(text, model, scoreResult) {
+    var SW = G.CLICHE_SWAPS || {}, SWV = G.CLICHE_SWAPS_VERB || {};
+    function subsFor(w) {
+      if (SW[w] && SW[w].length) return SW[w];
+      var v = SWV[w]; if (!v) return null;
+      if (Array.isArray(v)) return v.length ? v : null;
+      var o = (v.noobj && v.noobj.length) ? v.noobj : v.obj; return (o && o.length) ? o : null;
+    }
+    var out = [], seen = {};
+    try { var j = buildJoker(scoreResult, text, model); if (j && j.text && !seen[j.text]) { out.push(j.text); seen[j.text] = 1; } } catch (e) {}
+    var lines = String(text).split("\n").map(function (l) { return l.trim(); })
+      .filter(function (l) { return l && !/^\[.*\]$/.test(l) && (l.match(/[a-z']+/gi) || []).length >= 3; });
+    var scored = lines.map(function (l) { var s = 0; try { if (G.SlopV8) s = G.SlopV8.scoreV8(l).score; } catch (e) {} return { l: l, s: s }; });
+    scored.sort(function (a, b) { return b.s - a.s; });
+    for (var k = 0; k < scored.length && out.length < 8; k++) {
+      var line = scored[k].l, ws = (line.toLowerCase().match(/[a-z']+/g) || []), bw = null, bwt = 0;
+      for (var w = 0; w < ws.length; w++) { var cw = ws[w]; if (!subsFor(cw)) continue; var ci = model.vocab.indexOf(cw), cwt = ci >= 0 ? model.wBow[ci] : 0; if (cwt > bwt) { bwt = cwt; bw = cw; } }
+      var txt = bw
+        ? "“" + clip(line) + "” — “" + bw + "” reads AI here; try " + subsFor(bw).slice(0, 3).join(", ") + "."
+        : "“" + clip(line) + "” reads most AI — press Humanize Line to rebuild it.";
+      if (seen[txt]) continue; seen[txt] = 1; out.push(txt);
+    }
+    return out;
+  }
+
   function build(text, scoreResult) {
     var model = G.SLOP_MODEL;
     if (!model) throw new Error("SLOP_MODEL not loaded");
     if (!scoreResult) scoreResult = G.SlopV2.score(text);
     // Defensive: instrumental / empty inputs have no contributions — return an empty panel, never crash.
     if (!scoreResult || scoreResult.instrumental || !scoreResult.contributions) {
-      return { good: [], joker: null, bad: [] };
+      return { good: [], joker: null, bad: [], jokerOpts: [] };
     }
     return {
       good:  buildGood(scoreResult, text, model),
       joker: buildJoker(scoreResult, text, model),
+      jokerOpts: jokerOptions(text, model, scoreResult),
       bad:   buildBad(scoreResult, text, model)
     };
   }

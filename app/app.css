@@ -165,6 +165,11 @@ button:active { transform: translateY(1px); }
 .cr-label { font-size: 14px; color: var(--fg); }
 .craft-row.joker .cr-label { color: #d9c4ff; }
 .cr-detail { font-size: 12.5px; color: var(--muted); margin-top: 3px; font-style: italic; word-break: break-word; }
+/* tap-to-reroll: one row per category, click cycles within it */
+.craft-row.craft-tap { cursor: pointer; position: relative; }
+.craft-row.craft-tap:hover { background: rgba(255, 255, 255, 0.08); }
+.craft-row.craft-tap.joker:hover { background: rgba(176, 123, 255, 0.16); }
+.craft-row.craft-tap::after { content: "↻"; position: absolute; top: 7px; right: 9px; font-size: 12px; color: var(--muted); opacity: 0.6; }
 
 /* ---- humanize toast ---- */
 .toast {

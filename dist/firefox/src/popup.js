@@ -39,42 +39,36 @@
   }
 
   // build a compact craft panel into `host` from a panel object {good,joker,bad}
+  // Compact panel (user 2026-06-14): one joker (top) + one ⚠️ (middle) + one ✅ (bottom) so it fits a
+  // phone; tap any row to reroll within its category (the joker cycles the smart move + the most-AI lines).
   function renderCraft(host, p) {
     while (host.firstChild) host.removeChild(host.firstChild);
     if (!p) return;
-    const head = (txt) => {
-      const h = document.createElement("div");
-      h.className = "craft-h";
-      h.textContent = txt;
-      host.appendChild(h);
-    };
-    const row = (cls, label, detail) => {
-      const r = document.createElement("div");
-      r.className = "craft-row " + cls;
-      const l = document.createElement("div");
-      l.className = "craft-label";
-      l.textContent = label;
-      r.appendChild(l);
-      if (detail) {
-        const d = document.createElement("div");
-        d.className = "craft-detail";
-        d.textContent = detail;
-        r.appendChild(d);
-      }
-      host.appendChild(r);
-    };
-    if (p.good && p.good.length) {
-      head("✅ Keep this");
-      p.good.forEach((g) => row("good", "✅ " + g.label, g.quote || ""));
+    const head = (txt) => { const h = document.createElement("div"); h.className = "craft-h"; h.textContent = txt; host.appendChild(h); };
+    function makeRow(cls, label, detail) {
+      const r = document.createElement("div"); r.className = "craft-row " + cls;
+      const l = document.createElement("div"); l.className = "craft-label"; l.textContent = label; r.appendChild(l);
+      if (detail) { const d = document.createElement("div"); d.className = "craft-detail"; d.textContent = detail; r.appendChild(d); }
+      return r;
     }
-    if (p.joker) {
-      head("🃏 Try this");
-      row("joker", "🃏 " + p.joker.text, "");
+    var jokerOpts = (p.jokerOpts && p.jokerOpts.length) ? p.jokerOpts.slice() : (p.joker ? [p.joker.text] : []);
+    var bad = p.bad || [], good = p.good || [], ix = { joker: 0, bad: 0, good: 0 };
+    function addRow(cat, cls, emoji, header) {
+      head(header);
+      var holder = document.createElement("div"); host.appendChild(holder);
+      (function paint() {
+        while (holder.firstChild) holder.removeChild(holder.firstChild);
+        var r, count;
+        if (cat === "joker") { if (!jokerOpts.length) return; r = makeRow(cls, emoji + " " + jokerOpts[ix.joker % jokerOpts.length], ""); count = jokerOpts.length; }
+        else if (cat === "bad") { if (!bad.length) return; var b = bad[ix.bad % bad.length]; r = makeRow(cls, emoji + " " + b.label, [b.quote, b.fix].filter(Boolean).join(" — ")); count = bad.length; }
+        else { if (!good.length) return; var g = good[ix.good % good.length]; r = makeRow(cls, emoji + " " + g.label, g.quote || ""); count = good.length; }
+        if (count > 1) { r.classList.add("craft-tap"); r.title = "tap for another"; r.addEventListener("click", function () { ix[cat]++; paint(); }); }
+        holder.appendChild(r);
+      })();
     }
-    if (p.bad && p.bad.length) {
-      head("⚠️ Work on");
-      p.bad.forEach((b) => row("bad", "⚠️ " + b.label, [b.quote, b.fix].filter(Boolean).join(" — ")));
-    }
+    addRow("joker", "joker", "🃏", "🃏 Try this");
+    addRow("bad", "bad", "⚠️", "⚠️ Work on");
+    addRow("good", "good", "✅", "✅ Keep this");
   }
 
   // ---- current tab --------------------------------------------------------
@@ -86,10 +80,10 @@
   if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
     if (!tab) return;
-    const isSong = /^https:\/\/suno\.com\/song\//.test(tab.url || "");
+    const isSong = /^https:\/\/suno\.com\/(song\/|create\b)/.test(tab.url || "");
     if (!isSong) {
       pageMsg.textContent =
-        "Open a suno.com/song/… page to score its lyrics. (Reads nowhere else.)";
+        "Open a suno.com/song/… or suno.com/create page to score its lyrics. (Reads nowhere else.)";
       return;
     }
     chrome.tabs.sendMessage(tab.id, { type: "GET_SLOP" }, (resp) => {
@@ -215,21 +209,14 @@
   function renderJoker(panel) {
     updateRewriteBtn();
     const p = panel || {};
-    let baseJoker = p.joker ? p.joker.text : null;   // the panel's synonym suggestion
-    let joker = baseJoker;
-    if (hzNext.res) {
-      // SYNONYMS + button hint (user choice): keep the synonym suggestion, add a one-click nudge.
-      const hint = "Or press Humanize Line to auto-rebuild your most-AI line (#" + (hzNext.res.lineIndex + 1) + ").";
-      joker = baseJoker ? (baseJoker + " " + hint) :
-        ("Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — Humanize Line rebuilds it.");
-    } else if (aiScore(pasteEl.value || "") >= 55) {
-      // engine exhausted but the song still reads AI: say what only the writer can fix
+    // The joker is the cyclable jokerOpts list painted by renderCraft. The only override left: when the
+    // engine has nothing safe left AND the song still reads AI, swap in the shape diagnosis (what only
+    // the writer can fix). Otherwise leave the cyclable joker (smart move + most-AI lines) alone.
+    if (!hzNext.res && aiScore(pasteEl.value || "") >= 55) {
       let dg = null;
       try { dg = HumanizeFreestyle.diagnoseShape(pasteEl.value || ""); } catch (e) {}
-      if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
+      if (dg) renderCraft(pasteCraft, Object.assign({}, p, { jokerOpts: ["Every safe mechanical edit is done — what's left is yours to write: " + dg + "."] }));
     }
-    if (!joker) return; // keep the craft joker
-    renderCraft(pasteCraft, { good: p.good, bad: p.bad, joker: { text: joker } });
   }
 
   function showMsg(txt) { pasteMsg.textContent = txt; pasteMsg.hidden = !txt; }

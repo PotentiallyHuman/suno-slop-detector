@@ -22,6 +22,7 @@
   // missed, read "", and showed a false 0%. Still scoped to a <section>, so it can never
   // grab a heading, the prompt box, or anything outside the lyrics window.
   let lastResult = null;
+  let renderedText = null; // lyrics currently painted in the panel — skip needless repaints
 
   function getLyricsNode() {
     let nodes = document.querySelectorAll("section p.whitespace-pre-wrap");
@@ -355,42 +356,35 @@
     return el("div", { class: "slop-cr " + cls }, kids);
   }
 
+  // Compact panel (user 2026-06-14): ONE joker (top) + ONE ⚠️ (middle) + ONE ✅ (bottom) so it fits a
+  // phone. Tapping any row REROLLS it within its own category; the joker cycles the smart move then the
+  // most-AI lines. (On /create, when the engine is exhausted, the joker becomes the shape diagnosis.)
   function renderCraft(p) {
     clear(refs.craft);
     if (!p) return;
-    // ✅ good — keep this
-    if (p.good && p.good.length) {
-      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "✅ Keep this" }));
-      p.good.forEach((g) =>
-        refs.craft.appendChild(craftRow("good", "✅", g.label, g.quote || "", "")));
+    var jokerOpts = (p.jokerOpts && p.jokerOpts.length) ? p.jokerOpts.slice() : (p.joker ? [p.joker.text] : []);
+    if (isCreatePage() && lastResult && lastResult.score >= 55 && hzNext.key === lastResult._text && !hzNext.res) {
+      var dg = null; try { dg = HumanizeFreestyle.diagnoseShape(lastResult._text); } catch (e) {}
+      if (dg) jokerOpts = ["Every safe mechanical edit is done — what's left is yours to write: " + dg + "."];
     }
-    // 🃏 joker — do this. On /create, when the next-press preview is current, the
-    // joker names the exact line the next "Humanize Line" press will rebuild; when
-    // the engine has nothing safe left and the song still reads AI, it says what
-    // only the writer can fix (shape + a real-world anchor).
-    let joker = p.joker ? p.joker.text : null;
-    if (isCreatePage() && lastResult && hzNext.key === lastResult._text) {
-      if (hzNext.res) {
-        // SYNONYMS + button hint (user choice): keep the panel's synonym suggestion, add a one-click nudge.
-        var hint = "Or press Humanize Line above to auto-rebuild your most-AI line (#" + (hzNext.res.lineIndex + 1) + ").";
-        joker = joker ? (joker + " " + hint) :
-          ("Your most-AI line is #" + (hzNext.res.lineIndex + 1) + ": “" + hzNext.res.from + "” — press Humanize Line above to rebuild it.");
-      } else if (lastResult.score >= 55) {
-        let dg = null;
-        try { dg = HumanizeFreestyle.diagnoseShape(lastResult._text); } catch (e) {}
-        if (dg) joker = "Every safe mechanical edit is done — what's left is yours to write: " + dg + ".";
-      }
+    var bad = p.bad || [], good = p.good || [], ix = { joker: 0, bad: 0, good: 0 };
+    function addRow(cat, cls, emoji, header) {
+      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: header }));
+      var holder = el("div", {});
+      refs.craft.appendChild(holder);
+      (function paint() {
+        clear(holder);
+        var row, count;
+        if (cat === "joker") { if (!jokerOpts.length) return; row = craftRow(cls, emoji, jokerOpts[ix.joker % jokerOpts.length], "", ""); count = jokerOpts.length; }
+        else if (cat === "bad") { if (!bad.length) return; var b = bad[ix.bad % bad.length]; row = craftRow(cls, emoji, b.label, b.quote || "", b.fix || ""); count = bad.length; }
+        else { if (!good.length) return; var g = good[ix.good % good.length]; row = craftRow(cls, emoji, g.label, g.quote || "", ""); count = good.length; }
+        if (count > 1) { row.classList.add("slop-cr-tap"); row.title = "tap for another"; row.addEventListener("click", function () { ix[cat]++; paint(); }); }
+        holder.appendChild(row);
+      })();
     }
-    if (joker) {
-      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "🃏 Try this" }));
-      refs.craft.appendChild(craftRow("joker", "🃏", joker, "", ""));
-    }
-    // ⚠️ bad — work on
-    if (p.bad && p.bad.length) {
-      refs.craft.appendChild(el("div", { class: "slop-craft-h", text: "⚠️ Work on" }));
-      p.bad.forEach((b) =>
-        refs.craft.appendChild(craftRow("bad", "⚠️", b.label, b.quote || "", b.fix || "")));
-    }
+    addRow("joker", "joker", "🃏", "🃏 Try this");
+    addRow("bad", "bad", "⚠️", "⚠️ Work on");
+    addRow("good", "good", "✅", "✅ Keep this");
   }
 
   function colorFor(score) {
@@ -406,6 +400,11 @@
       refs.pct.textContent = "?";
       return;
     }
+    // Suno is a SPA that mutates the DOM constantly, and our own panel edits (tap-to-reroll)
+    // re-fire the MutationObserver. Re-painting on an UNCHANGED analysis would wipe the user's
+    // reroll state, so when the lyrics haven't changed we leave the live panel exactly as-is.
+    if (result._text != null && result._text === renderedText && refs.craft && refs.craft.childNodes.length) return;
+    renderedText = result._text;
     if (result.instrumental) {
       badge.style.setProperty("--slop-color", "#888");
       refs.pct.textContent = "–";
@@ -458,6 +457,7 @@
   function flush() {
     if (host) { host.remove(); host = null; badge = null; panel = null; refs = {}; }
     lastResult = null;
+    renderedText = null;
     hzUndoStack.length = 0; // a new page must never "undo" into a previous song's text
     hzNext = { key: null, res: null };
   }

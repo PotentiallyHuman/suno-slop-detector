@@ -92,6 +92,11 @@ code { color: #ffc04d; }
 .craft-label { color: #eaeaea; }
 .craft-row.joker .craft-label { color: #d9c4ff; }
 .craft-detail { color: #9a9a9a; font-size: 10.5px; margin-top: 2px; font-style: italic; }
+/* tap-to-reroll: one row per category, click cycles within it */
+.craft-row.craft-tap { cursor: pointer; position: relative; }
+.craft-row.craft-tap:hover { background: rgba(255, 255, 255, 0.06); }
+.craft-row.craft-tap.joker:hover { background: rgba(176, 123, 255, 0.14); }
+.craft-row.craft-tap::after { content: "↻"; position: absolute; top: 5px; right: 7px; font-size: 10px; color: #8a8a8a; opacity: 0.7; }
 
 #paste.hz-flash { animation: hzflash 0.7s ease-out; }
 @keyframes hzflash { 0% { background-color: rgba(95,208,104,0.55); } 100% { background-color: transparent; } }
