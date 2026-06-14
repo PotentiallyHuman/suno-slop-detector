@@ -442,14 +442,16 @@
         // for a singular source right after a/an (the singular->plural number break, cycle 36).
         if (/^(an?)$/.test(prev) && lw.charAt(lw.length - 1) !== "s" && s.charAt(s.length - 1) === "s") continue;
         var fit = (swapTheme && emb(s)) ? dot(emb(s), swapTheme) : 0;
-        cands.push({ s: s, q: Math.abs(nsyl(s) - nsyl(lw)) * 10 + k * 0.5 - fit * 4 });
+        cands.push({ s: s, sd: Math.abs(nsyl(s) - nsyl(lw)), q: Math.abs(nsyl(s) - nsyl(lw)) * 2.5 + k * 0.3 - fit * 4 });
       }
+      cands = cands.filter(function (c) { return c.sd <= 1; });   // hard meter cap: a ±2-syllable swap stilts the line ("sky"->"stratosphere") — never rotate into it
       if (!cands.length) return tok;
       cands.sort(function (a, b) { return a.q - b.q; });
-      // SONG-TAILORED variety WITHOUT quality loss: pick among only the TOP candidates (within 1.5
-      // of the best), seeded by the song — so two songs vary their swap, but neither dips into the
-      // weak tail. Expansive where safe (several good options), strict where risky (one good option).
-      var topN = 1; while (topN < cands.length && cands[topN].q <= cands[0].q + 1.5) topN++;
+      // SONG-TAILORED variety (anti-mode-collapse): rotate among ALL good candidates (within 4 of the
+      // best), seeded by the song — so the SAME word isn't reused in every song (silence->stillness in
+      // one, ->hush in another). If we always picked the single best, we'd just mint the NEXT slop word.
+      // A ±1-syllable sub is allowed in the rotation (minor meter give, user-approved); ±2 is capped above.
+      var topN = 1; while (topN < cands.length && cands[topN].q <= cands[0].q + 4) topN++;
       var best = cands[songSeed % topN].s;
       changed++;
       songWords[best] = 1;
