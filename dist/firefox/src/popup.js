@@ -76,7 +76,7 @@
   const pageScore = document.getElementById("page-score");
   const pageLabel = document.getElementById("page-label");
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
     if (!tab) return;
     const isSong = /^https:\/\/suno\.com\/song\//.test(tab.url || "");
