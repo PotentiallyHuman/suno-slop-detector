@@ -123,7 +123,7 @@
     veins: ["arteries", "bloodstream"],
     velvet: ["satin", "suede"],
     void: ["vacuum", "chasm"],
-    whisper: ["mutter"],
+    whisper: [],
     whispered: ["muttered"],
     whispering: ["muttering"],
     whispers: ["mutters"],
@@ -147,7 +147,7 @@
     scar: ["mark"],
     shimmer: ["glint"],
     surrender: ["yield"],
-    whisper: { obj: ["mutter", "offer", "breathe", "slip"], noobj: ["mutter"] },
+    whisper: { obj: [], noobj: [] },   // whisper is evocative/context-dependent (like light/starlight) — "mutter" reads grumbly, no universal substitute. Leave it.
     whispered: ["muttered"],
     whispering: ["muttering"],
     whispers: { obj: ["mutters", "offers"], noobj: ["mutters"] },
