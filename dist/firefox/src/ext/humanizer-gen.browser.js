@@ -154,6 +154,34 @@
     var L = globalThis.REPLACE_LIB || [];
     for (var i = 0; i < L.length; i++) { var lw = lastWord(L[i]), rk = VK[lw]; if (!rk) continue; REPLIDX.push({ line: L[i], rk: rk, syl: nsylLine(L[i]), tv: themeVec(L[i]) }); }
   }
+  // A library line may carry a cliché word ONLY if that word is cleanable — the Chaos word-swap
+  // post-pass will replace it (shadows->dark). Reject a candidate only when it holds an UN-cleanable
+  // cliché (no curated substitute, e.g. neon/echo/light) that the post-pass can't fix.
+  function clicheCleanable(w) {
+    var SWn = globalThis.CLICHE_SWAPS || {}, SWv = globalThis.CLICHE_SWAPS_VERB || {};
+    if (SWn[w] && SWn[w].length) return true;
+    var v = SWv[w]; if (v) { if (Array.isArray(v)) return v.length > 0; return !!((v.obj && v.obj.length) || (v.noobj && v.noobj.length)); }
+    return false;
+  }
+  function lineHasUncleanableCliche(line) { var ws = words(line); for (var i = 0; i < ws.length; i++) if (CLICHE.has(ws[i]) && !clicheCleanable(ws[i])) return true; return false; }
+  // Swap EVERY cliché WORD that has a curated substitute, across EVERY line — the user's
+  // "Humanize Rewrite = all AI words", and the Chaos final pass that cleans any cliché a library
+  // line left behind. A word swap keeps the sentence's structure, so there is no clause gate here —
+  // only grammatical() on the output and a real cliché removed. Chorus-consistent (all copies match).
+  function swapAllWords(text) {
+    var lines = String(text).split("\n"), steps = [], done = {}, i, j;
+    for (i = 0; i < lines.length; i++) {
+      var orig = lines[i];
+      if (done[orig] || /^\s*\[/.test(orig) || words(orig).length < 2 || clicheCount(orig) === 0) { done[orig] = 1; continue; }
+      var sw = swapCliches(orig, text);
+      if (sw && sw !== orig && clicheCount(sw) < clicheCount(orig) && grammatical(words(sw))) {
+        for (j = 0; j < lines.length; j++) if (lines[j] === orig) lines[j] = sw;
+        steps.push({ lineIndex: i, from: orig, to: sw, mode: "swap" });
+      }
+      done[orig] = 1;
+    }
+    return { text: lines.join("\n"), steps: steps };
+  }
   function sentenceReplace(aiLine, theme, songLines) {
     if (!REPLIDX) buildReplaceIndex();
     if (!REPLIDX.length) return null;
@@ -164,6 +192,7 @@
     for (var i = 0; i < REPLIDX.length; i++) {
       var c = REPLIDX[i];
       if (c.rk !== rk || Math.abs(c.syl - syl) > 1 || used[c.line.toLowerCase()]) continue;
+      if (lineHasUncleanableCliche(c.line)) continue;                                           // allow a swappable cliché (post-pass cleans it); reject only un-fixable ones
       var fit = (theme && c.tv) ? dot(theme, c.tv) : 0;
       if (fit > bs) { bs = fit; best = c.line; }
     }
@@ -365,6 +394,10 @@
       // "lost" is adjectival at line starts ("Lost in the moment" -> Stranded) but a VERB after
       // a subject/auxiliary ("you've almost lost your will") — swap only the adjectival uses
       if (lw === "lost" && /^(i|you|we|they|he|she|i've|you've|we've|they've|have|has|had|almost|nearly|just|never|who)$/.test(prev)) return tok;
+      // "shadows": swap only the "(in/from) the shadows" = darkness/place sense (prev is "the").
+      // A bare-subject "Shadows dance and sway" is moving shapes; a mass-noun sub (dark/gloom)
+      // breaks plural agreement, so leave it. (cycle 36 — restoring the catch the user expects.)
+      if (lw === "shadows" && prev !== "the") return tok;
       if (VERBY[lw]) {
         if (NOUN_CTX[prev]) {
           if (nxtL.length > 3 && !NOUN_CTX[nxtL]) return tok;    // "your love momma" — ambiguous dialect: leave it
@@ -530,7 +563,13 @@
       // matching the dup/mold gates (55). Saturated AI songs still pass, so good swaps are unaffected.
       if (clicheCount(orig) > 0 && (skipSongGuard || songScore >= 30)) {
         var swapped = swapCliches(orig, text);
-        if (swapped && clicheCount(swapped) < clicheCount(orig) && isFullClause(orig) && grammatical(words(swapped))) {
+        // WORD SWAP needs NO isFullClause gate: substituting one cliché word for a same-POS curated
+        // word keeps the sentence's structure intact, so it's safe even on a verbless fragment
+        // ("a neutron in the shadows" -> "a neutron in the dark"). isFullClause stays on RESTRUCTURE
+        // (line 519) where reshaping the clause CAN break grammar. grammatical(swapped) is the guard
+        // here — it validates the OUTPUT's POS-bigrams. (Fixes the 300-word list silently skipping
+        // every cliché that sits in an appositive/fragment line.)
+        if (swapped && clicheCount(swapped) < clicheCount(orig) && grammatical(words(swapped))) {
           var trialS = lines.slice(); trialS[idx] = swapped;
           var snew = trialS.join("\n"), nsS = scoreFn(snew);
           var sok = logitFn ? (logitFn(snew) <= fineBase + 0.05) : (nsS <= songScore + 1);
@@ -592,19 +631,21 @@
   function humanizeHalf(text, scoreFn, logitFn) {
     var theme = themeVec(text); if (!theme) return null;
     if (scoreFn(text) < 30) return null;               // genuinely human songs (0-21% in corpus) — leave them alone
-    var lines = String(text).split("\n"), nb = 0, i;
+    var before = Math.round(scoreFn(text));
+    // PASS 1 — Humanize Rewrite = swap EVERY cliché WORD in EVERY line (the user's "all AI words"),
+    // not just the worst half. Word swaps are meaning-preserving and the song % is blind to them,
+    // so doing them everywhere can only help; obvious clichés (shadows/silence/dreams) all go.
+    var w = swapAllWords(text), cur = w.text, steps = w.steps.slice();
+    // PASS 2 — meaning-preserving RESTRUCTURES (Every->This molds, chorus variation) on the worst
+    // remaining lines. Words are already clean, so humanizeOne here returns mold/dup edits.
+    var lines = cur.split("\n"), nb = 0, i;
     for (i = 0; i < lines.length; i++) if (words(lines[i]).length >= 3) nb++;
-    var half = Math.ceil(nb / 2), cur = text, before = Math.round(scoreFn(text)), steps = [], k;
-    // Decision made once: this song reads AI -> keep swapping its CLICHÉ lines (skipSongGuard) even as
-    // the running score drops. Otherwise one structural edit (v8 is hyper-sensitive: 37%->1%) would
-    // re-trip the per-line guard and halt, leaving obvious clichés (silence/shadows/whisper) untouched.
-    for (k = 0; k < half; k++) {                       // rebuild the worst HALF, each gated by humanizeOne (never worsens)
+    var half = Math.ceil(nb / 2), k;
+    for (k = steps.length; k < half; k++) {
       var res = humanizeOne(cur, scoreFn, logitFn, false, true);
       if (!res) break;
       cur = res.text;
-      // CHORUS CONSISTENCY: a repeated line (chorus) must read the same everywhere. Apply the same
-      // edit to every identical copy, so we never get "Breaking each law" in one spot and "Breaking
-      // every law" in another. (Trades the "vary the repeat" de-AI trick for a consistent chorus.)
+      // CHORUS CONSISTENCY: a repeated line (chorus) must read the same everywhere.
       if (res.from && res.to && res.from !== res.to) cur = cur.split("\n").map(function (l) { return l === res.from ? res.to : l; }).join("\n");
       steps.push({ lineIndex: res.lineIndex, from: res.from, to: res.to, mode: res.mode });
     }
@@ -663,6 +704,14 @@
           var rot = (songNow().match(/^(That|This|Some|Perhaps|Could be|Why do) /gmi) || []).length;
           var rs = restructure(orig, rot); if (rs && !moldLine(rs)) tries.push({ to: rs, mode: "restructure" });
           var sw = swapCliches(orig, songNow()); if (sw && sw !== orig) tries.push({ to: sw, mode: "swap" });
+          // LAST resort (Chaos only): the line carries no cliché/mold handle — it's pure
+          // structural typicality, the kind that keeps Hydrogen pinned at ~100% no matter how
+          // many words we swap. Replace it wholesale with a clean, rhyme-key+syllable-matched
+          // line from the 3085-line judge-cleaned library. This is what actually drops the % on
+          // structural songs; it is COHERENT (0 soup, build-time judged) but may go OFF-TOPIC —
+          // the explicit "meaning may bend" contract of Chaos. Tried last, so cliché lines still
+          // get a meaning-preserving swap first; only the unhandleable lines get replaced.
+          var lr = sentenceReplace(orig, theme, cur); if (lr && lr !== orig) tries.push({ to: lr, mode: "replace" });
         }
         for (var t = 0; t < tries.length; t++) {
           var trial = cur.slice(); trial[idx] = tries[t].to;
@@ -679,6 +728,11 @@
       }
       if (!improved) break;
     }
+    // FINAL — Chaos = lines, THEN all AI words: clean every cliché WORD still in the song, including
+    // any a library line introduced ("...in the shadows" -> "...in the dark"). swapAllWords keeps the
+    // sentence structure (no soup) and runs even when no line was replaced above.
+    var wp = swapAllWords(cur.join("\n"));
+    if (wp.steps.length) { cur = wp.text.split("\n"); for (var wi = 0; wi < wp.steps.length; wi++) steps.push(wp.steps[wi]); }
     if (!steps.length) return null;
     var finalText = cur.join("\n");
     return { text: finalText, count: steps.length, steps: steps, before: before, after: Math.round(scoreFn(finalText)), target: CHAOS_TARGET };

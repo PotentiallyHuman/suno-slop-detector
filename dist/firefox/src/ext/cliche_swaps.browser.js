@@ -95,7 +95,7 @@
     serenade: ["ballad"],
     shadow: ["silhouette", "shape"],
     shadowed: ["shaded", "dimmed"],
-    shadows: [],   // polysemous + idiom-locked: "in the shadows" (places) vs "shadows that pass/dance" (moving shapes) — no single substitute is safe across both, and "background/corners" broke "Shadows dance and sway". Leave it.
+    shadows: ["dark", "gloom", "distance"],   // the DARKNESS/place sense ("a neutron in the shadows" -> "in the dark/distance"). Guarded in the engine to fire ONLY after "the" — the bare-subject moving sense ("Shadows dance and sway") is left alone (a mass-noun sub would break agreement).
     shattered: ["smashed", "splintered"],
     shimmer: ["glint", "sheen"],
     silence: ["stillness", "calm"],
