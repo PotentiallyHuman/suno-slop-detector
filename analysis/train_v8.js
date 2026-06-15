@@ -10,6 +10,12 @@ const feats = require(path.join(ROOT, 'src/features.js'));
 const pat = require('./patterns.js');
 const PX = require('./portability_tells.js');
 const craft = require(path.join(ROOT, 'app/engine/ext/craft_features.browser.js'));
+// PREP: clean EVERY training input with the SAME cleaner the runtime uses (SlopClean), then hard-strip
+// any stray [ ] so all inputs are bracket-free AND train-features == runtime-features. (Before this,
+// training fed RAW text to feature extraction while runtime fed SlopClean'd text — a silent mismatch.)
+const _cln = {}; _cln.globalThis = _cln; _cln.window = _cln;
+require('vm').runInNewContext(fs.readFileSync(path.join(ROOT, 'src/ext/clean-lyrics.js'), 'utf8'), _cln);
+const PREP = t => _cln.SlopClean.clean(String(t == null ? '' : t)).lyrics.replace(/[\[\]]/g, '');
 const TARGET_H = parseInt(process.argv[2] || '6000', 10);
 const MODELS = ['suno', 'claude', 'grok', 'chatgpt', 'gemini'];
 const USAGE = { chatgpt: 0.35, suno: 0.30, gemini: 0.12, claude: 0.12, grok: 0.05 };
@@ -37,13 +43,13 @@ const predLR = (m, s, DN) => { let z = m.b; for (const i in s.bow) z += m.wB[i] 
 
 (async () => {
   // HUMAN from cache (no fetch)
-  let humTexts = Object.values(JSON.parse(fs.readFileSync('/tmp/human_lyrics_cache.json'))).filter(t => typeof t === 'string' && t.length > 120 && isEnglish(t));
+  let humTexts = Object.values(JSON.parse(fs.readFileSync('/tmp/human_lyrics_cache.json'))).map(t => typeof t === 'string' ? PREP(t) : '').filter(t => t.length > 120 && isEnglish(t));
   for (let k = humTexts.length - 1; k > 0; k--) { const j = (Math.random() * (k + 1)) | 0;[humTexts[k], humTexts[j]] = [humTexts[j], humTexts[k]]; }
   humTexts = humTexts.slice(0, TARGET_H);
   console.log('HUMAN songs (cached):', humTexts.length);
   // AI
   const ai = [];
-  for (const m of MODELS) { try { for (const s of (JSON.parse(fs.readFileSync(path.join(ROOT, 'corpus/models', m + '.json'))).songs || [])) { const t = s.lyrics_en || s.lyrics; if (typeof t === 'string' && t.length >= 120 && isEnglish(t)) ai.push({ model: m, text: t }); } } catch (e) {} }
+  for (const m of MODELS) { try { for (const s of (JSON.parse(fs.readFileSync(path.join(ROOT, 'corpus/models', m + '.json'))).songs || [])) { const t = PREP(s.lyrics_en || s.lyrics); if (t.length >= 120 && isEnglish(t)) ai.push({ model: m, text: t }); } } catch (e) {} }
   const cnt = Object.fromEntries(MODELS.map(m => [m, ai.filter(r => r.model === m).length]));
   const rawW = Object.fromEntries(MODELS.map(m => [m, (USAGE[m] || 0) / Math.max(1, cnt[m])]));
   const sumW = ai.reduce((s, r) => s + rawW[r.model], 0), scale = ai.length / sumW; for (const r of ai) r.uw = rawW[r.model] * scale;

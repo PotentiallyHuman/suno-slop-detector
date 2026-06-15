@@ -11,6 +11,11 @@
     let text = String(raw == null ? "" : raw);
     // 1) strip JSON objects that can leak into the box
     text = text.replace(/\{[^{}]*\}/g, " ");
+    // 1b) Suno production/style meta-prompts come wrapped in DOUBLE brackets [[...]] — always
+    // directives (audio architecture, vocal engine, signal chain…), never lyrics, even when long and
+    // multi-line. Drop them OUTRIGHT, before the "keep long multi-line block" rule below would treat
+    // them as wrapped lyrics. (Fixes a /song page scoring the meta-prose ~74% AI while /create read 0%.)
+    text = text.replace(/\[\[[\s\S]*?\]\]/g, " ");
     // 2) multi-line [..] brackets: short content = style tag (drop), long = wrapped lyric (keep inner)
     text = text.replace(/\[[^\]]*\n[\s\S]*?\]/g, function (m) {
       var inner = m.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();

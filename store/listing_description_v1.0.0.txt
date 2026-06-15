@@ -1,0 +1,14 @@
+Suno Slop Detector scores how "AI" your Suno lyrics read — and helps you fix it.
+
+Paste your lyrics (or open them on suno.com) for an instant 0–100% read of how machine-generated they sound, with a breakdown of the clichés, stock phrases, predictable rhymes, and repetition that give AI away.
+
+Then humanize them in one click:
+• Humanize Line — rebuild your single worst line
+• Humanize Rewrite — swap every cliché word at once
+• Humanize Chaos — a full rework when you want it truly human
+
+Your rhymes and hooks are kept, and it never makes a line read more AI than it started.
+
+100% on your device — no account, no sign-in, nothing uploaded. It reads only your lyrics box. Free and open source.
+
+A playful craft meter, not a verdict: using AI to write is completely fine — this just helps you make it sound like you.
