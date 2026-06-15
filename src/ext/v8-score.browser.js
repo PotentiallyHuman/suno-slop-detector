@@ -36,10 +36,14 @@
     var z = M.bias;
     for (var jj = 0; jj < DN; jj++) z += M.wDense[jj] * dnz[jj];
     for (var bk in bow) z += (M.wBow[bk] || 0) * (bow[bk] / nTok);
-    var pAI = 1 / (1 + Math.exp(-z));
+    // Platt calibration (v9): the displayed score is a CALIBRATED probability sigmoid(A*z+B), ECE 0.013.
+    var zc = M.platt ? (M.platt.a * z + M.platt.b) : z;
+    var pAI = 1 / (1 + Math.exp(-zc));
+    // band (v9): reads-human < bandLow, uncertain, reads-AI >= bandHigh (~2% false-positive). For the UI.
+    var band = (M.bandHigh != null) ? (pAI >= M.bandHigh ? "ai" : (M.bandLow != null && pAI < M.bandLow ? "human" : "uncertain")) : null;
     // z (raw log-odds) ships too: past ~z=36 the sigmoid underflows to exactly 1.0 in
     // floats, so a pAI-derived logit FREEZES and every editing gate reads "no change".
-    return { pAI: pAI, score: Math.round(pAI * 100), verdict: pAI >= (M.threshold || 0.5) ? "AI" : "human", z: z };
+    return { pAI: pAI, score: Math.round(pAI * 100), verdict: pAI >= (M.threshold || 0.5) ? "AI" : "human", z: z, band: band };
   }
   var api = { scoreV8: scoreV8 };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
