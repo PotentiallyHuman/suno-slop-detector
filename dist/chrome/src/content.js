@@ -176,7 +176,7 @@
   function ensureUI() {
     if (host) return;
     refs.pct = el("span", { id: "slop-pct", text: "…" });
-    badge = el("button", { id: "slop-badge", type: "button", title: "Suno Slop Detector" }, [
+    badge = el("button", { id: "slop-badge", type: "button", title: "Humanize AI Slop Lyrics" }, [
       el("span", { class: "slop-emoji", text: "🤖" }),
       refs.pct,
     ]);
@@ -186,7 +186,7 @@
     refs.craft = el("div", { id: "slop-craft" }); // the 5 ✅ · 1 🃏 · 5 ⚠️ panel
     const closeBtn = el("button", { id: "slop-close", type: "button", "aria-label": "close", text: "×" });
     panel = el("div", { id: "slop-panel", hidden: true }, [
-      el("div", { class: "slop-head" }, [el("strong", { text: "Suno Slop Detector" }), closeBtn]),
+      el("div", { class: "slop-head" }, [el("strong", { text: "Humanize AI Slop Lyrics" }), closeBtn]),
       refs.verdict,
       refs.components,
       refs.hz,

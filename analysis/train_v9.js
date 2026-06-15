@@ -60,10 +60,17 @@ function trainLR(rows, DN, VOCABn, init) {
 const predLR = (m, s, DN) => { let z = m.b; for (const i in s.bow) z += m.wB[i] * s.bow[i]; for (let j = 0; j < DN; j++) z += m.wD[j] * s.dn[j]; return 1 / (1 + Math.exp(-z)); };
 
 (async () => {
-  // HUMAN from cache (no fetch)
-  let humTexts = Object.values(JSON.parse(fs.readFileSync('/tmp/human_lyrics_cache.json'))).map(t => typeof t === 'string' ? PREP(t) : '').filter(t => t.length > 120 && isEnglish(t));
+  // HUMAN from cache (no fetch). Merge the 2000-song structure-study cache2 if present; dedup by
+  // normalized text (NOT key — cache uses \x01 separators, cache2 uses |). Deterministic order: cache, then cache2.
+  const _rawHum = [];
+  for (const f of ['/tmp/human_lyrics_cache.json', '/tmp/human_lyrics_cache2.json']) {
+    try { for (const t of Object.values(JSON.parse(fs.readFileSync(f)))) if (typeof t === 'string') _rawHum.push(t); } catch (e) {}
+  }
+  const _seenH = new Set(); const _humAll = [];
+  for (const t of _rawHum) { const k = t.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200); if (!k || _seenH.has(k)) continue; _seenH.add(k); _humAll.push(t); }
+  let humTexts = _humAll.map(PREP).filter(t => t.length > 120 && isEnglish(t));
   humTexts = humTexts.slice(0, TARGET_H); // deterministic JSON order, all humans (no random shuffle/subsample)
-  console.log('HUMAN songs (cached):', humTexts.length);
+  console.log('HUMAN songs (cached, cache+cache2 deduped):', humTexts.length, 'of', _rawHum.length, 'raw');
   // AI
   const ai = [];
   for (const m of MODELS) { try { for (const s of (JSON.parse(fs.readFileSync(path.join(ROOT, 'corpus/models', m + '.json'))).songs || [])) { const t = PREP(s.lyrics_en || s.lyrics); if (t.length >= 120 && isEnglish(t)) ai.push({ model: m, text: t }); } } catch (e) {} }

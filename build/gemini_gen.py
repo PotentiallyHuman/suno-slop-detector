@@ -32,8 +32,8 @@ OFFSET = int(sys.argv[2]) if len(sys.argv) > 2 else 0
 
 # logged-in Gemini layout (1080x1920), calibrated 2026-06-03
 CHAT_URL = "https://gemini.google.com/app"
-INPUT = (626, 1009)    # "Ask Gemini" composer
-BODY  = (626, 400)     # conversation body (focus here before Ctrl+A so we copy the page)
+INPUT = (590, 960)     # LOGGED-OUT composer (verified 2026-06-15); was (626,1009) for logged-in
+BODY  = (590, 400)     # conversation body (focus here before Ctrl+A so we copy the page)
 STORY2SONG = float(os.environ.get("STORY2SONG", "0.30"))  # fraction via two-stage story->song
 
 def x(*a): subprocess.run(["env", "DISPLAY=:1", "xdotool", *a], capture_output=True)
@@ -126,7 +126,9 @@ def strip_md(s):
 def extract_reply(raw, prompt):
     t = raw.replace('\r', '')
     tail = prompt.strip().split('\n')[-1].strip()[-40:]
-    k = t.rfind(tail)                               # rfind: last echo of the prompt
+    k = t.find(tail)                                # find: FIRST echo (the conversation bubble; the
+                                                    # logged-out page repeats the prompt at the bottom
+                                                    # before the footer, and rfind grabbed that empty one)
     if k != -1: t = t[k + len(tail):]
     m = FOOTER.search(t)
     if m: t = t[:m.start()]
