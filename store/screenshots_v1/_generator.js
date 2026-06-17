@@ -87,7 +87,7 @@ function page(st){
   .foot{color:#6f7382;font-size:13px;margin-top:16px;text-align:center}
   .foot b{color:#9b8fc0}
   </style></head><body><div class="wrap">
-   <div class="top"><div class="logo">🤖</div><div class="brand">Suno Slop Detector<small>on-device AI-lyric score + humanizer</small></div><div class="step">${st.step}</div></div>
+   <div class="top"><div class="logo">🤖</div><div class="brand">Humanize AI Slop Lyrics<small>on-device AI-lyric score + humanizer</small></div><div class="step">${st.step}</div></div>
    <div class="h">${st.btn}</div><div class="hsub">${st.sub}</div>
    <div class="body">
      <div class="lyr"><div class="cap">Lyrics${st.before!=null?" &nbsp;·&nbsp; <span style='color:#7ef0bf'>green = what changed</span>":""}</div><pre>${st.html}</pre></div>

@@ -1,6 +1,14 @@
 # Changelog
 
-All notable changes to the Suno Slop Detector. Dates are release-submission dates.
+All notable changes to Humanize AI Slop Lyrics (formerly Suno Slop Detector). Dates are release-submission dates.
+
+## [1.0.1] — rename + retrained model (2026-06-15)
+- **Renamed to "Humanize AI Slop Lyrics."** Clearer about what it actually does (detect *and* humanize)
+  and easier to find. Same extension and app, same IDs — your install updates in place.
+- **Detector retrained on an expanded corpus** (more human songs + more AI examples). Cross-validation
+  accuracy 93.2% → 94.2%, fully deterministic and repeatable. Same on-device, no-account, no-network design.
+- No feature changes; the humanizer behaves the same — it cleans clichés and stock phrasing and never
+  makes a line read more AI than it started.
 
 ## [1.0.0] — first public release (2026-06-14)
 The first proven, public version (Firefox + Chrome). The 0.x line was beta; everything below
