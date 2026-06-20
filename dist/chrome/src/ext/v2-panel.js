@@ -69,8 +69,22 @@
     }
     return null;
   }
-  // first matching stock cliché phrase substring present in text
-  var PHRASES = (G.SlopPatterns && G.SlopPatterns.PHRASES) || [];
+  // first matching stock cliché phrase substring present in text.
+  // DISPLAY-ONLY (drives the joker + work-on quotes, NOT the score). 2026-06-19: the
+  // base SlopPatterns.PHRASES list missed many common stock phrases, so the phrase-joker
+  // (move 10) fell back to a lone word ("dance"). Broaden it here — score is untouched.
+  var JOKER_STOCK = [
+    "shadows dance","dancing shadows","neon lights","city lights","streetlights",
+    "whisper in the wind","echoes of the past","echoes in the night","rise from the ashes",
+    "like a phoenix","chasing the horizon","on the horizon","concrete jungle","painted skies",
+    "fire in my veins","frozen in time","weight of the world","demons in my head",
+    "calm before the storm","waves kiss the shore","kiss the shore","saving grace",
+    "stars once dim","bells start to chime","ringing spells","endless night","morning light breaks",
+    "into the night","through the shadows","shadows and the night","fading light","broken dreams",
+    "shattered dreams","tears like rain","heart of stone","wings and fly","never fall",
+    "rise up","never back down","through the storm","find my way","light will guide"
+  ];
+  var PHRASES = ((G.SlopPatterns && G.SlopPatterns.PHRASES) || []).concat(JOKER_STOCK);
   function firstClichePhrase(text) {
     var lo = lc(text);
     for (var i = 0; i < PHRASES.length; i++) if (lo.indexOf(PHRASES[i]) >= 0) return PHRASES[i];
@@ -427,13 +441,16 @@
       var pick = bestMW || bestW;
       if (pick) {
         var arr = subsFor(pick), opts = arr.slice(0, 3);
-        moves.push({ move: 1, score: Math.abs(bestMW ? bestMWt : bestWt) * 1.5 + 1.2, text:   // boosted so it usually wins
+        moves.push({ move: 1, score: Math.abs(bestMW ? bestMWt : bestWt) * 1.0 + 0.4, text:   // un-boosted (2026-06-19): a real cliché PHRASE move should win over a lone generic word
           arr.length === 1
             ? "“" + pick + "” is a word AI leans on — try “" + opts[0] + "” instead."
             : "“" + pick + "” is a word AI leans on — try one of these instead: " + opts.join(", ") + "." });
         return;
       }
-      // fallback: the song's AI-ness isn't in a swappable word -> the deeper specificity move
+      // fallback: the song's AI-ness isn't in a swappable word -> the deeper specificity move.
+      // 2026-06-19: if a stock cliché PHRASE is present, DON'T nag a lone word — let the phrase
+      // joker (move 10) win. Directly implements the "prefer phrases over single words" feedback.
+      if (firstClichePhrase(text)) return;
       var w = topAiWordPresent(text, model); if (!w) return;
       var idx = model.vocab.indexOf(w), wt = idx >= 0 ? model.wBow[idx] : 0;
       moves.push({ move: 1, score: Math.abs(wt) * 1.0, text:
@@ -467,7 +484,15 @@
       var iV = denseVal(scoreResult, "s_iLineOpeners");
       var youV = denseVal(scoreResult, "s_secondPersonDensity");
       var z = aiZscore(model, "s_iLineOpeners", iV);
-      if (iV <= 0) return;
+      // 2026-06-19: only nag the all-"I" pattern when the writing is ALSO generic.
+      // A specific first-person song (named places/things) earns its "I"s — leave it.
+      var pnZ4 = aiZscore(model, "f_properNounDensity", denseVal(scoreResult, "f_properNounDensity"));
+      // require a REAL majority of lines to actually open with "I" (not just one line) AND
+      // generic writing (pnZ4 <= 0). Otherwise this nag fires on normal/varied songs.
+      var L4 = String(text).split("\n").map(function (s) { return s.trim(); })
+        .filter(function (s) { return s && !/^\[.*\]$/.test(s); });
+      var iLines = L4.filter(function (s) { return /^i([\s',]|$)/i.test(s); }).length;
+      if (iV <= 0 || pnZ4 > 0 || !L4.length || iLines / L4.length < 0.5) return;
       var w = Math.abs(denseWeight(model, "s_iLineOpeners")) || 0.4;
       var sig = Math.max(0, z) * (youV < 0.1 ? 1.3 : 1.0);
       moves.push({ move: 4, score: sig * w, text:
@@ -533,7 +558,9 @@
       var v = denseVal(scoreResult, "lex_cliche");
       var z = aiZscore(model, "lex_cliche", v);
       var w = Math.abs(denseWeight(model, "lex_cliche")) || Math.abs(denseWeight(model, "f_clicheDensity")) || 0.5;
-      moves.push({ move: 10, score: (1 + Math.max(0, z)) * w, text:
+      // 2026-06-19: a concrete stock PHRASE being present is a strong, specific joker — give it a
+      // base score so it beats the lone-word swap (move 1), per the "prefer phrases" feedback.
+      moves.push({ move: 10, score: 1.2 + Math.max(0, z) * w, text:
         "“" + ph + "” is everyone's line — what's yours? Replace it with the one detail only your narrator would say." });
     })();
 

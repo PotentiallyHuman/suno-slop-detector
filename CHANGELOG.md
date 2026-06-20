@@ -2,6 +2,19 @@
 
 All notable changes to Humanize AI Slop Lyrics (formerly Suno Slop Detector). Dates are release-submission dates.
 
+## [1.0.2] — smarter craft suggestions (2026-06-20)
+- **The "try this" tip now points at cliché *phrases*, not lone words.** A song full of stock
+  lines (e.g. "rise from the ashes", "neon lights", "chasing the horizon") used to get nagged to
+  swap a single generic word like "dance"; now it points at the actual stock phrase/line.
+- **The "switch perspective" tip only fires on genuinely all-"I" songs.** A normal first-person
+  song with named places (e.g. "I drove past the diner on Marshall Street") is no longer told to
+  "try the other person's side" — that suggestion now needs most lines to actually open with "I"
+  *and* the writing to be generic.
+- The **% score is unchanged** — these are craft-suggestion (joker / work-on) improvements only.
+- Refreshed store screenshots to match the current compact panel.
+- *Known limitation:* the score is a predictability meter, so some clichéd-but-unusually-phrased
+  AI songs read low. A retrain to close that gap is planned as a follow-up.
+
 ## [1.0.1] — rename + retrained model (2026-06-15)
 - **Renamed to "Humanize AI Slop Lyrics."** Clearer about what it actually does (detect *and* humanize)
   and easier to find. Same extension and app, same IDs — your install updates in place.

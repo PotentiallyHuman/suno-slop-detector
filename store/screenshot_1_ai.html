@@ -45,6 +45,7 @@ html,body { width:1280px; height:800px; background:#131316;
 .slop-cr-quote { color:#cdb6ff; font-size:12.5px; margin-top:2px; }
 .slop-cr.good .slop-cr-quote { color:#a9e6ac; }
 .slop-cr.bad .slop-cr-quote { color:#ffd79a; }
+.slop-cr-reroll { margin-left:auto; color:#777; font-size:14px; align-self:flex-start; padding-left:6px; }
 .slop-foot { margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,.07); color:#777; font-size:12px; }
 </style></head><body>
   <div class="title">How AI do your Suno lyrics read?</div>
@@ -64,16 +65,12 @@ html,body { width:1280px; height:800px; background:#131316;
       </div>
       <div class="slop-components">model confidence this is AI: 100%</div>
       <div id="slop-craft">
-        <div class="slop-craft-h">✅ Keep this</div>
-        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">repeated vowel sounds</div></div></div>
-        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">reaches for precise words</div></div></div>
-        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">rhymes inside the line</div></div></div>
         <div class="slop-craft-h">🃏 Try this</div>
-        <div class="slop-cr joker"><span class="slop-cr-emoji">🃏</span><div class="slop-cr-body"><div class="slop-cr-label">“dancing” is a word AI leans on. Swap it for one small, specific thing only your narrator would notice — an object, a place, a name (e.g. “the laundromat on 5th”).</div></div></div>
+        <div class="slop-cr joker"><span class="slop-cr-emoji">🃏</span><div class="slop-cr-body"><div class="slop-cr-label">Nothing here is named — drop in one real anchor (a street name, a year, a time like “6:15”) and the whole song gets a body.</div></div><span class="slop-cr-reroll">↻</span></div>
         <div class="slop-craft-h">⚠️ Work on</div>
-        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">leans on clichés</div><div class="slop-cr-quote">“Neon shadows on the horizon, echoes in my veins”</div></div></div>
-        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">stock images (shadows / wildfire / neon)</div></div></div>
-        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">‘like a…’ similes</div></div></div>
+        <div class="slop-cr bad"><span class="slop-cr-emoji">⚠️</span><div class="slop-cr-body"><div class="slop-cr-label">leans on clichés</div><div class="slop-cr-quote">“on the horizon”</div></div><span class="slop-cr-reroll">↻</span></div>
+        <div class="slop-craft-h">✅ Keep this</div>
+        <div class="slop-cr good"><span class="slop-cr-emoji">✅</span><div class="slop-cr-body"><div class="slop-cr-label">repeated vowel sounds</div><div class="slop-cr-quote">sound-play in the lines</div></div><span class="slop-cr-reroll">↻</span></div>
       </div>
       <div class="slop-foot">Reads only the lyrics box · model confidence, not proof</div>
     </div>

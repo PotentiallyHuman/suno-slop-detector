@@ -1,4 +1,4 @@
-# r/SunoAI launch post — paste when Chrome v1.0.0+ is approved
+# r/SunoAI launch post — READY TO POST (both v1.0.0 live; v1.0.1 pending review)
 
 ## Title
 I built a free tool that scores how "AI" your Suno lyrics read — and rewrites the sloppy lines (looking for a few Android beta testers)
@@ -14,23 +14,31 @@ What it does:
 
 It's a toy and a craft mirror, not a judgement — a high score doesn't mean a song is bad (plenty of human classics score high too). For fun, and a little spite.
 
-The Firefox version is live, Chrome's in review, and I just finished an **Android app** version.
+Both the **Firefox and Chrome** versions are live, and I just finished an **Android app** version.
 
 👉 **I need ~12 beta testers for the phone app** (Google makes you run a short closed test before launch). If you've got an Android phone and 30 seconds, **PM me** and I'll send the join link. 🙏
 
-Firefox: https://addons.mozilla.org/en-US/firefox/addon/suno-slop-detector/
+Firefox: https://addons.mozilla.org/en-US/firefox/addon/humanize-ai-slop-lyrics/
+Chrome: https://chromewebstore.google.com/detail/lcgafecacefmkhckbkjchlbgibfhbnke
 Code: https://github.com/PotentiallyHuman/suno-slop-detector
 
-<!-- NOTE: update the Firefox link/name if the rename to "Humanize AI Slop Lyrics" is live by post time; add the Chrome Web Store link once approved. -->
+<!-- NOTE on name: Firefox/AMO already shows the new name "Humanize AI Slop Lyrics" + new URL slug (listing
+     edits apply instantly). Chrome still shows "Suno Slop Detector" until its v1.0.1 review approves. The
+     post describes the tool by what it DOES (not by name), so both links read fine during the transition. -->
 
-## 📸 IMAGES TO ATTACH (Reddit allows a gallery — lead with the strongest)
-A text post gets scrolled past; an image gallery gets stopped on. Attach 3-4, in this order:
-1. **The "% AI" badge on a real Suno song** — the hook (a high score like 92% reads instantly).
-2. **Before → after of a Rewrite** — the money shot: a sloppy cliché line → the humanized version. Most shareable.
-3. **The craft panel expanded** — the "why" (clichés / predictable rhymes / repetition).
-4. **The phone app screen** — ties to the "Android beta testers" ask.
+## 📸 IMAGES TO ATTACH
+READY NOW (new "Humanize AI Slop Lyrics" panel, rendered 1280×800 — verified current):
+1. store/screenshot_1_ai.png — a slop song reading **100% AI** with the craft panel (the hook + the "why").
+2. store/screenshot_2_human.png — a real-songwriting song reading **0%** green ("scores low — not a witch hunt"). The fair-to-humans contrast.
 
-THESE ARE THE SAME ASSETS THE PLAY STORE LISTING NEEDS (feature graphic 1024×500 + 2-8 phone screenshots) — capture once, use for both.
-- Phone screenshots: capture the live PWA (potentiallyhuman.github.io/suno-slop-detector/) at a phone viewport, or the Android app.
-- Badge/panel/rewrite shots: the extension on a real suno.com song page (needs the browser + a logged-in Suno tab — do when driving).
-- Before/after: run a known-sloppy lyric through Rewrite and screenshot the diff.
+Lead with #1 (the high score grabs), then #2 (shows it's calibrated, not a witch hunt). Those two alone tell the story.
+
+OPTIONAL stronger adds (not yet captured — say the word and I'll make them):
+- A before → after of a Rewrite (cliché line → cleaned), the "money shot".
+- A phone-app screen (from the live PWA at phone size) to back the beta-tester ask.
+- A badge on a real suno.com song page (needs a logged-in Suno tab; I'd drive the browser for it).
+
+## ⚠️ Known rule note
+r/SunoAI restricts unapproved tool/self-promo links. User requested mod approval 3× with no reply and has
+decided to post anyway and accept removal — the removal itself drives the DM/curiosity funnel (the declicker
+precedent). Post is otherwise honest, free, open-source, privacy-forward, and non-judgemental of AI music.
