@@ -2,7 +2,7 @@
 
 All notable changes to Humanize AI Slop Lyrics (formerly Suno Slop Detector). Dates are release-submission dates.
 
-## [1.0.3] — works with Suno's new lyrics editor (2026-09-22)
+## [1.0.3] — works with Suno's new lyrics editor (2026-09-22; submitted to Chrome Web Store + Firefox AMO the same day, pending review)
 - **Fixed: no score / no Humanize on suno.com/create.** Suno replaced the plain lyrics text box
   with a rich-text editor (the one with "improve this section" / "write another verse" tools),
   so the extension could no longer find the lyrics and showed nothing. It now reads the new
