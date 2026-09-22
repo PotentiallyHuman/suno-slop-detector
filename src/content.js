@@ -1,6 +1,7 @@
 /*
- * content.js — runs ONLY on https://suno.com/song/* (enforced by manifest
- * `matches` AND re-checked below). It reads ONE element: the lyrics paragraph.
+ * content.js — runs ONLY on https://suno.com/song/* and https://suno.com/create*
+ * (enforced by manifest `matches` AND re-checked below). It reads ONE element:
+ * the song page's lyrics paragraph, or the create page's lyrics editor.
  * It never reads anything else on the page. No network, no storage of page text.
  */
 (function () {
@@ -46,39 +47,151 @@
     return /^https:\/\/suno\.com\/create\b/.test(location.href);
   }
 
-  // The /create lyrics editor, pinned to the STABLE data-testid="lyrics-textarea"
-  // (verified live), with fuzzy fallbacks. Never the style/title box.
-  // Suno can keep MORE THAN ONE matching textarea mounted (e.g. a restored draft
-  // in a hidden editor instance) — caught live 2026-06-13 when the panel quoted a
-  // line that wasn't in the visible box. Always pick the first VISIBLE match.
+  // The /create lyrics editor. Since 2026-09 (verified live 2026-09-22 against a saved
+  // copy of the page) Suno's lyrics box is a Lexical rich-text editor:
+  //   <div contenteditable="true" role="textbox" aria-label="Lyrics editor"
+  //        data-lexical-editor="true" class="lyrics-editor-content">
+  //     <p class="lyrics-paragraph"><span data-lexical-text="true">one line</span></p>
+  //     <p class="lyrics-paragraph"><br></p>            <- a blank line
+  //   </div>
+  // The old <textarea data-testid="lyrics-textarea"> is gone; it is kept only as a
+  // legacy fallback. The NEW "Cowriter prompt" textarea (Suno's "improve this
+  // section / write another verse" feature) is explicitly never the lyrics box.
+  // Suno can keep MORE THAN ONE editor mounted (a hidden draft instance, or the
+  // full-screen editor dialog on top of the inline one) — always pick a VISIBLE
+  // match, and prefer the one inside an open dialog.
+  function isVisible(n) { return !!n && n.getClientRects().length > 0; }
   function getCreateBox() {
     if (!isCreatePage()) return null;
+    const editors = document.querySelectorAll(
+      'div[contenteditable="true"][data-lexical-editor="true"][aria-label="Lyrics editor"],' +
+      'div[contenteditable="true"].lyrics-editor-content,' +
+      'div[contenteditable="true"][role="textbox"][aria-label*="lyric" i]'
+    );
+    let first = null;
+    for (let i = 0; i < editors.length; i++) {
+      if (!isVisible(editors[i])) continue;
+      if (editors[i].closest('[role="dialog"]')) return editors[i]; // full-screen editor on top
+      if (!first) first = editors[i];
+    }
+    if (first) return first;
+    if (editors.length) return editors[0];
+    // legacy layout (pre-2026-09): the plain textarea
     const list = document.querySelectorAll(
       'textarea[data-testid="lyrics-textarea"], textarea[data-testid*="lyric" i], textarea[placeholder*="lyric" i]'
     );
+    let firstTa = null;
     for (let i = 0; i < list.length; i++) {
-      if (list[i].getClientRects().length > 0) return list[i]; // on-screen editor
+      if (list[i].hasAttribute("data-cowrite-input")) continue;        // never the co-writer prompt
+      if (/cowrit/i.test(list[i].getAttribute("aria-label") || "")) continue;
+      if (isVisible(list[i])) return list[i];
+      if (!firstTa) firstTa = list[i];
     }
-    return list[0] || null;
+    return firstTa;
   }
 
-  // Write into the lyrics box ONLY — through the native value setter, then an
-  // `input` event, so Suno's controlled React textarea picks the change up as if
-  // the user had typed it. Plain `.value =` would render but desync React state,
-  // and the next keystroke would snap the box back to the stale value.
-  function setCreateBoxText(box, text) {
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
-    setter.call(box, text);
-    box.dispatchEvent(new Event("input", { bubbles: true }));
+  function isEditorBox(box) { return !!box && box.tagName !== "TEXTAREA"; }
+
+  // The exact text in the lyrics box. For the Lexical editor: one block (<p>) per
+  // line, a <br> inside a block is an in-paragraph line break, and a block whose
+  // only child is a <br> is an empty line. Never `innerText` — it double-spaces <p>s.
+  function readBoxText(box) {
+    if (!box) return "";
+    if (!isEditorBox(box)) return typeof box.value === "string" ? box.value : "";
+    const blocks = box.children.length ? Array.prototype.slice.call(box.children) : [box];
+    const lines = [];
+    for (let b = 0; b < blocks.length; b++) {
+      const blk = blocks[b];
+      let s = "";
+      (function walk(n) {
+        if (n.nodeType === 3) { s += n.nodeValue; return; }
+        if (n.nodeType !== 1) return;
+        if (n.tagName === "BR") { s += "\n"; return; }
+        for (let c = n.firstChild; c; c = c.nextSibling) walk(c);
+      })(blk);
+      const kids = blk.childNodes;
+      if (kids.length === 1 && kids[0].nodeType === 1 && kids[0].tagName === "BR") s = ""; // empty paragraph
+      else if (s.endsWith("\n\n")) s = s.slice(0, -1); // Lexical paints a trailing line break as <br><br>
+      lines.push(s);
+    }
+    return lines.join("\n");
+  }
+
+  function normText(t) { return String(t || "").replace(/\r\n?/g, "\n").replace(/[ \t]+$/gm, "").replace(/\n+$/, ""); }
+
+  // Write into the lyrics box ONLY.
+  //  - legacy textarea: the native value setter + an `input` event, so Suno's
+  //    controlled React textarea picks the change up as if the user had typed it.
+  //  - Lexical editor: select everything, then dispatch a `paste` event carrying the
+  //    new text — the exact path a user's Ctrl+V takes, so Suno's editor state, its
+  //    auto-save and its own undo history all see the change. The DOM is never
+  //    edited directly (Lexical would overwrite that on its next render).
+  //    Lexical commits asynchronously, so the result is verified on a short timer;
+  //    if the paste route did nothing, `insertText` (a beforeinput event Lexical
+  //    also handles) is tried, and `onDone(ok)` reports whether the box now holds
+  //    the text.
+  function setCreateBoxText(box, text, onDone) {
+    const done = typeof onDone === "function" ? onDone : function () {};
+    if (!isEditorBox(box)) {
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+      setter.call(box, text);
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+      done(true);
+      return;
+    }
+    const want = normText(text);
+    function selectAll() {
+      box.focus();
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(box);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    function landed() { return normText(readBoxText(box)) === want; }
+    // which route landed the text (read back by the maintainer from a saved page; harmless otherwise)
+    function mark(v) { if (host) host.setAttribute("data-hz-write", v); }
+    selectAll();
+    setTimeout(() => { // let the editor register the selection before the paste
+      try {
+        const dt = new DataTransfer();
+        dt.setData("text/plain", text);
+        box.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+      } catch (e) { /* fall through to insertText */ }
+      setTimeout(() => {
+        if (landed()) { mark("paste"); done(true); return; }
+        // Route 2 (Firefox ignores a synthetic paste's clipboard data): rebuild the text
+        // line by line through the editor's own input commands — `insertText` for a line,
+        // `insertParagraph` between lines — which is what typing it would do, so every
+        // line stays its own paragraph exactly like a user paste.
+        selectAll();
+        setTimeout(() => {
+          try {
+            const lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+            document.execCommand("delete");
+            for (let i = 0; i < lines.length; i++) {
+              if (i > 0) document.execCommand("insertParagraph");
+              if (lines[i]) document.execCommand("insertText", false, lines[i]);
+            }
+          } catch (e) {}
+          setTimeout(() => {
+            if (landed()) { mark("lines"); done(true); return; }
+            // Route 3 (last resort): the whole text in one insertText — right words, one block.
+            selectAll();
+            setTimeout(() => {
+              try { document.execCommand("insertText", false, text); } catch (e) {}
+              setTimeout(() => { const ok = landed(); mark(ok ? "inserttext" : "failed"); done(ok); }, 80);
+            }, 30);
+          }, 120);
+        }, 30);
+      }, 80);
+    }, 30);
   }
 
   // The ONLY text we read: the song-page lyrics <p>, or (on /create) the lyrics
   // input box. Returns "" if neither is present. Reads nothing else on the page.
   function getLyricsText() {
-    if (isCreatePage()) {
-      const box = getCreateBox();
-      return (box && typeof box.value === "string") ? box.value : "";
-    }
+    if (isCreatePage()) return readBoxText(getCreateBox());
     // /song: the rendered lyrics paragraph (or "" — never anything else on the page).
     const p = getLyricsNode();
     return p ? (p.innerText || p.textContent || "") : "";
@@ -267,6 +380,15 @@
     if (refs.hzMsg) refs.hzMsg.textContent = text || "";
   }
 
+  // Runs after an edit was written into Suno's editor (its commit is async): if the
+  // box does NOT hold the new text, say so instead of describing an edit that never landed.
+  function hzWriteCheck(ok) {
+    if (ok) return;
+    hzUndoStack.pop();
+    if (refs.hzUndo) refs.hzUndo.hidden = hzUndoStack.length === 0;
+    hzMsg("Couldn't write into Suno's lyrics editor (its layout may have changed again). Nothing was changed.");
+  }
+
   function hzShapeMsg(text) {
     const s0 = hzScore(text);
     if (s0 < 55) return "Every line already reads human — nothing left to rebuild.";
@@ -280,7 +402,7 @@
   function hzPress(kind) {
     const box = getCreateBox();
     if (!box) { hzMsg("Couldn't find the lyrics box on this page."); return; }
-    const text = box.value || "";
+    const text = readBoxText(box);
     if (text.trim().length < 8) { hzMsg("Write a few lines in the lyrics box first."); return; }
     if (!globalThis.HumanizeFreestyle) { hzMsg("Humanizer is still loading — try again in a second."); return; }
     let res = null, chaos = kind === "half" && hzChaosArmed;
@@ -296,7 +418,7 @@
     if (chaos) {
       hzUndoStack.push(text);
       if (refs.hzUndo) refs.hzUndo.hidden = false;
-      setCreateBoxText(box, res.text);
+      setCreateBoxText(box, res.text, hzWriteCheck);
       scheduleAnalyse();
       hzMsg("Chaos: dropped every safety gate and reworked " + res.count + " " + (res.count === 1 ? "line" : "lines") +
         " — " + res.before + "% → " + res.after + "% AI. Rhymes and your hooks kept. Undo to revert.");
@@ -304,7 +426,7 @@
     }
     hzUndoStack.push(text);
     if (refs.hzUndo) refs.hzUndo.hidden = false;
-    setCreateBoxText(box, res.text);
+    setCreateBoxText(box, res.text, hzWriteCheck);
     scheduleAnalyse(); // refresh the pill % from the edited box
     let summary = "";
     try { summary = HumanizeFreestyle.pressSummary(res); } catch (e) {}
@@ -338,7 +460,7 @@
     refs.hzUndo.addEventListener("click", () => {
       const box = getCreateBox();
       if (!box || !hzUndoStack.length) return;
-      setCreateBoxText(box, hzUndoStack.pop());
+      setCreateBoxText(box, hzUndoStack.pop(), hzWriteCheck);
       refs.hzUndo.hidden = hzUndoStack.length === 0;
       scheduleAnalyse();
       hzMsg("Reverted the last Humanize press.");
@@ -500,7 +622,7 @@
       if (msg && msg.type === "GET_SLOP") {
         sendResponse({
           onSongPage: true,
-          hasLyrics: !!getLyricsNode(),
+          hasLyrics: !!getLyricsText(),
           result: lastResult
             ? {
                 score: lastResult.score,

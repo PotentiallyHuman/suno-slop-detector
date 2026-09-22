@@ -2,6 +2,20 @@
 
 All notable changes to Humanize AI Slop Lyrics (formerly Suno Slop Detector). Dates are release-submission dates.
 
+## [1.0.3] — works with Suno's new lyrics editor (2026-09-22)
+- **Fixed: no score / no Humanize on suno.com/create.** Suno replaced the plain lyrics text box
+  with a rich-text editor (the one with "improve this section" / "write another verse" tools),
+  so the extension could no longer find the lyrics and showed nothing. It now reads the new
+  editor line by line (exactly the text you see, blank lines included) and finds the legacy
+  box too, in case Suno rolls it back.
+- **Humanize Line / Rewrite / Undo write into the new editor the same way a paste does**, so
+  Suno's own auto-save, character counter and undo button all see the change. Firefox ignores
+  a scripted paste, so there the text is rebuilt line by line through the editor's own typing
+  commands — same result, one paragraph per line, verified on both browsers. If Suno's layout
+  changes again and the write cannot land, the panel now says so instead of claiming an edit.
+- Suno's new co-writer prompt box is never read or written.
+- Song pages (suno.com/song/…) and the % score are unchanged.
+
 ## [1.0.2] — smarter craft suggestions (2026-06-20)
 - **The "try this" tip now points at cliché *phrases*, not lone words.** A song full of stock
   lines (e.g. "rise from the ashes", "neon lights", "chasing the horizon") used to get nagged to
