@@ -6,7 +6,7 @@ A browser extension that reads the lyrics on a Suno song page and tells you, in 
 
 Open a song. A little pill appears top-right. Click it for the **craft-coach panel**: what the song does well, one creative move to try, and what to work on.
 
-Born out of spite after r/SunoAI removed an open-source de-clicker post. So now it's open source forever. 🫡
+It is open source, so anyone can check exactly how the score is made.
 
 > ### 🙅 This is for fun — it is **not** a personal attack or a judgement of any songwriter.
 > The score rates **lyrical texture**, not talent, effort, or worth. Using AI to make music is **completely fine** — this is a playful mirror, not a courtroom. A high score doesn't mean a song is bad and a low score doesn't mean it's good. Plenty of beloved human songs score high (they share vocabulary with the AI that trained on them), and plenty of careful AI-assisted writing scores low. **Don't use this to harass, shame, or "out" anyone.** It's a toy for curiosity and craft, full stop.
