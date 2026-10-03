@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suno Slop Detector</title>
+    <meta
+      name="description"
+      content="Analyze song lyrics locally in your browser with the Suno Slop Detector model."
+    />
+    <link rel="stylesheet" href="gh-pages.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Local lyrics analyzer</p>
+          <h1>Suno Slop Detector</h1>
+          <p class="lede">
+            Paste lyrics or upload a lyric file. The model runs entirely in this browser.
+          </p>
+        </div>
+        <div class="hero-status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span>No account, no server, no tracking.</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Lyrics analyzer">
+        <div class="input-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Lyrics</h2>
+              <p>Paste lyrics or upload a plain text lyric file.</p>
+            </div>
+            <button id="sample" type="button" class="ghost-button">Sample</button>
+          </div>
+
+          <label class="file-drop" for="file">
+            <span class="file-drop-title">Upload lyrics</span>
+            <span class="file-drop-subtitle">TXT, LRC, or MD</span>
+            <input id="file" type="file" accept=".txt,.lrc,.md,text/plain,text/markdown" />
+          </label>
+
+          <div id="file-status" class="file-status" aria-live="polite"></div>
+
+          <textarea
+            id="lyrics"
+            rows="18"
+            spellcheck="false"
+            placeholder="Paste lyrics here..."
+          ></textarea>
+
+          <div class="actions">
+            <button id="analyze" type="button">Analyze Lyrics</button>
+            <button id="clear" type="button" class="ghost-button">Clear</button>
+          </div>
+        </div>
+
+        <aside class="result-panel" aria-live="polite">
+          <div id="result" hidden>
+            <div class="score-row">
+              <div>
+                <p class="eyebrow">Model confidence</p>
+                <div id="score" class="score">0% AI</div>
+              </div>
+              <div id="verdict" class="verdict"></div>
+            </div>
+
+            <div id="notes" class="notes"></div>
+            <div id="craft" class="craft"></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="disclaimer">
+        <p>
+          This rates lyrical texture, not the person who made the song. It is a craft mirror, not proof.
+        </p>
+      </section>
+    </main>
+
+    <script src="src/slop-core.js"></script>
+    <script src="src/common_words.js"></script>
+    <script src="src/features.js"></script>
+    <script src="src/ext/patterns.browser.js"></script>
+    <script src="src/ext/tier3.browser.js"></script>
+    <script src="src/ext/model.js"></script>
+    <script src="src/ext/clean-lyrics.js"></script>
+    <script src="src/ext/v2-engine.js"></script>
+    <script src="src/ext/v2-panel.js"></script>
+    <script src="gh-pages.js"></script>
+  </body>
+</html>

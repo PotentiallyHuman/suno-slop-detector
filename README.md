@@ -26,7 +26,7 @@ v0.1 was a hand-tuned cliché lexicon squashed through a curve. **v0.2 replaces 
   - **1 🃏 joker** — a single, always-present, decisive creative suggestion, with its slots (a word, a rhyme, a line) filled from *this* song. Grounded in real songwriting craft (Pattison's prosody, object-writing / show-don't-tell, Shklovsky's defamiliarization, slant rhyme, point-of-view shifts). See [`analysis/JOKER_STRATEGY_LIBRARY.md`](analysis/JOKER_STRATEGY_LIBRARY.md).
   - **5 ⚠️ work-on** — the song's 5 strongest *AI-leaning* signals that fired, each quoting the offending word/line plus a one-line fix.
 
-**Everything runs on-device, text-only, with no network.** No embeddings, no LLM call, no upload. The model weights ship inside the extension; the lyric is scored in memory and thrown away.
+**Everything runs on-device, text-only, with no network.** No embeddings, no LLM call, no network upload. The model weights ship with the browser runtime; the lyric is scored in memory and thrown away.
 
 ---
 
@@ -91,9 +91,28 @@ It is a **vibe meter, not a detector of ground truth, and never a personal attac
 
 > Firefox: load `manifest.json` via `about:debugging` → "This Firefox" → "Load Temporary Add-on". (MV3 content scripts work; the manifest is cross-browser — the Chrome build just strips the Firefox-only `browser_specific_settings`.)
 
+## Web app / GitHub Pages
+
+This repo also includes a static lyrics-only web app at [`index.html`](index.html).
+It reuses the same browser model files as the extension, but removes the Suno page
+scraper and extension popup APIs. Use it to paste lyrics or upload a `.txt`, `.lrc`,
+or `.md` lyric file.
+
+To publish it with GitHub Pages:
+
+1. Push this repository to GitHub.
+2. Go to repository **Settings → Pages**.
+3. Set **Source** to "Deploy from a branch".
+4. Pick your branch and set the folder to `/ (root)`.
+5. Save. GitHub will serve `index.html` as the analyzer page.
+
+The model is text-only, so the web app only accepts lyrics.
+
 ## Project layout
 
 ```
+index.html                    static GitHub Pages lyrics analyzer
+gh-pages.js/css               web-app UI around the same in-browser model
 manifest.json                 MV3, scoped to suno.com/song/*
 src/slop-core.js              cliché-lexicon engine + lyric normalisation (pure; browser + node)
 src/common_words.js           top-1000 English word list (perplexity proxy)
