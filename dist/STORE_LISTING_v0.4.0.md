@@ -4,7 +4,7 @@
 Suno Slop Detector
 
 ## Summary / short description (≤132 chars — Chrome)
-Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun. And spite.
+Scores how AI a Suno song's lyrics read with a trained model, plus craft feedback. Reads only the lyrics box. For fun.
 
 ## Category
 Fun / Developer Tools

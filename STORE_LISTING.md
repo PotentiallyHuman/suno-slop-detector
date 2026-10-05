@@ -4,7 +4,7 @@
 Humanize AI Slop Lyrics
 
 ## Short summary (≤132 chars, Chrome) — 128 chars
-Detect AI/Suno slop in lyrics, then humanize it to read human. On-device, no account. Score + craft feedback. For fun and spite.
+Detect AI/Suno slop in lyrics, then humanize it to read human. On-device, no account. Score + craft feedback. For fun.
 
 ## Category
 Fun / Entertainment
