@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Humanize AI Slop Lyrics",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Detect AI/Suno slop in lyrics, then humanize it to read human. On-device, no account. Score + craft feedback. For fun.",
   "permissions": [
     "activeTab"

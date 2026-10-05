@@ -1,6 +1,6 @@
 {
   "name": "suno-slop-detector",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Humanize AI Slop Lyrics \u2014 detects how AI a Suno song's lyrics read with a trained model, then rewrites them to sound human, plus a craft-coach panel.",
   "scripts": {
     "test": "node test/calibrate.js",

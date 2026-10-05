@@ -2,6 +2,9 @@
 
 All notable changes to Humanize AI Slop Lyrics (formerly Suno Slop Detector). Dates are release-submission dates.
 
+## [1.0.4] — store summary wording only (2026-10-05; Chrome package built, Firefox summary edited in place)
+- Store summary now ends "For fun." instead of "For fun and spite." No code changes: the Chrome 1.0.4 zip is byte-identical to 1.0.3 apart from manifest version and description.
+
 ## [1.0.3] — works with Suno's new lyrics editor (2026-09-22; submitted to Chrome Web Store + Firefox AMO the same day, pending review)
 - **Fixed: no score / no Humanize on suno.com/create.** Suno replaced the plain lyrics text box
   with a rich-text editor (the one with "improve this section" / "write another verse" tools),
